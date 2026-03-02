@@ -40,9 +40,26 @@ PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=event_user
-DB_PASSWORD=123
+DB_PASSWORD=your_strong_password_here
 DB_DATABASE=event_management
 DB_SYNCHRONIZE=false
+```
+
+## Quick start (Docker Compose)
+
+From the project root:
+
+```bash
+docker compose up --build
+```
+
+Useful commands:
+
+```bash
+docker compose up -d
+docker compose logs -f backend
+docker compose down
+docker compose down -v
 ```
 
 ## Compile and run the project
