@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -6,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Event } from '../../events/entities/event.entity';
+import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('users')
 export class User {
@@ -26,4 +28,7 @@ export class User {
 
   @OneToMany(() => Event, (event) => event.organizer)
   organizedEvents!: Event[];
+
+  @OneToMany(() => Participant, (participant) => participant.user)
+  participations!: Participant[];
 }
