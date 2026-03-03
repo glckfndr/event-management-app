@@ -3,7 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Event } from '../../events/entities/event.entity';
 
 @Entity('users')
 export class User {
@@ -21,4 +23,7 @@ export class User {
 
   @CreateDateColumn()
   createdAt!: Date;
+
+  @OneToMany(() => Event, (event) => event.organizer)
+  organizedEvents!: Event[];
 }
