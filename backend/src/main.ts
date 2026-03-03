@@ -22,12 +22,19 @@ async function bootstrap() {
       .setDescription('API documentation for the Event Management application')
       .setVersion('1.0')
       .addTag('events')
+      .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
   }
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,

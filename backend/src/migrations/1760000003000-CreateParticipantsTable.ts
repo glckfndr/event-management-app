@@ -6,9 +6,7 @@ import {
   TableUnique,
 } from 'typeorm';
 
-export class CreateParticipantsTable1760000003000
-  implements MigrationInterface
-{
+export class CreateParticipantsTable1760000003000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
 
@@ -87,7 +85,10 @@ export class CreateParticipantsTable1760000003000
       );
 
       if (uniqueConstraint) {
-        await queryRunner.dropUniqueConstraint('participants', uniqueConstraint);
+        await queryRunner.dropUniqueConstraint(
+          'participants',
+          uniqueConstraint,
+        );
       }
 
       if (userForeignKey) {
