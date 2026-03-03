@@ -5,7 +5,7 @@
 Create a `.env` file in this folder (you can copy from `.env.example`):
 
 ```bash
-VITE_PORT=8080
+VITE_PORT=8090
 ```
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

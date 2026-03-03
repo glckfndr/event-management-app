@@ -36,7 +36,7 @@ $ npm install
 Create a `.env` file in the backend root (you can copy from `.env.example`):
 
 ```bash
-PORT=3000
+PORT=3001
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=event_user

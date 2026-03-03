@@ -139,6 +139,12 @@ docker-compose up
 
 ### Docker Compose commands
 
+Before running Docker Compose, create a root `.env` file (copy from `.env.example`) and set:
+
+```bash
+DB_PASSWORD=your_strong_password_here
+```
+
 ```bash
 # build images and start all services
 docker compose up --build

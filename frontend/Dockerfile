@@ -7,6 +7,6 @@ RUN npm ci
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8090
 
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
