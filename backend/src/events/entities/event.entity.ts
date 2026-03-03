@@ -4,9 +4,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { Participant } from '../../participants/entities/participant.entity';
 
 @Entity('events')
 export class Event {
@@ -37,6 +39,9 @@ export class Event {
 
   @Column({ type: 'uuid' })
   organizerId!: string;
+
+  @OneToMany(() => Participant, (participant) => participant.event)
+  participants!: Participant[];
 
   @CreateDateColumn()
   createdAt!: Date;
