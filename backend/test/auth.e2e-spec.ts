@@ -112,7 +112,7 @@ describe('AuthController (e2e)', () => {
         email: 'user@example.com',
         password: 'password123',
       })
-      .expect(201);
+      .expect(200);
 
     const meResponse = await request(httpServer)
       .get('/auth/me')
