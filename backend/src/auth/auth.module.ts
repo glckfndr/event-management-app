@@ -6,15 +6,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import type { StringValue } from 'ms';
 import { JwtStrategy } from './jwt.strategy';
+import { resolveJwtSecret } from './jwt.config';
 
 const jwtExpiresIn = (process.env.JWT_EXPIRES_IN ?? '1h') as StringValue;
+const jwtSecret = resolveJwtSecret();
 
 @Module({
   imports: [
     UsersModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-jwt-secret',
+      secret: jwtSecret,
       signOptions: { expiresIn: jwtExpiresIn },
     }),
   ],
