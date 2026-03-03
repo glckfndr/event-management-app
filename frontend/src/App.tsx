@@ -1,4 +1,5 @@
 import { AppLayout } from "./components/layout/AppLayout";
+import "./index.css";
 
 function App() {
   const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001";

@@ -4,8 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
-  const port = Number(env.VITE_PORT) || 8080;
+  const env = loadEnv(mode, process.cwd());
+  const port = Number(env.VITE_PORT) || 8090;
 
   return {
     plugins: [react(), tailwindcss()],

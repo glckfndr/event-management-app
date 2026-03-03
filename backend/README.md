@@ -37,6 +37,8 @@ Create a `.env` file in the backend root (you can copy from `.env.example`):
 
 ```bash
 PORT=3001
+FRONTEND_URL=http://localhost:8090,http://127.0.0.1:8090
+ENABLE_SWAGGER=true
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=event_user

@@ -135,7 +135,10 @@ The application is fully containerized using Docker and Docker Compose:
 - React frontend container
 
 The project can be started with a single command:
-docker-compose up
+
+```bash
+docker compose up
+```
 
 ### Docker Compose commands
 
@@ -143,7 +146,11 @@ Before running Docker Compose, create a root `.env` file (copy from `.env.exampl
 
 ```bash
 DB_PASSWORD=your_strong_password_here
+BACKEND_PUBLIC_URL=http://localhost:3001
 ```
+
+For access from another device in your local network, set `BACKEND_PUBLIC_URL` to your host IP,
+for example `http://192.168.0.10:3001`.
 
 ```bash
 # build images and start all services

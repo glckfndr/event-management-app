@@ -3,7 +3,16 @@ import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConne
 import 'dotenv/config';
 
 const toNumber = (value: string | undefined, fallback: number): number => {
-  const parsed = Number(value);
+  if (value === undefined) {
+    return fallback;
+  }
+
+  const normalized = value.trim();
+  if (normalized === '') {
+    return fallback;
+  }
+
+  const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
