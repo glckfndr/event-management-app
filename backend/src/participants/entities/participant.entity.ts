@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   CreateDateColumn,
   Entity,
@@ -5,11 +6,13 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Column,
+  Unique,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Event } from '../../events/entities/event.entity';
 
 @Entity('participants')
+@Unique(['userId', 'eventId'])
 export class Participant {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
