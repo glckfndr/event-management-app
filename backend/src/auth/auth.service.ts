@@ -47,7 +47,9 @@ export class AuthService {
     accessToken: string;
     tokenType: 'Bearer';
   }> {
-    const user = await this.usersService.findByEmailWithPassword(loginDto.email);
+    const user = await this.usersService.findByEmailWithPassword(
+      loginDto.email,
+    );
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials.');

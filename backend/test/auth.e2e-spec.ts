@@ -6,6 +6,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
+import { resolveJwtSecret } from '../src/auth/jwt.config';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -22,7 +23,7 @@ describe('AuthController (e2e)', () => {
       imports: [
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.register({
-          secret: process.env.JWT_SECRET ?? 'dev-jwt-secret',
+          secret: resolveJwtSecret(),
         }),
       ],
       controllers: [AuthController],
@@ -105,7 +106,7 @@ describe('AuthController (e2e)', () => {
       })
       .expect(201);
 
-    const loginResponse = await request(httpServer)
+    await request(httpServer)
       .post('/auth/login')
       .send({
         email: 'user@example.com',
@@ -115,7 +116,7 @@ describe('AuthController (e2e)', () => {
 
     const meResponse = await request(httpServer)
       .get('/auth/me')
-      .set('Authorization', `Bearer ${loginResponse.body.accessToken}`)
+      .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
     expect(authService.register).toHaveBeenCalledWith({

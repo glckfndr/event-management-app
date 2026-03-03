@@ -18,8 +18,19 @@ describe('JwtStrategy', () => {
   });
 
   it('throws UnauthorizedException when payload is invalid', () => {
-    expect(() =>
-      strategy.validate({ sub: 'user-id', email: '' }),
-    ).toThrow(UnauthorizedException);
+    expect(() => strategy.validate({ sub: 'user-id', email: '' })).toThrow(
+      UnauthorizedException,
+    );
+  });
+
+  it('throws UnauthorizedException when payload fields are not strings', () => {
+    const invalidPayload = {
+      sub: 1,
+      email: 123,
+    } as unknown as { sub: string; email: string };
+
+    expect(() => strategy.validate(invalidPayload)).toThrow(
+      UnauthorizedException,
+    );
   });
 });

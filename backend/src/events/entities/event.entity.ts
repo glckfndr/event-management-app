@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Column,
   CreateDateColumn,
@@ -31,7 +30,7 @@ export class Event {
   @Column({ type: 'int', default: 1 })
   capacity!: number;
 
-  @ManyToOne(() => User, (user) => user.organizedEvents, {
+  @ManyToOne(() => User, (user: User): Event[] => user.organizedEvents, {
     nullable: false,
     onDelete: 'CASCADE',
   })
@@ -41,7 +40,10 @@ export class Event {
   @Column({ type: 'uuid' })
   organizerId!: string;
 
-  @OneToMany(() => Participant, (participant) => participant.event)
+  @OneToMany(
+    () => Participant,
+    (participant: Participant): Event => participant.event,
+  )
   participants!: Participant[];
 
   @CreateDateColumn()

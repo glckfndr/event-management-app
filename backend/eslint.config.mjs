@@ -36,6 +36,8 @@ export default tseslint.config(
     files: ['src/**/*.dto.ts', 'src/**/*.entity.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {

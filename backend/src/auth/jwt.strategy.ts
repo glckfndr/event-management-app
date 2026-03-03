@@ -19,7 +19,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload): JwtPayload {
-    if (!payload?.sub || !payload?.email) {
+    const isSubValid =
+      typeof payload?.sub === 'string' && payload.sub.trim().length > 0;
+    const isEmailValid =
+      typeof payload?.email === 'string' && payload.email.trim().length > 0;
+
+    if (!isSubValid || !isEmailValid) {
       throw new UnauthorizedException('Invalid token payload.');
     }
 

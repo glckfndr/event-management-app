@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -26,9 +25,9 @@ export class User {
   @CreateDateColumn()
   createdAt!: Date;
 
-  @OneToMany(() => Event, (event) => event.organizer)
+  @OneToMany(() => Event, 'organizer')
   organizedEvents!: Event[];
 
-  @OneToMany(() => Participant, (participant) => participant.user)
+  @OneToMany(() => Participant, 'user')
   participations!: Participant[];
 }
