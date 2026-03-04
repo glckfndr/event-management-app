@@ -30,7 +30,8 @@ export class CreateEventDto {
   location!: string;
 
   @ApiProperty({ example: 50, default: 1 })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  capacity!: number;
+  capacity?: number;
 }
