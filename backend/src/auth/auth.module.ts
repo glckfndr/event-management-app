@@ -22,5 +22,6 @@ const jwtSecret = resolveJwtSecret();
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
+  exports: [JwtModule],
 })
 export class AuthModule {}
