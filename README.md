@@ -33,18 +33,18 @@ The system allows users to:
 - As an organizer, I want to edit and delete my own events.
 - As an organizer, I want to view participants.
 
-  ***
+---
 
-  ## Acceptance Criteria
+## Acceptance Criteria
 
 - Only authenticated users can create events.
-- Event capacity is enforced.
-- Users cannot join the same event twice.
+- Users cannot join the same event twice (unique participant constraint is enforced).
+- Event capacity is stored for events but is not yet enforced when users join.
 - Only organizers can edit or delete their events.
 
-  ***
+---
 
-  ## Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -75,7 +75,7 @@ The backend is built using a modular structure:
 - **Auth Module** – Handles user registration, login, JWT authentication, and route protection.
 - **Users Module** – Manages user-related operations.
 - **Events Module** – Contains business logic for event creation, update, deletion, and retrieval.
-- **Participants Logic** – Handles join/leave functionality and enforces event capacity rules.
+- **Participants Logic** – Handles join/leave functionality and enforces unique participation per user/event.
 
 The application follows REST principles and uses DTOs for request validation.
 Business logic is placed in services, while controllers handle routing only.
@@ -100,7 +100,7 @@ Main entities:
 The database schema enforces:
 
 - Unique user emails
-- Event capacity validation
+- Unique user/event participant pairs
 - Proper relationship handling
 
 ---
@@ -147,6 +147,8 @@ Before running Docker Compose, create a root `.env` file (copy from `.env.exampl
 ```bash
 DB_PASSWORD=your_strong_password_here
 BACKEND_PUBLIC_URL=http://localhost:3001
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRES_IN=1h
 ```
 
 For access from another device in your local network, set `BACKEND_PUBLIC_URL` to your host IP,

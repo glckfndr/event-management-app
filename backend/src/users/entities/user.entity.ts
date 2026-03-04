@@ -25,9 +25,9 @@ export class User {
   @CreateDateColumn()
   createdAt!: Date;
 
-  @OneToMany(() => Event, 'organizer')
+  @OneToMany(() => Event, (event) => event.organizer)
   organizedEvents!: Event[];
 
-  @OneToMany(() => Participant, 'user')
+  @OneToMany(() => Participant, (participant) => participant.user)
   participations!: Participant[];
 }
