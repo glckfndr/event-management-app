@@ -80,4 +80,36 @@ describe('EventsService', () => {
 
     expect(eventsRepository.save).not.toHaveBeenCalled();
   });
+
+  it('create stores null capacity when omitted (unlimited)', async () => {
+    const user = { sub: 'user-id', email: 'user@example.com' };
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    eventsRepository.create.mockImplementation((payload) => payload);
+    eventsRepository.save.mockImplementation(async (payload) => payload);
+
+    const result = await service.create(
+      {
+        title: 'Unlimited event',
+        eventDate: futureDate,
+        location: 'Kyiv',
+      },
+      user,
+    );
+
+    expect(eventsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Unlimited event',
+        location: 'Kyiv',
+        organizerId: 'user-id',
+        capacity: null,
+      }),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        capacity: null,
+      }),
+    );
+  });
 });
