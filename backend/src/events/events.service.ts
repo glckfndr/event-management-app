@@ -124,39 +124,57 @@ export class EventsService {
   }
 
   async joinEvent(id: string, user: AuthenticatedUser): Promise<void> {
-    const event = await this.eventsRepository.findOne({ where: { id } });
+    await this.eventsRepository.manager.transaction(async (manager) => {
+      const transactionalEventsRepository = manager.getRepository(Event);
+      const transactionalParticipantsRepository =
+        manager.getRepository(Participant);
 
-    if (!event) {
-      throw new NotFoundException('Event not found');
-    }
+      const event = await transactionalEventsRepository
+        .createQueryBuilder('event')
+        .setLock('pessimistic_write')
+        .where('event.id = :id', { id })
+        .getOne();
 
-    const existingParticipant = await this.participantsRepository.findOne({
-      where: {
+      if (!event) {
+        throw new NotFoundException('Event not found');
+      }
+
+      if (event.organizerId === user.sub) {
+        throw new ForbiddenException(
+          'Organizer cannot join their own event as participant',
+        );
+      }
+
+      const existingParticipant =
+        await transactionalParticipantsRepository.findOne({
+          where: {
+            eventId: id,
+            userId: user.sub,
+          },
+        });
+
+      if (existingParticipant) {
+        throw new ConflictException('User already joined this event');
+      }
+
+      if (event.capacity !== null && event.capacity !== undefined) {
+        const participantCount =
+          await transactionalParticipantsRepository.count({
+            where: { eventId: id },
+          });
+
+        if (participantCount >= event.capacity) {
+          throw new ConflictException('Event capacity reached');
+        }
+      }
+
+      const participant = transactionalParticipantsRepository.create({
         eventId: id,
         userId: user.sub,
-      },
-    });
-
-    if (existingParticipant) {
-      throw new ConflictException('User already joined this event');
-    }
-
-    if (event.capacity !== null && event.capacity !== undefined) {
-      const participantCount = await this.participantsRepository.count({
-        where: { eventId: id },
       });
 
-      if (participantCount >= event.capacity) {
-        throw new ConflictException('Event capacity reached');
-      }
-    }
-
-    const participant = this.participantsRepository.create({
-      eventId: id,
-      userId: user.sub,
+      await transactionalParticipantsRepository.save(participant);
     });
-
-    await this.participantsRepository.save(participant);
   }
 
   async leaveEvent(id: string, user: AuthenticatedUser): Promise<void> {
