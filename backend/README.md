@@ -106,6 +106,19 @@ $ npm run migration:create
 $ npm run migration:generate
 ```
 
+## Seeding sample data
+
+Run seeding after migrations to create demo data:
+
+```bash
+$ npm run seed
+```
+
+The seed is idempotent and creates sample records if they do not exist:
+
+- 2 users (`alice@example.com`, `bob@example.com`)
+- 3 public events (including one with unlimited capacity)
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
