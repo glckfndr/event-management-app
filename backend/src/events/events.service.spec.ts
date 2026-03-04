@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventsService } from './events.service';
 import { Event } from './entities/event.entity';
@@ -143,7 +147,7 @@ describe('EventsService', () => {
         },
         user,
       ),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(eventsRepository.create).not.toHaveBeenCalled();
     expect(eventsRepository.save).not.toHaveBeenCalled();
@@ -167,7 +171,7 @@ describe('EventsService', () => {
         },
         user,
       ),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(eventsRepository.save).not.toHaveBeenCalled();
   });
@@ -206,6 +210,92 @@ describe('EventsService', () => {
         capacity: null,
       }),
     );
+  });
+
+  it('findOne returns public event without authentication', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'public',
+      organizerId: 'organizer-id',
+      participants: [],
+    });
+
+    const result = await service.findOne('event-id');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'event-id',
+      }),
+    );
+  });
+
+  it('findOne throws when unauthenticated user requests private event', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [],
+    });
+
+    await expect(service.findOne('event-id')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('findOne returns private event to organizer', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [],
+    });
+
+    const result = await service.findOne('event-id', {
+      sub: 'organizer-id',
+      email: 'organizer@example.com',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'event-id',
+      }),
+    );
+  });
+
+  it('findOne returns private event to participant', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [{ userId: 'participant-id' }],
+    });
+
+    const result = await service.findOne('event-id', {
+      sub: 'participant-id',
+      email: 'participant@example.com',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'event-id',
+      }),
+    );
+  });
+
+  it('findOne throws when authenticated non-member requests private event', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [{ userId: 'participant-id' }],
+    });
+
+    await expect(
+      service.findOne('event-id', {
+        sub: 'another-user',
+        email: 'another@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('joinEvent throws when capacity is reached', async () => {

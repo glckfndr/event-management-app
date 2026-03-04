@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -33,7 +34,7 @@ export class EventsService {
     });
   }
 
-  async findOne(id: string): Promise<Event> {
+  async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
     const event = await this.eventsRepository.findOne({
       where: { id },
       relations: { organizer: true, participants: true },
@@ -41,6 +42,25 @@ export class EventsService {
 
     if (!event) {
       throw new NotFoundException('Event not found');
+    }
+
+    if (event.visibility === EventVisibility.PRIVATE) {
+      if (!user) {
+        throw new ForbiddenException(
+          'Authentication is required to access private events',
+        );
+      }
+
+      const isOrganizer = event.organizerId === user.sub;
+      const isParticipant = event.participants.some(
+        (participant) => participant.userId === user.sub,
+      );
+
+      if (!isOrganizer && !isParticipant) {
+        throw new ForbiddenException(
+          'You do not have access to this private event',
+        );
+      }
     }
 
     return event;
@@ -93,7 +113,7 @@ export class EventsService {
     }
 
     if (updateEventDto.capacity !== undefined) {
-      event.capacity = updateEventDto.capacity;
+      event.capacity = updateEventDto.capacity ?? null;
     }
 
     if (updateEventDto.visibility !== undefined) {
@@ -196,11 +216,11 @@ export class EventsService {
     const parsedDate = new Date(value);
 
     if (Number.isNaN(parsedDate.getTime())) {
-      throw new ForbiddenException('Event date is invalid');
+      throw new BadRequestException('Event date is invalid');
     }
 
     if (parsedDate.getTime() <= Date.now()) {
-      throw new ForbiddenException('Event date cannot be in the past');
+      throw new BadRequestException('Event date cannot be in the past');
     }
 
     return parsedDate;

@@ -7,7 +7,6 @@ import {
   Param,
   Patch,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,19 +15,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
-
-type AuthenticatedRequest = Request & {
-  user: {
-    sub: string;
-    email: string;
-  };
-};
 
 @ApiTags('events')
 @Controller('events')
@@ -45,8 +37,11 @@ export class EventsController {
   @Get(':id')
   @ApiOperation({ summary: 'Fetch event by id' })
   @ApiResponse({ status: 200, description: 'Event details' })
-  findOne(@Param('id') id: string): Promise<Event> {
-    return this.eventsService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser() user?: { sub: string; email: string },
+  ): Promise<Event> {
+    return this.eventsService.findOne(id, user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -56,9 +51,9 @@ export class EventsController {
   @ApiResponse({ status: 201, description: 'Event created successfully' })
   create(
     @Body() createEventDto: CreateEventDto,
-    @Req() req: AuthenticatedRequest,
+    @CurrentUser() user: { sub: string; email: string },
   ): Promise<Event> {
-    return this.eventsService.create(createEventDto, req.user);
+    return this.eventsService.create(createEventDto, user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -69,9 +64,9 @@ export class EventsController {
   update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @Req() req: AuthenticatedRequest,
+    @CurrentUser() user: { sub: string; email: string },
   ): Promise<Event> {
-    return this.eventsService.update(id, updateEventDto, req.user);
+    return this.eventsService.update(id, updateEventDto, user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -82,9 +77,9 @@ export class EventsController {
   @ApiResponse({ status: 204, description: 'Event deleted successfully' })
   async remove(
     @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
+    @CurrentUser() user: { sub: string; email: string },
   ): Promise<void> {
-    await this.eventsService.remove(id, req.user);
+    await this.eventsService.remove(id, user);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -95,9 +90,9 @@ export class EventsController {
   @ApiResponse({ status: 200, description: 'Joined event successfully' })
   async joinEvent(
     @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
+    @CurrentUser() user: { sub: string; email: string },
   ): Promise<{ message: string }> {
-    await this.eventsService.joinEvent(id, req.user);
+    await this.eventsService.joinEvent(id, user);
     return { message: 'Joined event successfully' };
   }
 
@@ -109,9 +104,9 @@ export class EventsController {
   @ApiResponse({ status: 200, description: 'Left event successfully' })
   async leaveEvent(
     @Param('id') id: string,
-    @Req() req: AuthenticatedRequest,
+    @CurrentUser() user: { sub: string; email: string },
   ): Promise<{ message: string }> {
-    await this.eventsService.leaveEvent(id, req.user);
+    await this.eventsService.leaveEvent(id, user);
     return { message: 'Left event successfully' };
   }
 }
