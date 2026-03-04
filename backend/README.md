@@ -106,6 +106,37 @@ $ npm run migration:create
 $ npm run migration:generate
 ```
 
+## Seeding sample data
+
+Run seeding after migrations to create demo data:
+
+```bash
+$ npm run seed
+```
+
+Security notes:
+
+- Seed script is blocked in `production` by default.
+- To intentionally allow seeding in production-like environments, set:
+
+```bash
+ALLOW_SEED_IN_PRODUCTION=true
+```
+
+- Seed user passwords can be configured via environment variables:
+
+```bash
+SEED_ALICE_PASSWORD=your_secure_seed_password
+SEED_BOB_PASSWORD=your_secure_seed_password
+```
+
+- If these are not set, fallback values are used only outside `production`.
+
+The seed is idempotent and creates sample records if they do not exist:
+
+- 2 users (`alice@example.com`, `bob@example.com`)
+- 3 public events (including one with unlimited capacity)
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
