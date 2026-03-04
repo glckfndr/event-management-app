@@ -9,6 +9,8 @@ async function bootstrap() {
   const swaggerEnv = process.env.ENABLE_SWAGGER;
   const swaggerEnabled =
     swaggerEnv === 'true' || (!isProduction && swaggerEnv !== 'false');
+  const forbidNonWhitelisted =
+    process.env.FORBID_NON_WHITELISTED === 'false' ? false : true;
   const allowedOrigins = (
     process.env.FRONTEND_URL ?? 'http://localhost:8090,http://127.0.0.1:8090'
   )
@@ -22,12 +24,19 @@ async function bootstrap() {
       .setDescription('API documentation for the Event Management application')
       .setVersion('1.0')
       .addTag('events')
+      .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);
   }
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted,
+      transform: true,
+    }),
+  );
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,

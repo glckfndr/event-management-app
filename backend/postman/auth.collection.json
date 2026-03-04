@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Event Management Auth",
+    "_postman_id": "8f9f6f7e-2d66-4f4a-9f8f-9b7d6f0f1111",
+    "description": "Auth register tests for backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "registeredEmail", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Register (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"test.user.{{$timestamp}}@example.com\",\n  \"password\": \"MyStrongPass123!\",\n  \"name\": \"Test User\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "",
+              "pm.test('Response has required fields', function () {",
+              "  pm.expect(body).to.have.property('id');",
+              "  pm.expect(body).to.have.property('email');",
+              "  pm.expect(body).to.have.property('createdAt');",
+              "});",
+              "",
+              "pm.test('Password is not returned', function () {",
+              "  pm.expect(body).to.not.have.property('password');",
+              "});",
+              "",
+              "pm.collectionVariables.set('registeredEmail', body.email);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Register Duplicate (409)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"MyStrongPass123!\",\n  \"name\": \"Test User\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 409 for duplicate email', function () {",
+              "  pm.response.to.have.status(409);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
