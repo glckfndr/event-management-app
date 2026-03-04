@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsDateString,
   IsInt,
   IsNotEmpty,
@@ -7,6 +8,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { EventVisibility } from '../entities/event.entity';
 
 export class CreateEventDto {
   @ApiProperty({ example: 'NestJS Meetup' })
@@ -38,4 +40,13 @@ export class CreateEventDto {
   @IsInt()
   @Min(1)
   capacity?: number;
+
+  @ApiPropertyOptional({
+    enum: EventVisibility,
+    default: EventVisibility.PUBLIC,
+    description: 'Event visibility. Public events are shown in public listing.',
+  })
+  @IsOptional()
+  @IsEnum(EventVisibility)
+  visibility?: EventVisibility;
 }

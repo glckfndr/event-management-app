@@ -1,5 +1,6 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsDateString,
   IsInt,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { CreateEventDto } from './create-event.dto';
+import { EventVisibility } from '../entities/event.entity';
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {
   @ApiPropertyOptional({ example: 'NestJS Meetup Updated' })
@@ -34,4 +36,9 @@ export class UpdateEventDto extends PartialType(CreateEventDto) {
   @IsInt()
   @Min(1)
   capacity?: number;
+
+  @ApiPropertyOptional({ enum: EventVisibility })
+  @IsOptional()
+  @IsEnum(EventVisibility)
+  visibility?: EventVisibility;
 }

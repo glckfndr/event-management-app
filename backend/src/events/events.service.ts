@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Event } from './entities/event.entity';
+import { Event, EventVisibility } from './entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Participant } from '../participants/entities/participant.entity';
@@ -27,6 +27,7 @@ export class EventsService {
 
   async findAll(): Promise<Event[]> {
     return this.eventsRepository.find({
+      where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
       relations: { organizer: true },
     });
@@ -57,6 +58,7 @@ export class EventsService {
       eventDate,
       location: createEventDto.location,
       capacity: createEventDto.capacity ?? null,
+      visibility: createEventDto.visibility ?? EventVisibility.PUBLIC,
       organizerId: user.sub,
     });
 
@@ -92,6 +94,10 @@ export class EventsService {
 
     if (updateEventDto.capacity !== undefined) {
       event.capacity = updateEventDto.capacity;
+    }
+
+    if (updateEventDto.visibility !== undefined) {
+      event.visibility = updateEventDto.visibility;
     }
 
     if (updateEventDto.eventDate !== undefined) {

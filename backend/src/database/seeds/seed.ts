@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { hash } from 'bcrypt';
 import AppDataSource from '../../data-source';
 import { User } from '../../users/entities/user.entity';
-import { Event } from '../../events/entities/event.entity';
+import { Event, EventVisibility } from '../../events/entities/event.entity';
 
 type SeedUser = {
   email: string;
@@ -15,6 +15,7 @@ type SeedEvent = {
   description: string;
   location: string;
   capacity: number | null;
+  visibility: EventVisibility;
   startsInDays: number;
   organizerEmail: string;
 };
@@ -38,6 +39,7 @@ const eventsToSeed: SeedEvent[] = [
     description: 'A public meetup for backend and frontend developers.',
     location: 'Kyiv',
     capacity: 80,
+    visibility: EventVisibility.PUBLIC,
     startsInDays: 7,
     organizerEmail: 'alice@example.com',
   },
@@ -46,6 +48,7 @@ const eventsToSeed: SeedEvent[] = [
     description: 'Hands-on workshop focused on REST and API design.',
     location: 'Lviv',
     capacity: 30,
+    visibility: EventVisibility.PUBLIC,
     startsInDays: 14,
     organizerEmail: 'alice@example.com',
   },
@@ -54,6 +57,7 @@ const eventsToSeed: SeedEvent[] = [
     description: 'Open networking event for product and engineering teams.',
     location: 'Online',
     capacity: null,
+    visibility: EventVisibility.PUBLIC,
     startsInDays: 21,
     organizerEmail: 'bob@example.com',
   },
@@ -121,6 +125,7 @@ const seed = async (): Promise<void> => {
       location: eventData.location,
       eventDate: toFutureDate(eventData.startsInDays),
       capacity: eventData.capacity,
+      visibility: eventData.visibility,
       organizerId: organizer.id,
     });
 
