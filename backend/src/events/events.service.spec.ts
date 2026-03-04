@@ -107,8 +107,12 @@ describe('EventsService', () => {
     const user = { sub: 'user-id', email: 'user@example.com' };
     const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-    eventsRepository.create.mockImplementation((payload) => payload);
-    eventsRepository.save.mockImplementation(async (payload) => payload);
+    eventsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
 
     const result = await service.create(
       {
