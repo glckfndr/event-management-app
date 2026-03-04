@@ -114,6 +114,24 @@ Run seeding after migrations to create demo data:
 $ npm run seed
 ```
 
+Security notes:
+
+- Seed script is blocked in `production` by default.
+- To intentionally allow seeding in production-like environments, set:
+
+```bash
+ALLOW_SEED_IN_PRODUCTION=true
+```
+
+- Seed user passwords can be configured via environment variables:
+
+```bash
+SEED_ALICE_PASSWORD=your_secure_seed_password
+SEED_BOB_PASSWORD=your_secure_seed_password
+```
+
+- If these are not set, fallback values are used only outside `production`.
+
 The seed is idempotent and creates sample records if they do not exist:
 
 - 2 users (`alice@example.com`, `bob@example.com`)

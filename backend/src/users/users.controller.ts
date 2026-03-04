@@ -1,21 +1,14 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Event } from '../events/entities/event.entity';
 import { UsersService } from './users.service';
-
-type AuthenticatedRequest = Request & {
-  user: {
-    sub: string;
-    email: string;
-  };
-};
 
 @ApiTags('users')
 @Controller('users')
@@ -27,7 +20,9 @@ export class UsersController {
   @Get('me/events')
   @ApiOperation({ summary: "Fetch current user's events (calendar)" })
   @ApiResponse({ status: 200, description: 'List of user events' })
-  getMyEvents(@Req() req: AuthenticatedRequest): Promise<Event[]> {
-    return this.usersService.getMyEvents(req.user.sub);
+  getMyEvents(
+    @CurrentUser() user: { sub: string; email: string },
+  ): Promise<Event[]> {
+    return this.usersService.getMyEvents(user.sub);
   }
 }

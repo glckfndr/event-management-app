@@ -7,7 +7,7 @@ import { Event, EventVisibility } from '../../events/entities/event.entity';
 type SeedUser = {
   email: string;
   name: string;
-  password: string;
+  passwordEnvKey: 'SEED_ALICE_PASSWORD' | 'SEED_BOB_PASSWORD';
 };
 
 type SeedEvent = {
@@ -24,12 +24,12 @@ const usersToSeed: SeedUser[] = [
   {
     email: 'alice@example.com',
     name: 'Alice Organizer',
-    password: 'Password123!',
+    passwordEnvKey: 'SEED_ALICE_PASSWORD',
   },
   {
     email: 'bob@example.com',
     name: 'Bob Attendee',
-    password: 'Password123!',
+    passwordEnvKey: 'SEED_BOB_PASSWORD',
   },
 ];
 
@@ -69,7 +69,37 @@ const toFutureDate = (startsInDays: number): Date => {
   return now;
 };
 
+const getSeedPassword = (
+  envKey: 'SEED_ALICE_PASSWORD' | 'SEED_BOB_PASSWORD',
+): string => {
+  const configuredValue = process.env[envKey]?.trim();
+
+  if (configuredValue) {
+    return configuredValue;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(`${envKey} must be set when running seed in production.`);
+  }
+
+  return 'Password123!';
+};
+
+const assertSeedAllowed = (): void => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const allowInProduction =
+    process.env.ALLOW_SEED_IN_PRODUCTION?.toLowerCase() === 'true';
+
+  if (isProduction && !allowInProduction) {
+    throw new Error(
+      'Seeding is blocked in production. Set ALLOW_SEED_IN_PRODUCTION=true only if this is intentional.',
+    );
+  }
+};
+
 const seed = async (): Promise<void> => {
+  assertSeedAllowed();
+
   await AppDataSource.initialize();
 
   const usersRepository = AppDataSource.getRepository(User);
@@ -83,7 +113,10 @@ const seed = async (): Promise<void> => {
     });
 
     if (!user) {
-      const hashedPassword = await hash(userData.password, 10);
+      const hashedPassword = await hash(
+        getSeedPassword(userData.passwordEnvKey),
+        10,
+      );
       user = usersRepository.create({
         email: userData.email,
         name: userData.name,
