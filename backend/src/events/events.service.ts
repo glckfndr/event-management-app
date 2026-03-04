@@ -52,7 +52,7 @@ export class EventsService {
       description: createEventDto.description,
       eventDate,
       location: createEventDto.location,
-      capacity: createEventDto.capacity,
+      capacity: createEventDto.capacity ?? null,
       organizerId: user.sub,
     });
 

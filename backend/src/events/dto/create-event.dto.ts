@@ -29,7 +29,11 @@ export class CreateEventDto {
   @IsNotEmpty()
   location!: string;
 
-  @ApiProperty({ example: 50, default: 1 })
+  @ApiPropertyOptional({
+    example: 50,
+    description:
+      'Maximum number of participants. If omitted, capacity is unlimited.',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

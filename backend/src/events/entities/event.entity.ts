@@ -27,8 +27,8 @@ export class Event {
   @Column({ nullable: true })
   location?: string;
 
-  @Column({ type: 'int', default: 1 })
-  capacity!: number;
+  @Column({ type: 'int', nullable: true })
+  capacity?: number | null;
 
   @ManyToOne(() => User, (user: User): Event[] => user.organizedEvents, {
     nullable: false,
