@@ -86,4 +86,32 @@ export class EventsController {
   ): Promise<void> {
     await this.eventsService.remove(id, req.user);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':id/join')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Join event' })
+  @ApiResponse({ status: 200, description: 'Joined event successfully' })
+  async joinEvent(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    await this.eventsService.joinEvent(id, req.user);
+    return { message: 'Joined event successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post(':id/leave')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Leave event' })
+  @ApiResponse({ status: 200, description: 'Left event successfully' })
+  async leaveEvent(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ message: string }> {
+    await this.eventsService.leaveEvent(id, req.user);
+    return { message: 'Left event successfully' };
+  }
 }

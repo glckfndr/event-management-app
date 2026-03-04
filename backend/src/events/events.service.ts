@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Event } from './entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { Participant } from '../participants/entities/participant.entity';
 
 type AuthenticatedUser = {
   sub: string;
@@ -19,6 +21,8 @@ export class EventsService {
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
+    @InjectRepository(Participant)
+    private readonly participantsRepository: Repository<Participant>,
   ) {}
 
   async findAll(): Promise<Event[]> {
@@ -111,6 +115,57 @@ export class EventsService {
     }
 
     await this.eventsRepository.delete({ id });
+  }
+
+  async joinEvent(id: string, user: AuthenticatedUser): Promise<void> {
+    const event = await this.eventsRepository.findOne({ where: { id } });
+
+    if (!event) {
+      throw new NotFoundException('Event not found');
+    }
+
+    const existingParticipant = await this.participantsRepository.findOne({
+      where: {
+        eventId: id,
+        userId: user.sub,
+      },
+    });
+
+    if (existingParticipant) {
+      throw new ConflictException('User already joined this event');
+    }
+
+    if (event.capacity !== null && event.capacity !== undefined) {
+      const participantCount = await this.participantsRepository.count({
+        where: { eventId: id },
+      });
+
+      if (participantCount >= event.capacity) {
+        throw new ConflictException('Event capacity reached');
+      }
+    }
+
+    const participant = this.participantsRepository.create({
+      eventId: id,
+      userId: user.sub,
+    });
+
+    await this.participantsRepository.save(participant);
+  }
+
+  async leaveEvent(id: string, user: AuthenticatedUser): Promise<void> {
+    const participant = await this.participantsRepository.findOne({
+      where: {
+        eventId: id,
+        userId: user.sub,
+      },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participation not found');
+    }
+
+    await this.participantsRepository.delete({ id: participant.id });
   }
 
   private parseAndValidateEventDate(value: string): Date {

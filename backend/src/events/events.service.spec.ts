@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventsService } from './events.service';
 import { Event } from './entities/event.entity';
+import { Participant } from '../participants/entities/participant.entity';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -12,6 +13,14 @@ describe('EventsService', () => {
     findOne: jest.Mock;
     find: jest.Mock;
     delete: jest.Mock;
+  };
+  let participantsRepository: {
+    create: jest.Mock;
+    save: jest.Mock;
+    findOne: jest.Mock;
+    find: jest.Mock;
+    delete: jest.Mock;
+    count: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -23,12 +32,25 @@ describe('EventsService', () => {
       delete: jest.fn(),
     };
 
+    participantsRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      find: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
         {
           provide: getRepositoryToken(Event),
           useValue: eventsRepository,
+        },
+        {
+          provide: getRepositoryToken(Participant),
+          useValue: participantsRepository,
         },
       ],
     }).compile();
@@ -111,5 +133,40 @@ describe('EventsService', () => {
         capacity: null,
       }),
     );
+  });
+
+  it('joinEvent throws when capacity is reached', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      capacity: 1,
+    });
+    participantsRepository.findOne.mockResolvedValue(null);
+    participantsRepository.count.mockResolvedValue(1);
+
+    await expect(
+      service.joinEvent('event-id', {
+        sub: 'user-id',
+        email: 'user@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(participantsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('leaveEvent deletes participation for joined user', async () => {
+    participantsRepository.findOne.mockResolvedValue({
+      id: 'participant-id',
+      eventId: 'event-id',
+      userId: 'user-id',
+    });
+
+    await service.leaveEvent('event-id', {
+      sub: 'user-id',
+      email: 'user@example.com',
+    });
+
+    expect(participantsRepository.delete).toHaveBeenCalledWith({
+      id: 'participant-id',
+    });
   });
 });
