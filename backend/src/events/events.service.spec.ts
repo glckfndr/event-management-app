@@ -212,6 +212,67 @@ describe('EventsService', () => {
     );
   });
 
+  it('getCalendarForUser merges organized and joined events, deduplicates by id, and sorts by eventDate', async () => {
+    const userId = 'user-id';
+
+    const organizedEvent = {
+      id: 'event-1',
+      organizerId: userId,
+      eventDate: new Date('2026-07-20T12:00:00.000Z'),
+      title: 'Organized Event',
+    } as Event;
+
+    const sharedEvent = {
+      id: 'event-2',
+      organizerId: userId,
+      eventDate: new Date('2026-07-10T12:00:00.000Z'),
+      title: 'Shared Event',
+    } as Event;
+
+    const joinedOnlyEvent = {
+      id: 'event-3',
+      organizerId: 'another-user',
+      eventDate: new Date('2026-07-15T12:00:00.000Z'),
+      title: 'Joined Event',
+    } as Event;
+
+    eventsRepository.find.mockResolvedValue([organizedEvent, sharedEvent]);
+    participantsRepository.find.mockResolvedValue([
+      { event: sharedEvent },
+      { event: joinedOnlyEvent },
+    ]);
+
+    const result = await service.getCalendarForUser(userId);
+
+    expect(eventsRepository.find).toHaveBeenCalledWith({
+      where: { organizerId: userId },
+      relations: { organizer: true },
+    });
+
+    expect(participantsRepository.find).toHaveBeenCalledWith({
+      where: { userId },
+      relations: { event: { organizer: true } },
+    });
+
+    expect(result).toHaveLength(3);
+    expect(result.map((event) => event.id)).toEqual([
+      'event-2',
+      'event-3',
+      'event-1',
+    ]);
+  });
+
+  it('getCalendarForUser ignores participant rows without event', async () => {
+    const userId = 'user-id';
+
+    eventsRepository.find.mockResolvedValue([]);
+    participantsRepository.find.mockResolvedValue([{ event: null }, {}]);
+
+    const result = await service.getCalendarForUser(userId);
+
+    expect(result).toEqual([]);
+  });
+
   it('findOne returns public event without authentication', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',

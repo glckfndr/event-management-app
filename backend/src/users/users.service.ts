@@ -1,19 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { Event } from '../events/entities/event.entity';
-import { Participant } from '../participants/entities/participant.entity';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-    @InjectRepository(Event)
-    private readonly eventsRepository: Repository<Event>,
-    @InjectRepository(Participant)
-    private readonly participantsRepository: Repository<Participant>,
+    @Inject(EventsService)
+    private readonly eventsService: {
+      getCalendarForUser(userId: string): Promise<Event[]>;
+    },
   ) {}
 
   findByEmail(email: string): Promise<User | null> {
@@ -42,32 +42,7 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async getMyEvents(userId: string): Promise<Event[]> {
-    const [organizedEvents, participantRows] = await Promise.all([
-      this.eventsRepository.find({
-        where: { organizerId: userId },
-        relations: { organizer: true },
-      }),
-      this.participantsRepository.find({
-        where: { userId },
-        relations: { event: { organizer: true } },
-      }),
-    ]);
-
-    const joinedEvents = participantRows
-      .map((participant) => participant.event)
-      .filter((event): event is Event => Boolean(event));
-
-    const eventsById = new Map<string, Event>();
-
-    for (const event of [...organizedEvents, ...joinedEvents]) {
-      eventsById.set(event.id, event);
-    }
-
-    return [...eventsById.values()].sort(
-      (first, second) =>
-        new Date(first.eventDate).getTime() -
-        new Date(second.eventDate).getTime(),
-    );
+  getMyEvents(userId: string): Promise<Event[]> {
+    return this.eventsService.getCalendarForUser(userId);
   }
 }

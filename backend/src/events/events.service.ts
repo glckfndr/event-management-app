@@ -34,6 +34,35 @@ export class EventsService {
     });
   }
 
+  async getCalendarForUser(userId: string): Promise<Event[]> {
+    const [organizedEvents, participantRows] = await Promise.all([
+      this.eventsRepository.find({
+        where: { organizerId: userId },
+        relations: { organizer: true },
+      }),
+      this.participantsRepository.find({
+        where: { userId },
+        relations: { event: { organizer: true } },
+      }),
+    ]);
+
+    const joinedEvents = participantRows
+      .map((participant) => participant.event)
+      .filter((event): event is Event => Boolean(event));
+
+    const eventsById = new Map<string, Event>();
+
+    for (const event of [...organizedEvents, ...joinedEvents]) {
+      eventsById.set(event.id, event);
+    }
+
+    return [...eventsById.values()].sort(
+      (first, second) =>
+        new Date(first.eventDate).getTime() -
+        new Date(second.eventDate).getTime(),
+    );
+  }
+
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
     const event = await this.eventsRepository.findOne({
       where: { id },
