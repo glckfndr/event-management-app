@@ -126,12 +126,12 @@ export function MyEventsPage() {
       <div
         key={`${dateKey}-${viewMode}`}
         onClick={() => setSelectedDateKey(dateKey)}
-        className={`min-h-36 cursor-pointer border-r border-t border-slate-200 p-2 last:border-r-0 ${
+        className={`min-h-[6.75rem] cursor-pointer border-r border-t border-slate-200 p-2 last:border-r-0 ${
           isSelected ? "bg-indigo-50 ring-2 ring-inset ring-indigo-500" : ""
         }`}
       >
         <p
-          className={`text-sm ${isCurrentMonth ? "text-slate-800" : "text-slate-400"}`}
+          className={`text-sm font-bold ${isCurrentMonth ? "text-slate-800" : "text-slate-400"}`}
         >
           {date.getDate()}
         </p>
@@ -155,6 +155,58 @@ export function MyEventsPage() {
           {events.length > 2 ? (
             <p className="text-xs text-slate-500">+{events.length - 2} more</p>
           ) : null}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekCard = (date: Date) => {
+    const dateKey = toLocalDateKey(date);
+    const events = eventsByDate[dateKey] ?? [];
+    const isSelected = selectedDateKey === dateKey;
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+
+    return (
+      <div
+        key={`${dateKey}-week`}
+        onClick={() => setSelectedDateKey(dateKey)}
+        className={`min-h-[6.75rem] cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 ${
+          isSelected ? "ring-2 ring-indigo-500" : ""
+        }`}
+      >
+        <p className="text-[1.05rem] font-bold text-slate-800">{dayName}</p>
+        <p
+          className={`mt-1 text-[1.05rem] ${isSelected ? "text-indigo-600" : "text-slate-500"}`}
+        >
+          {date.getDate()}
+        </p>
+
+        <div className="mt-3 space-y-2">
+          {events.length === 0 ? (
+            <p className="text-sm text-slate-500">No events</p>
+          ) : (
+            events.slice(0, 1).map((event) => {
+              const time = new Date(event.eventDate).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+
+              return (
+                <button
+                  type="button"
+                  key={event.id}
+                  onClick={(clickEvent) => {
+                    clickEvent.stopPropagation();
+                    void navigate(`/events/${event.id}`);
+                  }}
+                  className="w-full rounded-lg bg-indigo-100 px-3 py-2 text-left text-indigo-600 hover:bg-indigo-200"
+                >
+                  <p className="text-sm font-semibold">{time}</p>
+                  <p className="truncate text-sm">{event.title}</p>
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
     );
@@ -227,20 +279,26 @@ export function MyEventsPage() {
         </div>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-          {weekDays.map((day) => (
-            <p
-              key={day}
-              className="px-3 py-2 text-center text-sm font-semibold text-slate-700"
-            >
-              {day}
-            </p>
-          ))}
-        </div>
+      {viewMode === "month" ? (
+        <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+            {weekDays.map((day) => (
+              <p
+                key={day}
+                className="px-3 py-2 text-center text-sm font-bold text-slate-700"
+              >
+                {day}
+              </p>
+            ))}
+          </div>
 
-        <div className="grid grid-cols-7">{visibleCells.map(renderCell)}</div>
-      </div>
+          <div className="grid grid-cols-7">{visibleCells.map(renderCell)}</div>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-4 md:grid-cols-7">
+          {weekCells.map(renderWeekCard)}
+        </div>
+      )}
 
       {!hasAnyEvents ? (
         <p className="mt-4 text-sm text-slate-600">

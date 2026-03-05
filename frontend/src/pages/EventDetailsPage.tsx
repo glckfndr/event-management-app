@@ -186,31 +186,42 @@ export function EventDetailsPage() {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-2xl font-bold">{event.title}</h2>
-      <p className="mt-2 text-sm text-slate-600">
-        {new Date(event.eventDate).toLocaleString()}
-      </p>
-      <p className="mt-1 text-sm text-slate-600">
-        {event.location || "Location TBD"}
+      <h2 className="text-[1.6rem] font-semibold text-slate-900">
+        {event.title}
+      </h2>
+      <p className="mt-[0.675rem] text-lg text-slate-500">
+        {event.description || "No description"}
       </p>
 
-      <div className="mt-4 grid gap-2 text-sm text-slate-700">
+      <div className="mt-5 space-y-2 text-lg text-slate-500">
         <p>
-          <span className="font-medium">Organizer:</span>{" "}
-          {event.organizer?.name || event.organizer?.email || "Unknown"}
+          🗓️{" "}
+          {new Date(event.eventDate).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
         </p>
         <p>
-          <span className="font-medium">Visibility:</span> {event.visibility}
+          🕒{" "}
+          {new Date(event.eventDate).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </p>
+        <p>📍 {event.location || "Location TBD"}</p>
         <p>
-          <span className="font-medium">Description:</span>{" "}
-          {event.description || "No description"}
-        </p>
-        <p>
-          <span className="font-medium">Capacity:</span>{" "}
-          {event.capacity == null ? "Unlimited" : event.capacity}
+          👥 {participantsCount} /{" "}
+          {event.capacity == null ? "∞" : event.capacity} participants
         </p>
       </div>
+
+      <div className="mt-4 border-t border-slate-200" />
+
+      <p className="mt-4 text-[1.05rem] text-slate-600">
+        Organizer:{" "}
+        {event.organizer?.name || event.organizer?.email || "Unknown"}
+      </p>
 
       <div className="mt-5">
         <p className="text-sm font-medium text-slate-700">Participants</p>
@@ -239,12 +250,12 @@ export function EventDetailsPage() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => void handleLeave()}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-md border border-slate-200 bg-slate-100 px-3 py-1.5 text-lg font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-60"
               >
                 Leave
               </button>
             ) : isFull ? (
-              <span className="inline-block rounded-md bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600">
+              <span className="inline-block rounded-md bg-slate-200 px-3 py-1.5 text-lg font-semibold text-slate-600">
                 Full
               </span>
             ) : (
@@ -252,7 +263,7 @@ export function EventDetailsPage() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => void handleJoin()}
-                className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                className="rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
               >
                 Join
               </button>
@@ -265,15 +276,15 @@ export function EventDetailsPage() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => setIsEditing((value) => !value)}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
-                Edit
+                ✏️ Edit
               </button>
               <button
                 type="button"
                 disabled={isBusy}
                 onClick={() => setIsDeleteModalOpen(true)}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                className="rounded-md border border-red-300 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
               >
                 Delete
               </button>
@@ -289,7 +300,7 @@ export function EventDetailsPage() {
           <input
             value={editTitle}
             onChange={(inputEvent) => setEditTitle(inputEvent.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
             placeholder="Title"
             required
           />
@@ -298,20 +309,20 @@ export function EventDetailsPage() {
             onChange={(inputEvent) =>
               setEditDescription(inputEvent.target.value)
             }
-            className="min-h-24 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="min-h-24 rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
             placeholder="Description"
           />
           <input
             type="datetime-local"
             value={editDateTime}
             onChange={(inputEvent) => setEditDateTime(inputEvent.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
             required
           />
           <input
             value={editLocation}
             onChange={(inputEvent) => setEditLocation(inputEvent.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
             placeholder="Location"
           />
           <input
@@ -319,14 +330,14 @@ export function EventDetailsPage() {
             min={1}
             value={editCapacity}
             onChange={(inputEvent) => setEditCapacity(inputEvent.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
             placeholder="Capacity (optional)"
           />
 
           <button
             type="submit"
             disabled={isBusy}
-            className="w-fit rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+            className="w-fit rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
           >
             Save changes
           </button>
@@ -348,7 +359,7 @@ export function EventDetailsPage() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -356,7 +367,7 @@ export function EventDetailsPage() {
                 type="button"
                 disabled={isBusy}
                 onClick={() => void handleDelete()}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                className="rounded-md border border-red-300 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
               >
                 Delete
               </button>
