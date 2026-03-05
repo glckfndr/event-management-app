@@ -25,9 +25,36 @@ type RegisterPayload = {
 
 const tokenFromStorage = localStorage.getItem("accessToken");
 
+const getUserFromToken = (token: string | null): User | null => {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const base64Payload = token.split(".")[1];
+
+    if (!base64Payload) {
+      return null;
+    }
+
+    const normalizedPayload = base64Payload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const decoded = JSON.parse(atob(normalizedPayload)) as { email?: string };
+
+    if (!decoded.email) {
+      return null;
+    }
+
+    return { email: decoded.email };
+  } catch {
+    return null;
+  }
+};
+
 const initialState: AuthState = {
   token: tokenFromStorage,
-  user: null,
+  user: getUserFromToken(tokenFromStorage),
   status: "idle",
   error: null,
 };

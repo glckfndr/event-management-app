@@ -6,10 +6,13 @@ export function MainLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const token = useAppSelector((state) => state.auth.token);
+  const userEmail = useAppSelector((state) => state.auth.user?.email);
+
+  const displayName = userEmail?.split("@")[0] || "User";
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -28,13 +31,16 @@ export function MainLayout() {
               My Events
             </Link>
             {token ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-800"
-              >
-                Logout
-              </button>
+              <>
+                <span className="text-slate-700">{displayName}</span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-800"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"
