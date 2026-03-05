@@ -196,6 +196,10 @@ export function EventDetailsPage() {
 
       <div className="mt-4 grid gap-2 text-sm text-slate-700">
         <p>
+          <span className="font-medium">Organizer:</span>{" "}
+          {event.organizer?.name || event.organizer?.email || "Unknown"}
+        </p>
+        <p>
           <span className="font-medium">Visibility:</span> {event.visibility}
         </p>
         <p>

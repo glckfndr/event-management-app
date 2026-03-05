@@ -105,6 +105,10 @@ export function EventsPage() {
             <p className="mt-2 text-sm text-slate-700">
               {event.location || "Location TBD"}
             </p>
+            <p className="mt-1 text-sm text-slate-700">
+              <span className="font-medium">Organizer:</span>{" "}
+              {event.organizer?.name || event.organizer?.email || "Unknown"}
+            </p>
 
             <div className="mt-3 grid gap-1 text-sm text-slate-700">
               <p>
