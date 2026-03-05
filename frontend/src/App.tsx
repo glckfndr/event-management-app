@@ -1,31 +1,44 @@
-import { AppLayout } from "./components/layout/AppLayout";
-import "./index.css";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { MainLayout } from "./components/layout/MainLayout";
+import { ProtectedRoute } from "./components/routing/ProtectedRoute";
+import { CreateEventPage } from "./pages/CreateEventPage";
+import { EventDetailsPage } from "./pages/EventDetailsPage";
+import { EventsPage } from "./pages/EventsPage";
+import { LoginPage } from "./pages/LoginPage";
+import { MyEventsPage } from "./pages/MyEventsPage";
+import { RegisterPage } from "./pages/RegisterPage";
 
 function App() {
-  const rawApiUrl = import.meta.env.VITE_API_URL;
-  const apiUrl = rawApiUrl?.trim() || "http://localhost:3001";
-
   return (
-    <AppLayout
-      title="Event Management App"
-      subtitle="Frontend is connected and ready. Next step: build auth and events pages."
-    >
-      <div className="mx-auto max-w-3xl">
-        <div className="mt-6 rounded-xl bg-slate-100 p-4">
-          <p className="text-sm text-slate-500">API URL</p>
-          <p className="mt-1 font-medium">{apiUrl}</p>
-        </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
-        <div className="mt-8 flex gap-3">
-          <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-            Create Event
-          </button>
-          <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50">
-            Browse Events
-          </button>
-        </div>
-      </div>
-    </AppLayout>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Navigate to="/events" replace />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/events/:id" element={<EventDetailsPage />} />
+
+        <Route
+          path="/events/create"
+          element={
+            <ProtectedRoute>
+              <CreateEventPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-events"
+          element={
+            <ProtectedRoute>
+              <MyEventsPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/events" replace />} />
+    </Routes>
   );
 }
 
