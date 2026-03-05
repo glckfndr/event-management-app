@@ -9,9 +9,12 @@ import { EventsService } from '../events/events.service';
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepositoryMock: Partial<Repository<User>>;
+<<<<<<< HEAD
   let eventsServiceMock: {
     getCalendarForUser: jest.Mock;
   };
+=======
+>>>>>>> origin/main
 
   beforeEach(async () => {
     usersRepositoryMock = {
@@ -21,10 +24,13 @@ describe('UsersService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+<<<<<<< HEAD
     eventsServiceMock = {
       getCalendarForUser: jest.fn(),
     };
 
+=======
+>>>>>>> origin/main
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
@@ -32,10 +38,13 @@ describe('UsersService', () => {
           provide: getRepositoryToken(User),
           useValue: usersRepositoryMock,
         },
+<<<<<<< HEAD
         {
           provide: EventsService,
           useValue: eventsServiceMock,
         },
+=======
+>>>>>>> origin/main
       ],
     }).compile();
 

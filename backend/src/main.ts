@@ -38,7 +38,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+<<<<<<< HEAD
   app.useGlobalFilters(new AllExceptionsFilter());
+=======
+>>>>>>> origin/main
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
