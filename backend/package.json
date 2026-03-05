@@ -23,12 +23,8 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:generate": "npm run typeorm -- migration:generate src/migrations/AutoMigration",
-<<<<<<< HEAD
     "migration:create": "npm run typeorm -- migration:create src/migrations/ManualMigration",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts"
-=======
-    "migration:create": "npm run typeorm -- migration:create src/migrations/ManualMigration"
->>>>>>> origin/main
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

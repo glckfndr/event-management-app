@@ -1,29 +1,19 @@
-<<<<<<< HEAD
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { Event } from '../events/entities/event.entity';
 import { EventsService } from '../events/events.service';
-=======
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
->>>>>>> origin/main
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-<<<<<<< HEAD
     @Inject(EventsService)
     private readonly eventsService: {
       getCalendarForUser(userId: string): Promise<Event[]>;
     },
-=======
->>>>>>> origin/main
   ) {}
 
   findByEmail(email: string): Promise<User | null> {
@@ -51,11 +41,8 @@ export class UsersService {
 
     return this.usersRepository.save(user);
   }
-<<<<<<< HEAD
 
   getMyEvents(userId: string): Promise<Event[]> {
     return this.eventsService.getCalendarForUser(userId);
   }
-=======
->>>>>>> origin/main
 }
