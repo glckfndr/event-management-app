@@ -60,6 +60,40 @@ export const createEvent = createAsyncThunk(
   },
 );
 
+export const joinEvent = createAsyncThunk(
+  "events/joinEvent",
+  async (eventId: string, { getState }) => {
+    const state = getState() as RootState;
+
+    await api.post(
+      `/events/${eventId}/join`,
+      {},
+      {
+        headers: getAuthHeader(state.auth.token),
+      },
+    );
+
+    return eventId;
+  },
+);
+
+export const leaveEvent = createAsyncThunk(
+  "events/leaveEvent",
+  async (eventId: string, { getState }) => {
+    const state = getState() as RootState;
+
+    await api.post(
+      `/events/${eventId}/leave`,
+      {},
+      {
+        headers: getAuthHeader(state.auth.token),
+      },
+    );
+
+    return eventId;
+  },
+);
+
 const eventsSlice = createSlice({
   name: "events",
   initialState,

@@ -1,5 +1,12 @@
 export type EventVisibility = "public" | "private";
 
+export type EventParticipant = {
+  id: string;
+  userId: string;
+  eventId: string;
+  joinedAt: string;
+};
+
 export type EventItem = {
   id: string;
   title: string;
@@ -9,6 +16,7 @@ export type EventItem = {
   capacity?: number | null;
   visibility: EventVisibility;
   organizerId: string;
+  participants?: EventParticipant[];
 };
 
 export type CreateEventPayload = {

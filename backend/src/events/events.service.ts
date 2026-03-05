@@ -30,7 +30,7 @@ export class EventsService {
     return this.eventsRepository.find({
       where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
-      relations: { organizer: true },
+      relations: { organizer: true, participants: true },
     });
   }
 
