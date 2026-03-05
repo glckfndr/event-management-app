@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
@@ -16,13 +17,24 @@ type CreateEventFormValues = {
 export function CreateEventPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const status = useAppSelector((state) => state.events.status);
+
+  const selectedDate = searchParams.get("date");
+
+  const defaultEventDate = useMemo(() => {
+    if (!selectedDate) {
+      return "";
+    }
+
+    return `${selectedDate}T10:00`;
+  }, [selectedDate]);
 
   const { register, handleSubmit } = useForm<CreateEventFormValues>({
     defaultValues: {
       title: "",
       description: "",
-      eventDate: "",
+      eventDate: defaultEventDate,
       location: "",
       capacity: "",
       visibility: "public",
