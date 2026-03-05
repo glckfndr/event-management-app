@@ -3,10 +3,15 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { Event } from '../events/entities/event.entity';
+import { EventsService } from '../events/events.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let usersRepositoryMock: Partial<Repository<User>>;
+  let eventsServiceMock: {
+    getCalendarForUser: jest.Mock;
+  };
 
   beforeEach(async () => {
     usersRepositoryMock = {
@@ -16,12 +21,20 @@ describe('UsersService', () => {
       createQueryBuilder: jest.fn(),
     };
 
+    eventsServiceMock = {
+      getCalendarForUser: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: getRepositoryToken(User),
           useValue: usersRepositoryMock,
+        },
+        {
+          provide: EventsService,
+          useValue: eventsServiceMock,
         },
       ],
     }).compile();
@@ -31,5 +44,24 @@ describe('UsersService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  it('getMyEvents delegates to EventsService calendar API', async () => {
+    const userId = 'user-id';
+    const expectedEvents = [
+      {
+        id: 'event-1',
+        organizerId: userId,
+        eventDate: new Date('2026-07-20T12:00:00.000Z'),
+        title: 'Organized Event',
+      },
+    ] as Event[];
+
+    eventsServiceMock.getCalendarForUser.mockResolvedValue(expectedEvents);
+
+    const result = await service.getMyEvents(userId);
+
+    expect(eventsServiceMock.getCalendarForUser).toHaveBeenCalledWith(userId);
+    expect(result).toEqual(expectedEvents);
   });
 });

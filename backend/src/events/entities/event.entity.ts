@@ -10,6 +10,10 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Participant } from '../../participants/entities/participant.entity';
 
+export enum EventVisibility {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
+}
 @Entity('events')
 export class Event {
   @PrimaryGeneratedColumn('uuid')
@@ -27,8 +31,15 @@ export class Event {
   @Column({ nullable: true })
   location?: string;
 
-  @Column({ type: 'int', default: 1 })
-  capacity!: number;
+  @Column({ type: 'int', nullable: true })
+  capacity?: number | null;
+
+  @Column({
+    type: 'enum',
+    enum: EventVisibility,
+    default: EventVisibility.PUBLIC,
+  })
+  visibility!: EventVisibility;
 
   @ManyToOne(() => User, (user: User): Event[] => user.organizedEvents, {
     nullable: false,
