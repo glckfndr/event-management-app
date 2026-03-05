@@ -60,6 +60,42 @@ export const createEvent = createAsyncThunk(
   },
 );
 
+export const updateEvent = createAsyncThunk(
+  "events/updateEvent",
+  async (
+    payload: {
+      eventId: string;
+      data: Partial<CreateEventPayload>;
+    },
+    { getState },
+  ) => {
+    const state = getState() as RootState;
+
+    const response = await api.patch<EventItem>(
+      `/events/${payload.eventId}`,
+      payload.data,
+      {
+        headers: getAuthHeader(state.auth.token),
+      },
+    );
+
+    return response.data;
+  },
+);
+
+export const deleteEvent = createAsyncThunk(
+  "events/deleteEvent",
+  async (eventId: string, { getState }) => {
+    const state = getState() as RootState;
+
+    await api.delete(`/events/${eventId}`, {
+      headers: getAuthHeader(state.auth.token),
+    });
+
+    return eventId;
+  },
+);
+
 export const joinEvent = createAsyncThunk(
   "events/joinEvent",
   async (eventId: string, { getState }) => {
