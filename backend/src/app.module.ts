@@ -21,7 +21,7 @@ import { AuthMiddleware } from './auth/auth.middleware';
     EventsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AuthMiddleware],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

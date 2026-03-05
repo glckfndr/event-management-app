@@ -120,6 +120,13 @@ describe('EventsController (e2e)', () => {
           };
         }
 
+        if (token === 'stranger-token') {
+          req.user = {
+            sub: 'stranger-id',
+            email: 'stranger@example.com',
+          };
+        }
+
         next();
       },
     );

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -10,10 +10,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
-    @Inject(EventsService)
-    private readonly eventsService: {
-      getCalendarForUser(userId: string): Promise<Event[]>;
-    },
+    private readonly eventsService: EventsService,
   ) {}
 
   findByEmail(email: string): Promise<User | null> {
