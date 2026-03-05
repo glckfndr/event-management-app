@@ -26,15 +26,54 @@ export function MainLayout() {
 
   const navLinkClass = (isActive: boolean) =>
     isActive
-      ? "rounded-md bg-slate-900 px-3 py-1.5 text-white"
-      : "rounded-md px-3 py-1.5 text-slate-700 hover:bg-slate-100";
+      ? "rounded-md bg-slate-900 px-3 py-1.5 text-[1.05rem] font-semibold text-white"
+      : "rounded-md px-3 py-1.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-100";
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <h1 className="text-lg font-bold">Event Management</h1>
-          <nav className="flex items-center gap-4 text-sm font-medium">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-md px-1 py-1 hover:bg-slate-100"
+            aria-label="Go to home"
+          >
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M8 3V6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M16 3V6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="16"
+                  rx="3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <path d="M3 10H21" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            </span>
+            <span className="text-lg font-bold text-slate-900">Evently</span>
+          </Link>
+          <nav className="flex items-center gap-4">
             <Link to="/events" className={navLinkClass(isEventsActive)}>
               Events
             </Link>
@@ -45,20 +84,77 @@ export function MainLayout() {
               My Events
             </Link>
             {token ? (
-              <>
-                <span className="text-slate-700">{displayName}</span>
+              <div className="ml-1 flex items-center gap-3 border-l border-slate-200 pl-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M5 20C5.75 16.95 8.36 15 12 15C15.64 15 18.25 16.95 19 20"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span className="text-[1.05rem] font-semibold text-slate-800">
+                  {displayName}
+                </span>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-800"
+                  aria-label="Logout"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-700 hover:bg-slate-100"
                 >
-                  Logout
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M15 8L19 12L15 16"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M19 12H9"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 5H7C5.89543 5 5 5.89543 5 7V17C5 18.1046 5.89543 19 7 19H12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
-              </>
+              </div>
             ) : (
               <Link
                 to="/login"
-                className="rounded-md bg-slate-900 px-3 py-1.5 text-white hover:bg-slate-800"
+                className="rounded-md bg-slate-900 px-3 py-1.5 text-[1.05rem] font-semibold text-white hover:bg-slate-800"
               >
                 Login
               </Link>
