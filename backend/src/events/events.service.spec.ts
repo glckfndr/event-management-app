@@ -288,6 +288,29 @@ describe('EventsService', () => {
         id: 'event-id',
       }),
     );
+
+    expect(eventsRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 'event-id' },
+      relations: { organizer: true, participants: true },
+    });
+  });
+
+  it('findOne does not include participant user relations for public event response', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'public',
+      organizerId: 'organizer-id',
+      participants: [{ userId: 'participant-id' }],
+    });
+
+    await service.findOne('event-id');
+
+    expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
+    expect(eventsRepository.findOne).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        relations: { organizer: true, participants: { user: true } },
+      }),
+    );
   });
 
   it('findOne throws when unauthenticated user requests private event', async () => {
@@ -324,12 +347,28 @@ describe('EventsService', () => {
   });
 
   it('findOne returns private event to participant', async () => {
-    eventsRepository.findOne.mockResolvedValue({
-      id: 'event-id',
-      visibility: 'private',
-      organizerId: 'organizer-id',
-      participants: [{ userId: 'participant-id' }],
-    });
+    eventsRepository.findOne
+      .mockResolvedValueOnce({
+        id: 'event-id',
+        visibility: 'private',
+        organizerId: 'organizer-id',
+        participants: [{ userId: 'participant-id' }],
+      })
+      .mockResolvedValueOnce({
+        id: 'event-id',
+        visibility: 'private',
+        organizerId: 'organizer-id',
+        participants: [
+          {
+            userId: 'participant-id',
+            user: {
+              id: 'participant-id',
+              email: 'participant@example.com',
+              name: 'Participant',
+            },
+          },
+        ],
+      });
 
     const result = await service.findOne('event-id', {
       sub: 'participant-id',
@@ -341,6 +380,16 @@ describe('EventsService', () => {
         id: 'event-id',
       }),
     );
+
+    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(1, {
+      where: { id: 'event-id' },
+      relations: { organizer: true, participants: true },
+    });
+
+    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: 'event-id' },
+      relations: { organizer: true, participants: { user: true } },
+    });
   });
 
   it('findOne throws when authenticated non-member requests private event', async () => {
