@@ -1,8 +1,6 @@
-type UsersGroupIconProps = {
-  className?: string;
-};
+import type { IconProps } from "../../../types/ui";
 
-export function UsersGroupIcon({ className }: UsersGroupIconProps) {
+export function UsersGroupIcon({ className }: IconProps) {
   return (
     <svg
       width="20"

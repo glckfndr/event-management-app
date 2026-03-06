@@ -1,8 +1,6 @@
-type TrashIconProps = {
-  className?: string;
-};
+import type { IconProps } from "../../../types/ui";
 
-export function TrashIcon({ className }: TrashIconProps) {
+export function TrashIcon({ className }: IconProps) {
   return (
     <svg
       width="18"

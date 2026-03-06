@@ -1,8 +1,6 @@
-type EditIconProps = {
-  className?: string;
-};
+import type { IconProps } from "../../../types/ui";
 
-export function EditIcon({ className }: EditIconProps) {
+export function EditIcon({ className }: IconProps) {
   return (
     <svg
       width="18"

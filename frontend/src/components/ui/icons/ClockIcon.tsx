@@ -1,8 +1,6 @@
-type ClockIconProps = {
-  className?: string;
-};
+import type { IconProps } from "../../../types/ui";
 
-export function ClockIcon({ className }: ClockIconProps) {
+export function ClockIcon({ className }: IconProps) {
   return (
     <svg
       width="20"

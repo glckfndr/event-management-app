@@ -1,8 +1,6 @@
-type CalendarIconProps = {
-  className?: string;
-};
+import type { IconProps } from "../../../types/ui";
 
-export function CalendarIcon({ className }: CalendarIconProps) {
+export function CalendarIcon({ className }: IconProps) {
   return (
     <svg
       width="20"
