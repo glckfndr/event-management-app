@@ -13,6 +13,8 @@ import {
 } from "../features/events/eventsSlice";
 import type { EventVisibility } from "../types/event";
 import { Button } from "../components/ui/Button";
+import { FormErrorText } from "../components/ui/FormErrorText";
+import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 import { EditIcon } from "../components/ui/icons/EditIcon";
 import { TrashIcon } from "../components/ui/icons/TrashIcon";
 
@@ -555,7 +557,7 @@ export function EventDetailsPage() {
         ) : null}
       </div>
 
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}
 
       {isOrganizer && isEditing ? (
         <form className="mt-6 grid gap-6" onSubmit={handleEditSubmit}>
@@ -664,11 +666,8 @@ export function EventDetailsPage() {
               placeholder="Capacity (optional)"
             />
           </div>
-          <fieldset className="grid gap-2">
-            <legend className="text-[1.05rem] font-semibold text-slate-800">
-              Visibility
-            </legend>
-            <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
+          <VisibilityFieldset
+            publicControl={
               <input
                 type="radio"
                 name="edit-visibility"
@@ -676,9 +675,8 @@ export function EventDetailsPage() {
                 checked={editVisibility === "public"}
                 onChange={() => setEditVisibility("public")}
               />
-              Public - Anyone can see and join this event
-            </label>
-            <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
+            }
+            privateControl={
               <input
                 type="radio"
                 name="edit-visibility"
@@ -686,9 +684,8 @@ export function EventDetailsPage() {
                 checked={editVisibility === "private"}
                 onChange={() => setEditVisibility("private")}
               />
-              Private - Only invited people can see this event
-            </label>
-          </fieldset>
+            }
+          />
 
           <div className="mt-2 grid gap-3 md:grid-cols-2">
             <Button

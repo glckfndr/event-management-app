@@ -8,6 +8,9 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
 import { Button } from "../components/ui/Button";
+import { FormErrorText } from "../components/ui/FormErrorText";
+import { FormField } from "../components/ui/FormField";
+import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 const createEventSchema = yup
   .object({
@@ -116,83 +119,79 @@ export function CreateEventPage() {
       </p>
 
       <form className="mt-8 grid gap-6" onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <label className="text-[1.05rem] font-semibold text-slate-800">
-            Event Title <span className="text-red-500">*</span>
-          </label>
+        <FormField
+          label="Event Title"
+          required
+          errorMessage={errors.title?.message}
+        >
           <input
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="e.g., Tech Conference 2025"
             {...register("title")}
           />
-          {errors.title ? (
-            <p className="text-sm text-red-600">{errors.title.message}</p>
-          ) : null}
-        </div>
+        </FormField>
 
-        <div className="grid gap-2">
-          <label className="text-[1.05rem] font-semibold text-slate-800">
-            Description <span className="text-red-500">*</span>
-          </label>
+        <FormField
+          label="Description"
+          required
+          errorMessage={errors.description?.message}
+        >
           <textarea
             className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="Describe what makes your event special..."
             rows={4}
             {...register("description")}
           />
-          {errors.description ? (
-            <p className="text-sm text-red-600">{errors.description.message}</p>
-          ) : null}
-        </div>
+        </FormField>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="grid gap-2">
-            <label className="text-[1.05rem] font-semibold text-slate-800">
-              Date <span className="text-red-500">*</span>
-            </label>
+          <FormField
+            label="Date"
+            required
+            errorMessage={errors.eventDate?.message}
+          >
             <input
               className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
               type="date"
               {...register("eventDate")}
             />
-            {errors.eventDate ? (
-              <p className="text-sm text-red-600">{errors.eventDate.message}</p>
-            ) : null}
-          </div>
+          </FormField>
 
-          <div className="grid gap-2">
-            <label className="text-[1.05rem] font-semibold text-slate-800">
-              Time <span className="text-red-500">*</span>
-            </label>
+          <FormField
+            label="Time"
+            required
+            errorMessage={errors.eventTime?.message}
+          >
             <input
               className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
               type="time"
               {...register("eventTime")}
             />
-            {errors.eventTime ? (
-              <p className="text-sm text-red-600">{errors.eventTime.message}</p>
-            ) : null}
-          </div>
+          </FormField>
         </div>
 
-        <div className="grid gap-2">
-          <label className="text-[1.05rem] font-semibold text-slate-800">
-            Location <span className="text-red-500">*</span>
-          </label>
+        <FormField
+          label="Location"
+          required
+          errorMessage={errors.location?.message}
+        >
           <input
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="e.g., Convention Center, San Francisco"
             {...register("location")}
           />
-          {errors.location ? (
-            <p className="text-sm text-red-600">{errors.location.message}</p>
-          ) : null}
-        </div>
+        </FormField>
 
-        <div className="grid gap-2">
-          <label className="text-[1.05rem] font-semibold text-slate-800">
-            Capacity (optional)
-          </label>
+        <FormField
+          label="Capacity (optional)"
+          errorMessage={errors.capacity?.message}
+          hint={
+            <p className="text-sm text-slate-500">
+              Maximum number of participants. Leave empty for unlimited
+              capacity.
+            </p>
+          }
+        >
           <input
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             type="number"
@@ -200,36 +199,24 @@ export function CreateEventPage() {
             placeholder="Leave empty for unlimited"
             {...register("capacity")}
           />
-          {errors.capacity ? (
-            <p className="text-sm text-red-600">{errors.capacity.message}</p>
-          ) : null}
-          <p className="text-sm text-slate-500">
-            Maximum number of participants. Leave empty for unlimited capacity.
-          </p>
-        </div>
+        </FormField>
 
-        <div className="grid gap-3">
-          <p className="text-[1.05rem] font-semibold text-slate-800">
-            Visibility
-          </p>
-
-          <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
+        <VisibilityFieldset
+          className="grid gap-3"
+          publicControl={
             <input type="radio" value="public" {...register("visibility")} />
-            Public - Anyone can see and join this event
-          </label>
-
-          <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
+          }
+          privateControl={
             <input type="radio" value="private" {...register("visibility")} />
-            Private - Only invited people can see this event
-          </label>
-          {errors.visibility ? (
-            <p className="text-sm text-red-600">{errors.visibility.message}</p>
-          ) : null}
-        </div>
+          }
+          errorMessage={errors.visibility?.message}
+        />
 
         <div className="mt-2 grid gap-3 md:grid-cols-2">
           {submitError ? (
-            <p className="md:col-span-2 text-sm text-red-600">{submitError}</p>
+            <FormErrorText className="md:col-span-2">
+              {submitError}
+            </FormErrorText>
           ) : null}
           <Button
             type="button"

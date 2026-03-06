@@ -6,6 +6,8 @@ import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { registerUser } from "../features/auth/authSlice";
 import { Button } from "../components/ui/Button";
+import { FormErrorText } from "../components/ui/FormErrorText";
+import { FormField } from "../components/ui/FormField";
 
 type RegisterFormValues = {
   name: string;
@@ -78,13 +80,11 @@ export function RegisterPage() {
         </p>
 
         <form className="mt-8 grid gap-5" onSubmit={onSubmit}>
-          <div className="grid gap-2">
-            <label
-              className="text-[1.05rem] font-semibold text-slate-800"
-              htmlFor="name"
-            >
-              Name
-            </label>
+          <FormField
+            label="Name"
+            htmlFor="name"
+            errorMessage={errors.name?.message}
+          >
             <input
               id="name"
               type="text"
@@ -92,18 +92,13 @@ export function RegisterPage() {
               placeholder="Your full name"
               {...register("name")}
             />
-            {errors.name ? (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            ) : null}
-          </div>
+          </FormField>
 
-          <div className="grid gap-2">
-            <label
-              className="text-[1.05rem] font-semibold text-slate-800"
-              htmlFor="email"
-            >
-              Email
-            </label>
+          <FormField
+            label="Email"
+            htmlFor="email"
+            errorMessage={errors.email?.message}
+          >
             <input
               id="email"
               type="email"
@@ -111,18 +106,13 @@ export function RegisterPage() {
               placeholder="you@example.com"
               {...register("email")}
             />
-            {errors.email ? (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
-            ) : null}
-          </div>
+          </FormField>
 
-          <div className="grid gap-2">
-            <label
-              className="text-[1.05rem] font-semibold text-slate-800"
-              htmlFor="password"
-            >
-              Password
-            </label>
+          <FormField
+            label="Password"
+            htmlFor="password"
+            errorMessage={errors.password?.message}
+          >
             <input
               id="password"
               type="password"
@@ -130,16 +120,11 @@ export function RegisterPage() {
               placeholder="Create a strong password"
               {...register("password")}
             />
-            {errors.password ? (
-              <p className="text-sm text-red-600">{errors.password.message}</p>
-            ) : null}
-          </div>
+          </FormField>
 
-          {submitError ? (
-            <p className="text-sm text-red-600">{submitError}</p>
-          ) : null}
+          {submitError ? <FormErrorText>{submitError}</FormErrorText> : null}
           {authState.error ? (
-            <p className="text-sm text-red-600">{authState.error}</p>
+            <FormErrorText>{authState.error}</FormErrorText>
           ) : null}
 
           <Button
