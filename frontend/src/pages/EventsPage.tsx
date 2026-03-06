@@ -7,6 +7,7 @@ import {
   joinEvent,
   leaveEvent,
 } from "../features/events/eventsSlice";
+import { Button } from "../components/ui/Button";
 
 export function EventsPage() {
   const navigate = useNavigate();
@@ -335,36 +336,36 @@ export function EventsPage() {
               {Boolean(currentUserEmail) &&
               currentUserEmail === event.organizer?.email ? null : token &&
                 joinedEventIds.has(event.id) ? (
-                <button
+                <Button
                   type="button"
                   disabled={busyEventId === event.id}
                   onClick={() => void handleLeave(event.id)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-[1.05rem] font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-60"
                 >
                   Leave Event
-                </button>
+                </Button>
               ) : event.capacity != null &&
                 (event.participants?.length ?? 0) >= event.capacity ? (
                 <span className="inline-block w-full rounded-xl bg-slate-200 px-4 py-2 text-center text-[1.05rem] font-semibold text-slate-600">
                   Full
                 </span>
               ) : token ? (
-                <button
+                <Button
                   type="button"
                   disabled={busyEventId === event.id}
                   onClick={() => void handleJoin(event.id)}
                   className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-[1.05rem] font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
                   Join Event
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
                   onClick={() => navigate("/login")}
                   className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-[1.05rem] font-semibold text-white hover:bg-emerald-500"
                 >
                   Join Event
-                </button>
+                </Button>
               )}
             </div>
           </article>

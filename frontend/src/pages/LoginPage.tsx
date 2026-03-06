@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { loginUser } from "../features/auth/authSlice";
+import { Button } from "../components/ui/Button";
 
 type LoginFormValues = {
   email: string;
@@ -119,13 +120,13 @@ export function LoginPage() {
             <p className="text-sm text-red-600">{authState.error}</p>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={authState.status === "loading"}
             className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
           >
             {authState.status === "loading" ? "Signing in..." : "Sign in"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-5 text-[1.05rem] text-slate-600">

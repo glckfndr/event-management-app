@@ -12,6 +12,9 @@ import {
   updateEvent,
 } from "../features/events/eventsSlice";
 import type { EventVisibility } from "../types/event";
+import { Button } from "../components/ui/Button";
+import { EditIcon } from "../components/ui/icons/EditIcon";
+import { TrashIcon } from "../components/ui/icons/TrashIcon";
 
 const toDateTimeLocalValue = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -483,70 +486,72 @@ export function EventDetailsPage() {
           <>
             {!isOrganizer ? (
               isJoined ? (
-                <button
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={() => void handleLeave()}
                   className="rounded-md border border-slate-200 bg-slate-100 px-3 py-1.5 text-lg font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-60"
                 >
                   Leave
-                </button>
+                </Button>
               ) : isFull ? (
                 <span className="inline-block rounded-md bg-slate-200 px-3 py-1.5 text-lg font-semibold text-slate-600">
                   Full
                 </span>
               ) : (
-                <button
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={() => void handleJoin()}
                   className="rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
                 >
                   Join
-                </button>
+                </Button>
               )
             ) : null}
 
             {isOrganizer ? (
               <>
-                <button
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={() => setIsEditing((value) => !value)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-100 px-3 py-1.5 text-lg font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
                 >
-                  ✏️ Edit
-                </button>
-                <button
+                  <EditIcon className="shrink-0" />
+                  Edit
+                </Button>
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={() => setIsDeleteModalOpen(true)}
-                  className="rounded-md border border-red-300 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
                 >
+                  <TrashIcon className="shrink-0" />
                   Delete
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   disabled={isBusy}
                   onClick={() => navigate(returnTo)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
                 >
                   ← Back
-                </button>
+                </Button>
               </>
             ) : null}
           </>
         ) : null}
 
         {!isOrganizer ? (
-          <button
+          <Button
             type="button"
             disabled={isBusy}
             onClick={() => navigate(returnTo)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
           >
             ← Back
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -686,7 +691,7 @@ export function EventDetailsPage() {
           </fieldset>
 
           <div className="mt-2 grid gap-3 md:grid-cols-2">
-            <button
+            <Button
               type="button"
               disabled={isBusy}
               onClick={() => {
@@ -696,14 +701,14 @@ export function EventDetailsPage() {
               className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={isBusy}
               className="rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
             >
               Save changes
-            </button>
+            </Button>
           </div>
         </form>
       ) : null}
@@ -719,22 +724,23 @@ export function EventDetailsPage() {
             </p>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
                 disabled={isBusy}
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={isBusy}
                 onClick={() => void handleDelete()}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
               >
+                <TrashIcon className="shrink-0" />
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>
