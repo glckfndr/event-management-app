@@ -69,7 +69,6 @@ export const loginUser = createAsyncThunk(
 
     return {
       token: response.data.accessToken,
-      email: payload.email,
     };
   },
 );
@@ -101,7 +100,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "idle";
         state.token = action.payload.token;
-        state.user = { email: action.payload.email };
+        state.user = getUserFromToken(action.payload.token);
         localStorage.setItem("accessToken", action.payload.token);
       })
       .addCase(loginUser.rejected, (state) => {

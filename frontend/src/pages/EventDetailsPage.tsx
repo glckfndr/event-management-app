@@ -12,11 +12,29 @@ import {
   updateEvent,
 } from "../features/events/eventsSlice";
 
+const toDateTimeLocalValue = (isoDate: string) => {
+  const date = new Date(isoDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export function EventDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useAppDispatch();
   const event = useAppSelector((state) => state.events.selectedEvent);
+  const eventsStatus = useAppSelector((state) => state.events.status);
+  const eventsError = useAppSelector((state) => state.events.error);
   const myEvents = useAppSelector((state) => state.events.myEvents);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
@@ -55,7 +73,7 @@ export function EventDetailsPage() {
 
     setEditTitle(event.title);
     setEditDescription(event.description ?? "");
-    setEditDateTime(event.eventDate.slice(0, 16));
+    setEditDateTime(toDateTimeLocalValue(event.eventDate));
     setEditLocation(event.location ?? "");
     setEditCapacity(
       event.capacity == null || Number.isNaN(event.capacity)
@@ -66,6 +84,10 @@ export function EventDetailsPage() {
 
   if (!id) {
     return <p>Event id is missing.</p>;
+  }
+
+  if (eventsStatus === "failed" && (!event || event.id !== id)) {
+    return <p>{eventsError ?? "Failed to load event details"}</p>;
   }
 
   if (!event || event.id !== id) {

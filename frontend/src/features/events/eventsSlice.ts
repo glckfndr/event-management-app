@@ -148,14 +148,87 @@ const eventsSlice = createSlice({
         state.status = "failed";
         state.error = "Failed to load events";
       })
+      .addCase(fetchEventById.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+        state.selectedEvent = null;
+      })
       .addCase(fetchEventById.fulfilled, (state, action) => {
+        state.status = "idle";
         state.selectedEvent = action.payload;
       })
+      .addCase(fetchEventById.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Failed to load event details";
+        state.selectedEvent = null;
+      })
+      .addCase(fetchMyEvents.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
       .addCase(fetchMyEvents.fulfilled, (state, action) => {
+        state.status = "idle";
         state.myEvents = action.payload;
       })
+      .addCase(fetchMyEvents.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Failed to load my events";
+      })
+      .addCase(createEvent.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
       .addCase(createEvent.fulfilled, (state, action) => {
+        state.status = "idle";
         state.publicEvents.unshift(action.payload);
+      })
+      .addCase(createEvent.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Failed to create event";
+      })
+      .addCase(updateEvent.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(updateEvent.fulfilled, (state, action) => {
+        state.status = "idle";
+
+        state.publicEvents = state.publicEvents.map((event) =>
+          event.id === action.payload.id ? action.payload : event,
+        );
+        state.myEvents = state.myEvents.map((event) =>
+          event.id === action.payload.id ? action.payload : event,
+        );
+
+        if (state.selectedEvent?.id === action.payload.id) {
+          state.selectedEvent = action.payload;
+        }
+      })
+      .addCase(updateEvent.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Failed to update event";
+      })
+      .addCase(deleteEvent.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(deleteEvent.fulfilled, (state, action) => {
+        state.status = "idle";
+
+        state.publicEvents = state.publicEvents.filter(
+          (event) => event.id !== action.payload,
+        );
+        state.myEvents = state.myEvents.filter(
+          (event) => event.id !== action.payload,
+        );
+
+        if (state.selectedEvent?.id === action.payload) {
+          state.selectedEvent = null;
+        }
+      })
+      .addCase(deleteEvent.rejected, (state) => {
+        state.status = "failed";
+        state.error = "Failed to delete event";
       });
   },
 });
