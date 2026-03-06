@@ -15,6 +15,7 @@ export function EventsPage() {
     (state) => state.events,
   );
   const token = useAppSelector((state) => state.auth.token);
+  const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -134,6 +135,13 @@ export function EventsPage() {
             className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6"
             onClick={() => navigate(`/events/${event.id}`)}
           >
+            {Boolean(currentUserEmail) &&
+            currentUserEmail === event.organizer?.email ? (
+              <span className="mb-3 inline-block rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-700">
+                Organizer
+              </span>
+            ) : null}
+
             <h3 className="text-[1.6rem] font-semibold text-slate-900 hover:text-indigo-600">
               {event.title}
             </h3>
@@ -172,7 +180,9 @@ export function EventsPage() {
             </p>
 
             <div className="mt-4" onClick={(evt) => evt.stopPropagation()}>
-              {joinedEventIds.has(event.id) ? (
+              {Boolean(currentUserEmail) &&
+              currentUserEmail ===
+                event.organizer?.email ? null : joinedEventIds.has(event.id) ? (
                 <button
                   type="button"
                   disabled={busyEventId === event.id}

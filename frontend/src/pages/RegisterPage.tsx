@@ -61,94 +61,107 @@ export function RegisterPage() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      <h2 className="text-4xl font-bold text-slate-900">Register</h2>
-      <p className="mt-3 text-lg text-slate-500">
-        Create your account to start organizing events.
-      </p>
-
-      <form className="mt-8 grid gap-5" onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <label
-            className="text-[1.05rem] font-semibold text-slate-800"
-            htmlFor="name"
-          >
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-            {...register("name")}
-          />
-          {errors.name ? (
-            <p className="text-sm text-red-600">{errors.name.message}</p>
-          ) : null}
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[1.05rem] font-semibold text-slate-800"
-            htmlFor="email"
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-            {...register("email")}
-          />
-          {errors.email ? (
-            <p className="text-sm text-red-600">{errors.email.message}</p>
-          ) : null}
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[1.05rem] font-semibold text-slate-800"
-            htmlFor="password"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-            {...register("password")}
-          />
-          {errors.password ? (
-            <p className="text-sm text-red-600">{errors.password.message}</p>
-          ) : null}
-        </div>
-
-        {submitError ? (
-          <p className="text-sm text-red-600">{submitError}</p>
-        ) : null}
-        {authState.error ? (
-          <p className="text-sm text-red-600">{authState.error}</p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={authState.status === "loading"}
-          className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
-        >
-          {authState.status === "loading"
-            ? "Creating account..."
-            : "Create account"}
-        </button>
-      </form>
-
-      <p className="mt-5 text-[1.05rem] text-slate-600">
-        Already have an account?{" "}
+    <div className="px-4 py-10 md:py-14">
+      <div className="mx-auto mb-4 max-w-2xl">
         <Link
-          to="/login"
-          className="font-semibold text-indigo-600 hover:text-indigo-500"
+          to="/events"
+          className="text-[1.05rem] font-semibold text-slate-600 hover:text-slate-800"
         >
-          Login
+          ← Back to events
         </Link>
-      </p>
+      </div>
+      <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h2 className="text-4xl font-bold text-slate-900">Register</h2>
+        <p className="mt-3 text-lg text-slate-500">
+          Create your account to start organizing events.
+        </p>
+
+        <form className="mt-8 grid gap-5" onSubmit={onSubmit}>
+          <div className="grid gap-2">
+            <label
+              className="text-[1.05rem] font-semibold text-slate-800"
+              htmlFor="name"
+            >
+              Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
+              placeholder="Your full name"
+              {...register("name")}
+            />
+            {errors.name ? (
+              <p className="text-sm text-red-600">{errors.name.message}</p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              className="text-[1.05rem] font-semibold text-slate-800"
+              htmlFor="email"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
+            {errors.email ? (
+              <p className="text-sm text-red-600">{errors.email.message}</p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-2">
+            <label
+              className="text-[1.05rem] font-semibold text-slate-800"
+              htmlFor="password"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
+              placeholder="Create a strong password"
+              {...register("password")}
+            />
+            {errors.password ? (
+              <p className="text-sm text-red-600">{errors.password.message}</p>
+            ) : null}
+          </div>
+
+          {submitError ? (
+            <p className="text-sm text-red-600">{submitError}</p>
+          ) : null}
+          {authState.error ? (
+            <p className="text-sm text-red-600">{authState.error}</p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={authState.status === "loading"}
+            className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+          >
+            {authState.status === "loading"
+              ? "Creating account..."
+              : "Create account"}
+          </button>
+        </form>
+
+        <p className="mt-5 text-[1.05rem] text-slate-600">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-semibold text-indigo-600 hover:text-indigo-500"
+          >
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
