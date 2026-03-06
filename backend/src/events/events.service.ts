@@ -30,7 +30,7 @@ export class EventsService {
     return this.eventsRepository.find({
       where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
-      relations: { organizer: true },
+      relations: { organizer: true, participants: true },
     });
   }
 
@@ -89,6 +89,15 @@ export class EventsService {
         throw new ForbiddenException(
           'You do not have access to this private event',
         );
+      }
+
+      const privateEventWithParticipants = await this.eventsRepository.findOne({
+        where: { id },
+        relations: { organizer: true, participants: { user: true } },
+      });
+
+      if (privateEventWithParticipants) {
+        return privateEventWithParticipants;
       }
     }
 
