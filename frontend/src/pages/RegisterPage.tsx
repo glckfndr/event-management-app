@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Link, useNavigate } from "react-router-dom";
+import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { registerUser } from "../features/auth/authSlice";
 
@@ -10,13 +12,37 @@ type RegisterFormValues = {
   password: string;
 };
 
+const registerSchema: yup.ObjectSchema<RegisterFormValues> = yup
+  .object({
+    name: yup
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters")
+      .required("Name is required"),
+    email: yup
+      .string()
+      .trim()
+      .email("Enter a valid email")
+      .required("Email is required"),
+    password: yup
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .required("Password is required"),
+  })
+  .required();
+
 export function RegisterPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const authState = useAppSelector((state) => state.auth);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit } = useForm<RegisterFormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: yupResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -50,8 +76,11 @@ export function RegisterPage() {
             id="name"
             type="text"
             className="rounded-lg border border-slate-300 px-3 py-2"
-            {...register("name", { required: true })}
+            {...register("name")}
           />
+          {errors.name ? (
+            <p className="text-sm text-red-600">{errors.name.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-1">
@@ -62,8 +91,11 @@ export function RegisterPage() {
             id="email"
             type="email"
             className="rounded-lg border border-slate-300 px-3 py-2"
-            {...register("email", { required: true })}
+            {...register("email")}
           />
+          {errors.email ? (
+            <p className="text-sm text-red-600">{errors.email.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-1">
@@ -74,8 +106,11 @@ export function RegisterPage() {
             id="password"
             type="password"
             className="rounded-lg border border-slate-300 px-3 py-2"
-            {...register("password", { required: true, minLength: 8 })}
+            {...register("password")}
           />
+          {errors.password ? (
+            <p className="text-sm text-red-600">{errors.password.message}</p>
+          ) : null}
         </div>
 
         {submitError ? (

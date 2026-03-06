@@ -1,19 +1,50 @@
 import { useForm } from "react-hook-form";
+import type { Resolver } from "react-hook-form";
 import { useMemo, useState } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
 
-type CreateEventFormValues = {
-  title: string;
-  description: string;
-  eventDate: string;
-  eventTime: string;
-  location: string;
-  capacity: string;
-  visibility: EventVisibility;
-};
+const createEventSchema = yup
+  .object({
+    title: yup
+      .string()
+      .trim()
+      .min(3, "Event title must be at least 3 characters")
+      .required("Event title is required"),
+    description: yup
+      .string()
+      .trim()
+      .min(10, "Description must be at least 10 characters")
+      .required("Description is required"),
+    eventDate: yup.string().required("Date is required"),
+    eventTime: yup.string().required("Time is required"),
+    location: yup
+      .string()
+      .trim()
+      .min(2, "Location must be at least 2 characters")
+      .required("Location is required"),
+    capacity: yup
+      .string()
+      .test("valid-capacity", "Capacity must be a positive number", (value) => {
+        if (!value || value.trim() === "") {
+          return true;
+        }
+
+        const parsed = Number(value);
+        return Number.isInteger(parsed) && parsed > 0;
+      }),
+    visibility: yup
+      .mixed<EventVisibility>()
+      .oneOf(["public", "private"], "Select event visibility")
+      .required("Visibility is required"),
+  })
+  .required();
+
+type CreateEventFormValues = yup.InferType<typeof createEventSchema>;
 
 export function CreateEventPage() {
   const dispatch = useAppDispatch();
@@ -30,7 +61,12 @@ export function CreateEventPage() {
     [selectedDate],
   );
 
-  const { register, handleSubmit } = useForm<CreateEventFormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CreateEventFormValues>({
+    resolver: yupResolver(createEventSchema) as Resolver<CreateEventFormValues>,
     defaultValues: {
       title: "",
       description: "",
@@ -86,8 +122,11 @@ export function CreateEventPage() {
           <input
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="e.g., Tech Conference 2025"
-            {...register("title", { required: true })}
+            {...register("title")}
           />
+          {errors.title ? (
+            <p className="text-sm text-red-600">{errors.title.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -98,8 +137,11 @@ export function CreateEventPage() {
             className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="Describe what makes your event special..."
             rows={4}
-            {...register("description", { required: true })}
+            {...register("description")}
           />
+          {errors.description ? (
+            <p className="text-sm text-red-600">{errors.description.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -110,8 +152,11 @@ export function CreateEventPage() {
             <input
               className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
               type="date"
-              {...register("eventDate", { required: true })}
+              {...register("eventDate")}
             />
+            {errors.eventDate ? (
+              <p className="text-sm text-red-600">{errors.eventDate.message}</p>
+            ) : null}
           </div>
 
           <div className="grid gap-2">
@@ -121,8 +166,11 @@ export function CreateEventPage() {
             <input
               className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
               type="time"
-              {...register("eventTime", { required: true })}
+              {...register("eventTime")}
             />
+            {errors.eventTime ? (
+              <p className="text-sm text-red-600">{errors.eventTime.message}</p>
+            ) : null}
           </div>
         </div>
 
@@ -133,8 +181,11 @@ export function CreateEventPage() {
           <input
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
             placeholder="e.g., Convention Center, San Francisco"
-            {...register("location", { required: true })}
+            {...register("location")}
           />
+          {errors.location ? (
+            <p className="text-sm text-red-600">{errors.location.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-2">
@@ -148,6 +199,9 @@ export function CreateEventPage() {
             placeholder="Leave empty for unlimited"
             {...register("capacity")}
           />
+          {errors.capacity ? (
+            <p className="text-sm text-red-600">{errors.capacity.message}</p>
+          ) : null}
           <p className="text-sm text-slate-500">
             Maximum number of participants. Leave empty for unlimited capacity.
           </p>
@@ -167,6 +221,9 @@ export function CreateEventPage() {
             <input type="radio" value="private" {...register("visibility")} />
             Private - Only invited people can see this event
           </label>
+          {errors.visibility ? (
+            <p className="text-sm text-red-600">{errors.visibility.message}</p>
+          ) : null}
         </div>
 
         <div className="mt-2 grid gap-3 md:grid-cols-2">

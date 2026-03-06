@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { loginUser } from "../features/auth/authSlice";
 
@@ -9,6 +11,20 @@ type LoginFormValues = {
   password: string;
 };
 
+const loginSchema: yup.ObjectSchema<LoginFormValues> = yup
+  .object({
+    email: yup
+      .string()
+      .trim()
+      .email("Enter a valid email")
+      .required("Email is required"),
+    password: yup
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .required("Password is required"),
+  })
+  .required();
+
 export function LoginPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -16,7 +32,12 @@ export function LoginPage() {
   const authState = useAppSelector((state) => state.auth);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit } = useForm<LoginFormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: yupResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -52,8 +73,11 @@ export function LoginPage() {
             id="email"
             type="email"
             className="rounded-lg border border-slate-300 px-3 py-2"
-            {...register("email", { required: true })}
+            {...register("email")}
           />
+          {errors.email ? (
+            <p className="text-sm text-red-600">{errors.email.message}</p>
+          ) : null}
         </div>
 
         <div className="grid gap-1">
@@ -64,8 +88,11 @@ export function LoginPage() {
             id="password"
             type="password"
             className="rounded-lg border border-slate-300 px-3 py-2"
-            {...register("password", { required: true })}
+            {...register("password")}
           />
+          {errors.password ? (
+            <p className="text-sm text-red-600">{errors.password.message}</p>
+          ) : null}
         </div>
 
         {submitError ? (
