@@ -11,16 +11,12 @@ import {
   leaveEvent,
   updateEvent,
 } from "../features/events/eventsSlice";
-import type { EventVisibility } from "../types/event";
-import { Button } from "../components/ui/Button";
+import { DeleteConfirmModal } from "../components/event-details/DeleteConfirmModal";
+import { EventDetailsActions } from "../components/event-details/EventDetailsActions";
+import { EventDetailsSummary } from "../components/event-details/EventDetailsSummary";
+import { EventEditForm } from "../components/event-details/EventEditForm";
+import type { EventEditFormValues } from "../components/event-details/EventEditForm";
 import { FormErrorText } from "../components/ui/FormErrorText";
-import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
-import { CalendarIcon } from "../components/ui/icons/CalendarIcon";
-import { ClockIcon } from "../components/ui/icons/ClockIcon";
-import { EditIcon } from "../components/ui/icons/EditIcon";
-import { LocationPinIcon } from "../components/ui/icons/LocationPinIcon";
-import { TrashIcon } from "../components/ui/icons/TrashIcon";
-import { UsersGroupIcon } from "../components/ui/icons/UsersGroupIcon";
 
 const toDateTimeLocalValue = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -70,14 +66,15 @@ export function EventDetailsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editDate, setEditDate] = useState("");
-  const [editTime, setEditTime] = useState("");
-  const [editLocation, setEditLocation] = useState("");
-  const [editCapacity, setEditCapacity] = useState("");
-  const [editVisibility, setEditVisibility] =
-    useState<EventVisibility>("public");
+  const [editForm, setEditForm] = useState<EventEditFormValues>({
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    location: "",
+    capacity: "",
+    visibility: "public",
+  });
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((item) => item.id)),
@@ -101,19 +98,30 @@ export function EventDetailsPage() {
       return;
     }
 
-    setEditTitle(event.title);
-    setEditDescription(event.description ?? "");
     const { date, time } = toDateAndTimeLocalValues(event.eventDate);
-    setEditDate(date);
-    setEditTime(time);
-    setEditLocation(event.location ?? "");
-    setEditCapacity(
-      event.capacity == null || Number.isNaN(event.capacity)
-        ? ""
-        : String(event.capacity),
-    );
-    setEditVisibility(event.visibility);
+    setEditForm({
+      title: event.title,
+      description: event.description ?? "",
+      date,
+      time,
+      location: event.location ?? "",
+      capacity:
+        event.capacity == null || Number.isNaN(event.capacity)
+          ? ""
+          : String(event.capacity),
+      visibility: event.visibility,
+    });
   }, [event]);
+
+  const updateEditFormField = <K extends keyof EventEditFormValues>(
+    field: K,
+    value: EventEditFormValues[K],
+  ) => {
+    setEditForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+  };
 
   if (!id) {
     return <p>Event id is missing.</p>;
@@ -136,20 +144,6 @@ export function EventDetailsPage() {
     Number.isFinite(event.capacity) &&
     participantsCount >= event.capacity;
 
-  const participantLabel = (
-    participant: {
-      userId: string;
-      user?: { name?: string; email?: string };
-    },
-    index: number,
-  ): string => {
-    if (participant.user?.name?.trim()) {
-      return participant.user.name;
-    }
-
-    return `participant ${index + 1}`;
-  };
-
   const refreshEventData = async () => {
     await dispatch(fetchEventById(event.id)).unwrap();
 
@@ -158,32 +152,41 @@ export function EventDetailsPage() {
     }
   };
 
-  const handleJoin = async () => {
+  const runBusyAction = async (
+    action: () => Promise<unknown>,
+    errorMessage: string,
+    onSuccess?: () => Promise<void> | void,
+  ) => {
     setError(null);
     setIsBusy(true);
 
     try {
-      await dispatch(joinEvent(event.id)).unwrap();
-      await refreshEventData();
+      await action();
+
+      if (onSuccess) {
+        await onSuccess();
+      }
     } catch {
-      setError("Failed to join event");
+      setError(errorMessage);
     } finally {
       setIsBusy(false);
     }
   };
 
-  const handleLeave = async () => {
-    setError(null);
-    setIsBusy(true);
+  const handleJoin = async () => {
+    await runBusyAction(
+      () => dispatch(joinEvent(event.id)).unwrap(),
+      "Failed to join event",
+      refreshEventData,
+    );
+  };
 
-    try {
-      await dispatch(leaveEvent(event.id)).unwrap();
-      await refreshEventData();
-    } catch {
-      setError("Failed to leave event");
-    } finally {
-      setIsBusy(false);
-    }
+  const handleLeave = async () => {
+    await runBusyAction(
+      () => dispatch(leaveEvent(event.id)).unwrap(),
+      "Failed to leave event",
+      refreshEventData,
+    );
   };
 
   const handleDelete = async () => {
@@ -204,9 +207,9 @@ export function EventDetailsPage() {
   const handleEditSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
     submitEvent.preventDefault();
 
-    const normalizedTitle = editTitle.trim();
-    const normalizedDescription = editDescription.trim();
-    const normalizedLocation = editLocation.trim();
+    const normalizedTitle = editForm.title.trim();
+    const normalizedDescription = editForm.description.trim();
+    const normalizedLocation = editForm.location.trim();
 
     if (!normalizedTitle) {
       setError("Title is required");
@@ -228,17 +231,17 @@ export function EventDetailsPage() {
       return;
     }
 
-    if (!editDate) {
+    if (!editForm.date) {
       setError("Date is required");
       return;
     }
 
-    if (!editTime) {
+    if (!editForm.time) {
       setError("Time is required");
       return;
     }
 
-    const parsedDateTime = new Date(`${editDate}T${editTime}`);
+    const parsedDateTime = new Date(`${editForm.date}T${editForm.time}`);
 
     if (Number.isNaN(parsedDateTime.getTime())) {
       setError("Date or time is invalid");
@@ -260,8 +263,8 @@ export function EventDetailsPage() {
       return;
     }
 
-    if (editCapacity !== "") {
-      const parsedCapacity = Number(editCapacity);
+    if (editForm.capacity !== "") {
+      const parsedCapacity = Number(editForm.capacity);
 
       if (!Number.isInteger(parsedCapacity) || parsedCapacity <= 0) {
         setError("Capacity must be a positive whole number");
@@ -269,7 +272,8 @@ export function EventDetailsPage() {
       }
     }
 
-    const capacityValue = editCapacity === "" ? null : Number(editCapacity);
+    const capacityValue =
+      editForm.capacity === "" ? null : Number(editForm.capacity);
 
     if (
       capacityValue != null &&
@@ -280,357 +284,74 @@ export function EventDetailsPage() {
       return;
     }
 
-    setError(null);
-    setIsBusy(true);
-
-    try {
-      await dispatch(
-        updateEvent({
-          eventId: event.id,
-          data: {
-            title: normalizedTitle,
-            description: normalizedDescription || undefined,
-            eventDate: parsedDateTime.toISOString(),
-            location: normalizedLocation,
-            capacity: capacityValue,
-            visibility: editVisibility,
-          },
-        }),
-      ).unwrap();
-
-      await refreshEventData();
-      setIsEditing(false);
-    } catch {
-      setError("Failed to update event");
-    } finally {
-      setIsBusy(false);
-    }
+    await runBusyAction(
+      () =>
+        dispatch(
+          updateEvent({
+            eventId: event.id,
+            data: {
+              title: normalizedTitle,
+              description: normalizedDescription || undefined,
+              eventDate: parsedDateTime.toISOString(),
+              location: normalizedLocation,
+              capacity: capacityValue,
+              visibility: editForm.visibility,
+            },
+          }),
+        ).unwrap(),
+      "Failed to update event",
+      async () => {
+        await refreshEventData();
+        setIsEditing(false);
+      },
+    );
   };
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-[1.6rem] font-semibold text-slate-900">
-        {event.title}
-      </h2>
-      <p className="mt-[0.675rem] text-lg text-slate-500">
-        {event.description || "No description"}
-      </p>
+      <EventDetailsSummary
+        event={event}
+        participantsCount={participantsCount}
+      />
 
-      <div className="mt-5 space-y-2 text-lg text-slate-500">
-        <p className="flex items-center gap-2">
-          <CalendarIcon className="text-slate-500" />
-          {new Date(event.eventDate).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
-        </p>
-        <p className="flex items-center gap-2">
-          <ClockIcon className="text-slate-500" />
-          {new Date(event.eventDate).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
-        <p className="flex items-center gap-2">
-          <LocationPinIcon className="text-slate-500" />
-          {event.location || "Location TBD"}
-        </p>
-        <p className="flex items-center gap-2">
-          <UsersGroupIcon className="text-slate-500" />
-          {participantsCount} / {event.capacity == null ? "∞" : event.capacity}{" "}
-          participants
-        </p>
-      </div>
-
-      <div className="mt-4 border-t border-slate-200" />
-
-      <p className="mt-4 text-[1.05rem] text-slate-600">
-        Organizer:{" "}
-        {event.organizer?.name || event.organizer?.email || "Unknown"}
-      </p>
-
-      <div className="mt-5">
-        <p className="text-[1.05rem] font-medium text-slate-700">
-          Participants
-        </p>
-
-        {participantsCount === 0 ? (
-          <p className="mt-2 text-[1.05rem] text-slate-600">
-            No participants yet.
-          </p>
-        ) : (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {event.participants?.map((participant, index) => (
-              <span
-                key={participant.id}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-[1.05rem] font-medium text-slate-700"
-              >
-                {participantLabel(participant, index)}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        {token ? (
-          <>
-            {!isOrganizer ? (
-              isJoined ? (
-                <Button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => void handleLeave()}
-                  className="rounded-md border border-slate-200 bg-slate-100 px-3 py-1.5 text-lg font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-60"
-                >
-                  Leave
-                </Button>
-              ) : isFull ? (
-                <span className="inline-block rounded-md bg-slate-200 px-3 py-1.5 text-lg font-semibold text-slate-600">
-                  Full
-                </span>
-              ) : (
-                <Button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => void handleJoin()}
-                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
-                >
-                  Join
-                </Button>
-              )
-            ) : null}
-
-            {isOrganizer ? (
-              <>
-                <Button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => setIsEditing((value) => !value)}
-                  className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-100 px-3 py-1.5 text-lg font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
-                >
-                  <EditIcon className="shrink-0" />
-                  Edit
-                </Button>
-                <Button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
-                >
-                  <TrashIcon className="shrink-0" />
-                  Delete
-                </Button>
-                <Button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => navigate(returnTo)}
-                  className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
-                >
-                  ← Back
-                </Button>
-              </>
-            ) : null}
-          </>
-        ) : null}
-
-        {!isOrganizer ? (
-          <Button
-            type="button"
-            disabled={isBusy}
-            onClick={() => navigate(returnTo)}
-            className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
-          >
-            ← Back
-          </Button>
-        ) : null}
-      </div>
+      <EventDetailsActions
+        state={{
+          token,
+          isOrganizer,
+          isJoined,
+          isFull,
+          isBusy,
+        }}
+        handlers={{
+          onJoin: () => void handleJoin(),
+          onLeave: () => void handleLeave(),
+          onOpenDelete: () => setIsDeleteModalOpen(true),
+          onToggleEdit: () => setIsEditing((value) => !value),
+          onBack: () => navigate(returnTo),
+        }}
+      />
 
       {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}
 
       {isOrganizer && isEditing ? (
-        <form className="mt-6 grid gap-6" onSubmit={handleEditSubmit}>
-          <div className="grid gap-2">
-            <label
-              htmlFor="edit-title"
-              className="text-[1.05rem] font-semibold text-slate-800"
-            >
-              Title
-            </label>
-            <input
-              id="edit-title"
-              value={editTitle}
-              onChange={(inputEvent) => setEditTitle(inputEvent.target.value)}
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-              placeholder="Title"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <label
-              htmlFor="edit-description"
-              className="text-[1.05rem] font-semibold text-slate-800"
-            >
-              Description
-            </label>
-            <textarea
-              id="edit-description"
-              value={editDescription}
-              onChange={(inputEvent) =>
-                setEditDescription(inputEvent.target.value)
-              }
-              className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-              placeholder="Description"
-              required
-            />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="grid gap-2">
-              <label
-                htmlFor="edit-date"
-                className="text-[1.05rem] font-semibold text-slate-800"
-              >
-                Date
-              </label>
-              <input
-                id="edit-date"
-                type="date"
-                value={editDate}
-                onChange={(inputEvent) => setEditDate(inputEvent.target.value)}
-                className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <label
-                htmlFor="edit-time"
-                className="text-[1.05rem] font-semibold text-slate-800"
-              >
-                Time
-              </label>
-              <input
-                id="edit-time"
-                type="time"
-                value={editTime}
-                onChange={(inputEvent) => setEditTime(inputEvent.target.value)}
-                className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-                required
-              />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <label
-              htmlFor="edit-location"
-              className="text-[1.05rem] font-semibold text-slate-800"
-            >
-              Location
-            </label>
-            <input
-              id="edit-location"
-              value={editLocation}
-              onChange={(inputEvent) =>
-                setEditLocation(inputEvent.target.value)
-              }
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-              placeholder="Location"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <label
-              htmlFor="edit-capacity"
-              className="text-[1.05rem] font-semibold text-slate-800"
-            >
-              Capacity (optional)
-            </label>
-            <input
-              id="edit-capacity"
-              type="number"
-              min={1}
-              value={editCapacity}
-              onChange={(inputEvent) =>
-                setEditCapacity(inputEvent.target.value)
-              }
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-              placeholder="Capacity (optional)"
-            />
-          </div>
-          <VisibilityFieldset
-            publicControl={
-              <input
-                type="radio"
-                name="edit-visibility"
-                value="public"
-                checked={editVisibility === "public"}
-                onChange={() => setEditVisibility("public")}
-              />
-            }
-            privateControl={
-              <input
-                type="radio"
-                name="edit-visibility"
-                value="private"
-                checked={editVisibility === "private"}
-                onChange={() => setEditVisibility("private")}
-              />
-            }
-          />
-
-          <div className="mt-2 grid gap-3 md:grid-cols-2">
-            <Button
-              type="button"
-              disabled={isBusy}
-              onClick={() => {
-                setError(null);
-                setIsEditing(false);
-              }}
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isBusy}
-              className="rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
-            >
-              Save changes
-            </Button>
-          </div>
-        </form>
+        <EventEditForm
+          isBusy={isBusy}
+          values={editForm}
+          onFieldChange={updateEditFormField}
+          onCancel={() => {
+            setError(null);
+            setIsEditing(false);
+          }}
+          onSubmit={handleEditSubmit}
+        />
       ) : null}
 
       {isDeleteModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
-            <h3 className="text-lg font-semibold text-slate-900">
-              Confirm deletion
-            </h3>
-            <p className="mt-2 text-sm text-slate-700">
-              Are you sure you want to delete this event?
-            </p>
-
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
-                type="button"
-                disabled={isBusy}
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                disabled={isBusy}
-                onClick={() => void handleDelete()}
-                className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
-              >
-                <TrashIcon className="shrink-0" />
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
+        <DeleteConfirmModal
+          isBusy={isBusy}
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={() => void handleDelete()}
+        />
       ) : null}
     </div>
   );

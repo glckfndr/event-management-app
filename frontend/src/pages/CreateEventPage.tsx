@@ -1,9 +1,11 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import type { Resolver } from "react-hook-form";
 import { useMemo, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import * as yup from "yup";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
@@ -11,6 +13,15 @@ import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import { FormField } from "../components/ui/FormField";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
+import { DatePickerInput } from "../components/ui/DatePickerInput";
+import { CalendarIcon } from "../components/ui/icons/CalendarIcon";
+import { ClockIcon } from "../components/ui/icons/ClockIcon";
+import {
+  parseDateValue,
+  parseTimeValue,
+  toDateInputValue,
+  toTimeInputValue,
+} from "../shared/dateTimeInput";
 
 const createEventSchema = yup
   .object({
@@ -67,6 +78,7 @@ export function CreateEventPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateEventFormValues>({
@@ -150,10 +162,31 @@ export function CreateEventPage() {
             required
             errorMessage={errors.eventDate?.message}
           >
-            <input
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-              type="date"
-              {...register("eventDate")}
+            <Controller
+              name="eventDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  selected={parseDateValue(field.value)}
+                  onChange={(selectedDate) => {
+                    field.onChange(
+                      selectedDate ? toDateInputValue(selectedDate) : "",
+                    );
+                  }}
+                  onBlur={field.onBlur}
+                  placeholderText="Select a date"
+                  dateFormat="MMM d, yyyy"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-[1.05rem] text-slate-700"
+                  calendarClassName="event-datepicker"
+                  popperClassName="event-datepicker-popper"
+                  wrapperClassName="w-full"
+                  customInput={
+                    <DatePickerInput
+                      icon={<CalendarIcon className="h-5 w-5" />}
+                    />
+                  }
+                />
+              )}
             />
           </FormField>
 
@@ -162,10 +195,33 @@ export function CreateEventPage() {
             required
             errorMessage={errors.eventTime?.message}
           >
-            <input
-              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
-              type="time"
-              {...register("eventTime")}
+            <Controller
+              name="eventTime"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  selected={parseTimeValue(field.value)}
+                  onChange={(selectedTime) => {
+                    field.onChange(
+                      selectedTime ? toTimeInputValue(selectedTime) : "",
+                    );
+                  }}
+                  onBlur={field.onBlur}
+                  placeholderText="Select time"
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="HH:mm"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-[1.05rem] text-slate-700"
+                  calendarClassName="event-datepicker"
+                  popperClassName="event-timepicker-popper"
+                  wrapperClassName="w-full"
+                  customInput={
+                    <DatePickerInput icon={<ClockIcon className="h-5 w-5" />} />
+                  }
+                />
+              )}
             />
           </FormField>
         </div>
