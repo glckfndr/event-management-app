@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { fetchMyEvents } from "../features/events/eventsSlice";
+import { Button } from "../components/ui/Button";
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -144,7 +145,7 @@ export function MyEventsPage() {
 
         <div className="mt-2 space-y-1">
           {events.slice(0, 2).map((event) => (
-            <button
+            <Button
               type="button"
               key={event.id}
               onClick={(clickEvent) => {
@@ -157,7 +158,7 @@ export function MyEventsPage() {
               title={renderEventLabel(event.eventDate, event.title)}
             >
               {renderEventLabel(event.eventDate, event.title)}
-            </button>
+            </Button>
           ))}
 
           {events.length > 2 ? (
@@ -200,7 +201,7 @@ export function MyEventsPage() {
               });
 
               return (
-                <button
+                <Button
                   type="button"
                   key={event.id}
                   onClick={(clickEvent) => {
@@ -213,7 +214,7 @@ export function MyEventsPage() {
                 >
                   <p className="text-lg font-semibold">{time}</p>
                   <p className="truncate text-lg">{event.title}</p>
-                </button>
+                </Button>
               );
             })
           )}
@@ -252,25 +253,25 @@ export function MyEventsPage() {
 
       <div className="mt-8 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
             onClick={() => changeMonth(-1)}
             className="h-9 w-9 rounded-md border border-slate-300 text-lg text-slate-700 hover:bg-slate-50"
           >
             ‹
-          </button>
+          </Button>
           <h3 className="text-4xl font-semibold">{title}</h3>
-          <button
+          <Button
             type="button"
             onClick={() => changeMonth(1)}
             className="h-9 w-9 rounded-md border border-slate-300 text-lg text-slate-700 hover:bg-slate-50"
           >
             ›
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-2 rounded-lg bg-white p-1">
-          <button
+          <Button
             type="button"
             onClick={() => setViewMode("month")}
             className={`rounded-md px-4 py-2 text-lg font-medium ${
@@ -280,8 +281,8 @@ export function MyEventsPage() {
             }`}
           >
             Month
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={() => setViewMode("week")}
             className={`rounded-md px-4 py-2 text-lg font-medium ${
@@ -291,7 +292,7 @@ export function MyEventsPage() {
             }`}
           >
             Week
-          </button>
+          </Button>
         </div>
       </div>
 

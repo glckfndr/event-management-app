@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { registerUser } from "../features/auth/authSlice";
+import { Button } from "../components/ui/Button";
 
 type RegisterFormValues = {
   name: string;
@@ -141,7 +142,7 @@ export function RegisterPage() {
             <p className="text-sm text-red-600">{authState.error}</p>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={authState.status === "loading"}
             className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
@@ -149,7 +150,7 @@ export function RegisterPage() {
             {authState.status === "loading"
               ? "Creating account..."
               : "Create account"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-5 text-[1.05rem] text-slate-600">

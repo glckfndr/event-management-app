@@ -7,6 +7,7 @@ import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
+import { Button } from "../components/ui/Button";
 
 const createEventSchema = yup
   .object({
@@ -230,20 +231,20 @@ export function CreateEventPage() {
           {submitError ? (
             <p className="md:col-span-2 text-sm text-red-600">{submitError}</p>
           ) : null}
-          <button
+          <Button
             type="button"
             onClick={() => navigate("/events")}
             className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={status === "loading"}
             className="rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
           >
             {status === "loading" ? "Creating..." : "Create Event"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

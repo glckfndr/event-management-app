@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { logout } from "../../features/auth/authSlice";
+import { Button } from "../ui/Button";
 
 export function MainLayout() {
   const dispatch = useAppDispatch();
@@ -219,7 +220,7 @@ export function MainLayout() {
                 <span className="text-[1.05rem] font-semibold text-slate-800">
                   {displayName}
                 </span>
-                <button
+                <Button
                   type="button"
                   onClick={handleLogout}
                   aria-label="Logout"
@@ -255,7 +256,7 @@ export function MainLayout() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                </button>
+                </Button>
               </div>
             ) : (
               <Link
