@@ -28,9 +28,9 @@ export function MyEventsPage() {
     void dispatch(fetchMyEvents());
   }, [dispatch]);
 
-  const eventsByDate = useMemo(
-    () =>
-      myEvents.reduce<Record<string, typeof myEvents>>((accumulator, event) => {
+  const eventsByDate = useMemo(() => {
+    const grouped = myEvents.reduce<Record<string, typeof myEvents>>(
+      (accumulator, event) => {
         const dateKey = toLocalDateKey(new Date(event.eventDate));
 
         if (!accumulator[dateKey]) {
@@ -38,16 +38,22 @@ export function MyEventsPage() {
         }
 
         accumulator[dateKey].push(event);
-        accumulator[dateKey].sort(
-          (first, second) =>
-            new Date(first.eventDate).getTime() -
-            new Date(second.eventDate).getTime(),
-        );
 
         return accumulator;
-      }, {}),
-    [myEvents],
-  );
+      },
+      {},
+    );
+
+    Object.values(grouped).forEach((events) => {
+      events.sort(
+        (first, second) =>
+          new Date(first.eventDate).getTime() -
+          new Date(second.eventDate).getTime(),
+      );
+    });
+
+    return grouped;
+  }, [myEvents]);
 
   const monthCells = useMemo(() => {
     const year = currentMonth.getFullYear();

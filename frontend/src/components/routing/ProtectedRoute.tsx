@@ -9,9 +9,10 @@ type ProtectedRouteProps = {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const token = useAppSelector((state) => state.auth.token);
   const location = useLocation();
+  const from = `${location.pathname}${location.search}${location.hash}`;
 
   if (!token) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace state={{ from }} />;
   }
 
   return <>{children}</>;

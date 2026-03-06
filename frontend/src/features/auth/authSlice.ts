@@ -25,6 +25,17 @@ type RegisterPayload = {
 
 const tokenFromStorage = localStorage.getItem("accessToken");
 
+const decodeBase64Url = (value: string) => {
+  const normalizedValue = value.replace(/-/g, "+").replace(/_/g, "/");
+  const paddingLength = (4 - (normalizedValue.length % 4)) % 4;
+  const paddedValue = normalizedValue.padEnd(
+    normalizedValue.length + paddingLength,
+    "=",
+  );
+
+  return atob(paddedValue);
+};
+
 const getUserFromToken = (token: string | null): User | null => {
   if (!token) {
     return null;
@@ -37,10 +48,9 @@ const getUserFromToken = (token: string | null): User | null => {
       return null;
     }
 
-    const normalizedPayload = base64Payload
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    const decoded = JSON.parse(atob(normalizedPayload)) as { email?: string };
+    const decoded = JSON.parse(decodeBase64Url(base64Payload)) as {
+      email?: string;
+    };
 
     if (!decoded.email) {
       return null;

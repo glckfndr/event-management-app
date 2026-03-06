@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
@@ -20,6 +20,7 @@ export function CreateEventPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const status = useAppSelector((state) => state.events.status);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const selectedDate = searchParams.get("date");
 
@@ -42,21 +43,32 @@ export function CreateEventPage() {
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    const dateTimeIso = new Date(
-      `${values.eventDate}T${values.eventTime || "00:00"}`,
-    ).toISOString();
+    setSubmitError(null);
 
-    const payload: CreateEventPayload = {
-      title: values.title,
-      description: values.description || undefined,
-      eventDate: dateTimeIso,
-      location: values.location || undefined,
-      visibility: values.visibility,
-      capacity: values.capacity ? Number(values.capacity) : null,
-    };
+    try {
+      const dateTimeIso = new Date(
+        `${values.eventDate}T${values.eventTime || "00:00"}`,
+      ).toISOString();
 
-    await dispatch(createEvent(payload)).unwrap();
-    navigate("/events");
+      const payload: CreateEventPayload = {
+        title: values.title,
+        description: values.description || undefined,
+        eventDate: dateTimeIso,
+        location: values.location || undefined,
+        visibility: values.visibility,
+        capacity: values.capacity ? Number(values.capacity) : null,
+      };
+
+      await dispatch(createEvent(payload)).unwrap();
+      navigate("/events");
+    } catch (submitErrorValue) {
+      if (submitErrorValue instanceof Error && submitErrorValue.message) {
+        setSubmitError(submitErrorValue.message);
+        return;
+      }
+
+      setSubmitError("Failed to create event. Please try again.");
+    }
   });
 
   return (
@@ -158,6 +170,9 @@ export function CreateEventPage() {
         </div>
 
         <div className="mt-2 grid gap-3 md:grid-cols-2">
+          {submitError ? (
+            <p className="md:col-span-2 text-sm text-red-600">{submitError}</p>
+          ) : null}
           <button
             type="button"
             onClick={() => navigate("/events")}
