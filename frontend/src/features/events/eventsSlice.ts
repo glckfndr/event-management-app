@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { RootState } from "../../app/store";
+import { logout } from "../auth/authSlice";
 import { api, getAuthHeader } from "../../shared/api";
 import type { CreateEventPayload, EventItem } from "../../types/event";
 
@@ -136,6 +137,12 @@ const eventsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(logout, (state) => {
+        state.myEvents = [];
+        state.selectedEvent = null;
+        state.error = null;
+        state.status = "idle";
+      })
       .addCase(fetchPublicEvents.pending, (state) => {
         state.status = "loading";
         state.error = null;

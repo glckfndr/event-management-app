@@ -137,7 +137,7 @@ export function MyEventsPage() {
         }`}
       >
         <p
-          className={`text-sm font-bold ${isCurrentMonth ? "text-slate-800" : "text-slate-400"}`}
+          className={`text-lg font-bold ${isCurrentMonth ? "text-slate-800" : "text-slate-400"}`}
         >
           {date.getDate()}
         </p>
@@ -149,9 +149,11 @@ export function MyEventsPage() {
               key={event.id}
               onClick={(clickEvent) => {
                 clickEvent.stopPropagation();
-                void navigate(`/events/${event.id}`);
+                void navigate(`/events/${event.id}`, {
+                  state: { from: "/my-events" },
+                });
               }}
-              className="w-full truncate rounded bg-indigo-100 px-2 py-1 text-left text-xs text-indigo-700 hover:bg-indigo-200"
+              className="w-full truncate rounded bg-indigo-100 px-2 py-1 text-left text-lg text-indigo-700 hover:bg-indigo-200"
               title={renderEventLabel(event.eventDate, event.title)}
             >
               {renderEventLabel(event.eventDate, event.title)}
@@ -159,7 +161,7 @@ export function MyEventsPage() {
           ))}
 
           {events.length > 2 ? (
-            <p className="text-xs text-slate-500">+{events.length - 2} more</p>
+            <p className="text-lg text-slate-500">+{events.length - 2} more</p>
           ) : null}
         </div>
       </div>
@@ -180,16 +182,16 @@ export function MyEventsPage() {
           isSelected ? "ring-2 ring-indigo-500" : ""
         }`}
       >
-        <p className="text-[1.05rem] font-bold text-slate-800">{dayName}</p>
+        <p className="text-lg font-bold text-slate-800">{dayName}</p>
         <p
-          className={`mt-1 text-[1.05rem] ${isSelected ? "text-indigo-600" : "text-slate-500"}`}
+          className={`mt-1 text-lg ${isSelected ? "text-indigo-600" : "text-slate-500"}`}
         >
           {date.getDate()}
         </p>
 
         <div className="mt-3 space-y-2">
           {events.length === 0 ? (
-            <p className="text-sm text-slate-500">No events</p>
+            <p className="text-lg text-slate-500">No events</p>
           ) : (
             events.slice(0, 1).map((event) => {
               const time = new Date(event.eventDate).toLocaleTimeString([], {
@@ -203,12 +205,14 @@ export function MyEventsPage() {
                   key={event.id}
                   onClick={(clickEvent) => {
                     clickEvent.stopPropagation();
-                    void navigate(`/events/${event.id}`);
+                    void navigate(`/events/${event.id}`, {
+                      state: { from: "/my-events" },
+                    });
                   }}
                   className="w-full rounded-lg bg-indigo-100 px-3 py-2 text-left text-indigo-600 hover:bg-indigo-200"
                 >
-                  <p className="text-sm font-semibold">{time}</p>
-                  <p className="truncate text-sm">{event.title}</p>
+                  <p className="text-lg font-semibold">{time}</p>
+                  <p className="truncate text-lg">{event.title}</p>
                 </button>
               );
             })
@@ -223,9 +227,15 @@ export function MyEventsPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-4xl font-bold">My Events</h2>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-lg text-slate-600">
             View and manage your event calendar
           </p>
+          {!hasAnyEvents ? (
+            <p className="mt-3 text-lg text-slate-600">
+              You are not part of any events yet. Explore public events and
+              join.
+            </p>
+          ) : null}
         </div>
 
         <Link
@@ -234,7 +244,7 @@ export function MyEventsPage() {
               ? `/events/create?date=${selectedDateKey}`
               : "/events/create"
           }
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+          className="rounded-md bg-indigo-600 px-4 py-2 text-lg font-medium text-white hover:bg-indigo-500"
         >
           + Create Event
         </Link>
@@ -263,7 +273,7 @@ export function MyEventsPage() {
           <button
             type="button"
             onClick={() => setViewMode("month")}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
+            className={`rounded-md px-4 py-2 text-lg font-medium ${
               viewMode === "month"
                 ? "bg-indigo-600 text-white"
                 : "text-slate-700 hover:bg-slate-100"
@@ -274,7 +284,7 @@ export function MyEventsPage() {
           <button
             type="button"
             onClick={() => setViewMode("week")}
-            className={`rounded-md px-4 py-2 text-sm font-medium ${
+            className={`rounded-md px-4 py-2 text-lg font-medium ${
               viewMode === "week"
                 ? "bg-indigo-600 text-white"
                 : "text-slate-700 hover:bg-slate-100"
@@ -291,7 +301,7 @@ export function MyEventsPage() {
             {weekDays.map((day) => (
               <p
                 key={day}
-                className="px-3 py-2 text-center text-sm font-bold text-slate-700"
+                className="px-3 py-2 text-center text-lg font-bold text-slate-700"
               >
                 {day}
               </p>
@@ -305,12 +315,6 @@ export function MyEventsPage() {
           {weekCells.map(renderWeekCard)}
         </div>
       )}
-
-      {!hasAnyEvents ? (
-        <p className="mt-4 text-sm text-slate-600">
-          No events yet. Create one to populate your calendar.
-        </p>
-      ) : null}
     </div>
   );
 }

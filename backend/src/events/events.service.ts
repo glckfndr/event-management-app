@@ -90,14 +90,29 @@ export class EventsService {
           'You do not have access to this private event',
         );
       }
+    }
 
-      const privateEventWithParticipants = await this.eventsRepository.findOne({
+    if (user) {
+      const eventWithParticipants = await this.eventsRepository.findOne({
         where: { id },
         relations: { organizer: true, participants: { user: true } },
       });
 
-      if (privateEventWithParticipants) {
-        return privateEventWithParticipants;
+      if (eventWithParticipants) {
+        return this.stripParticipantEmails(eventWithParticipants);
+      }
+    }
+
+    return event;
+  }
+
+  private stripParticipantEmails(event: Event): Event {
+    for (const participant of event.participants ?? []) {
+      if (participant.user) {
+        Reflect.deleteProperty(
+          participant.user as unknown as Record<string, unknown>,
+          'email',
+        );
       }
     }
 
