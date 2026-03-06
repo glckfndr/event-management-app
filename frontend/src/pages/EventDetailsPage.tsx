@@ -127,22 +127,22 @@ export function EventDetailsPage() {
     Number.isFinite(event.capacity) &&
     participantsCount >= event.capacity;
 
-  const participantLabel = (participant: {
-    userId: string;
-    user?: { name?: string; email: string };
-  }) => {
+  const participantLabel = (
+    participant: {
+      userId: string;
+      user?: { name?: string; email: string };
+    },
+    index: number,
+  ): string => {
     if (participant.user?.name?.trim()) {
       return participant.user.name;
     }
 
     if (participant.user?.email) {
-      const username = participant.user.email.split("@")[0];
-      return username.length <= 2
-        ? username.toUpperCase()
-        : username.slice(0, 2).toUpperCase();
+      return participant.user.email.split("@")[0];
     }
 
-    return participant.userId.slice(0, 2).toUpperCase();
+    return `participant ${index + 1}`;
   };
 
   const refreshEventData = async () => {
@@ -312,25 +312,143 @@ export function EventDetailsPage() {
       </p>
 
       <div className="mt-5 space-y-2 text-lg text-slate-500">
-        <p>
-          🗓️{" "}
+        <p className="flex items-center gap-2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            className="text-slate-500"
+          >
+            <path
+              d="M8 3V6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M16 3V6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            <rect
+              x="3"
+              y="5"
+              width="18"
+              height="16"
+              rx="3"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path d="M3 10H21" stroke="currentColor" strokeWidth="2" />
+          </svg>
           {new Date(event.eventDate).toLocaleDateString(undefined, {
             month: "short",
             day: "numeric",
             year: "numeric",
           })}
         </p>
-        <p>
-          🕒{" "}
+        <p className="flex items-center gap-2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            className="text-slate-500"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <path
+              d="M12 7V12L15.5 14"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
           {new Date(event.eventDate).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </p>
-        <p>📍 {event.location || "Location TBD"}</p>
-        <p>
-          👥 {participantsCount} /{" "}
-          {event.capacity == null ? "∞" : event.capacity} participants
+        <p className="flex items-center gap-2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            className="text-slate-500"
+          >
+            <path
+              d="M12 21C16 17 19 14 19 10.5C19 6.91015 15.866 4 12 4C8.13401 4 5 6.91015 5 10.5C5 14 8 17 12 21Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle
+              cx="12"
+              cy="10.5"
+              r="2"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+          </svg>
+          {event.location || "Location TBD"}
+        </p>
+        <p className="flex items-center gap-2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            className="text-slate-500"
+          >
+            <path
+              d="M16 11C17.6569 11 19 9.65685 19 8C19 6.34315 17.6569 5 16 5C14.3431 5 13 6.34315 13 8C13 9.65685 14.3431 11 16 11Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M8 12C9.65685 12 11 10.6569 11 9C11 7.34315 9.65685 6 8 6C6.34315 6 5 7.34315 5 9C5 10.6569 6.34315 12 8 12Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M3 18C3.6 15.8 5.5 14.5 8 14.5C10.5 14.5 12.4 15.8 13 18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M13 17.5C13.45 16.05 14.75 15 16.5 15C18.25 15 19.55 16.05 20 17.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {participantsCount} / {event.capacity == null ? "∞" : event.capacity}{" "}
+          participants
         </p>
       </div>
 
@@ -342,18 +460,22 @@ export function EventDetailsPage() {
       </p>
 
       <div className="mt-5">
-        <p className="text-sm font-medium text-slate-700">Participants</p>
+        <p className="text-[1.05rem] font-medium text-slate-700">
+          Participants
+        </p>
 
         {participantsCount === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">No participants yet.</p>
+          <p className="mt-2 text-[1.05rem] text-slate-600">
+            No participants yet.
+          </p>
         ) : (
           <div className="mt-2 flex flex-wrap gap-2">
-            {event.participants?.map((participant) => (
+            {event.participants?.map((participant, index) => (
               <span
                 key={participant.id}
-                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700"
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-[1.05rem] font-medium text-slate-700"
               >
-                {participantLabel(participant)}
+                {participantLabel(participant, index)}
               </span>
             ))}
           </div>

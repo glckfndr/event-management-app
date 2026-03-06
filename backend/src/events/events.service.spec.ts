@@ -313,6 +313,61 @@ describe('EventsService', () => {
     );
   });
 
+  it('findOne includes participant user relations for authenticated public event and strips participant emails', async () => {
+    eventsRepository.findOne
+      .mockResolvedValueOnce({
+        id: 'event-id',
+        visibility: 'public',
+        organizerId: 'organizer-id',
+        participants: [{ userId: 'participant-id' }],
+      })
+      .mockResolvedValueOnce({
+        id: 'event-id',
+        visibility: 'public',
+        organizerId: 'organizer-id',
+        participants: [
+          {
+            userId: 'participant-id',
+            user: {
+              id: 'participant-id',
+              email: 'participant@example.com',
+              name: 'Participant',
+            },
+          },
+        ],
+      });
+
+    const result = await service.findOne('event-id', {
+      sub: 'viewer-id',
+      email: 'viewer@example.com',
+    });
+
+    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(1, {
+      where: { id: 'event-id' },
+      relations: { organizer: true, participants: true },
+    });
+
+    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: 'event-id' },
+      relations: { organizer: true, participants: { user: true } },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        participants: [
+          expect.objectContaining({
+            user: expect.objectContaining({
+              id: 'participant-id',
+              name: 'Participant',
+            }),
+          }),
+        ],
+      }),
+    );
+
+    expect(result.participants?.[0]?.user).not.toHaveProperty('email');
+  });
+
   it('findOne throws when unauthenticated user requests private event', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',
@@ -390,6 +445,8 @@ describe('EventsService', () => {
       where: { id: 'event-id' },
       relations: { organizer: true, participants: { user: true } },
     });
+
+    expect(result.participants?.[0]?.user).not.toHaveProperty('email');
   });
 
   it('findOne throws when authenticated non-member requests private event', async () => {
