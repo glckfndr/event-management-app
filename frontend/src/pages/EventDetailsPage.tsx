@@ -130,16 +130,12 @@ export function EventDetailsPage() {
   const participantLabel = (
     participant: {
       userId: string;
-      user?: { name?: string; email: string };
+      user?: { name?: string; email?: string };
     },
     index: number,
   ): string => {
     if (participant.user?.name?.trim()) {
       return participant.user.name;
-    }
-
-    if (participant.user?.email) {
-      return participant.user.email.split("@")[0];
     }
 
     return `participant ${index + 1}`;
@@ -532,7 +528,7 @@ export function EventDetailsPage() {
                 <button
                   type="button"
                   disabled={isBusy}
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate(returnTo)}
                   className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                 >
                   ← Back
@@ -546,7 +542,7 @@ export function EventDetailsPage() {
           <button
             type="button"
             disabled={isBusy}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(returnTo)}
             className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
             ← Back
@@ -663,13 +659,14 @@ export function EventDetailsPage() {
               placeholder="Capacity (optional)"
             />
           </div>
-          <div className="grid gap-2">
-            <p className="text-[1.05rem] font-semibold text-slate-800">
+          <fieldset className="grid gap-2">
+            <legend className="text-[1.05rem] font-semibold text-slate-800">
               Visibility
-            </p>
+            </legend>
             <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
               <input
                 type="radio"
+                name="edit-visibility"
                 value="public"
                 checked={editVisibility === "public"}
                 onChange={() => setEditVisibility("public")}
@@ -679,13 +676,14 @@ export function EventDetailsPage() {
             <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
               <input
                 type="radio"
+                name="edit-visibility"
                 value="private"
                 checked={editVisibility === "private"}
                 onChange={() => setEditVisibility("private")}
               />
               Private - Only invited people can see this event
             </label>
-          </div>
+          </fieldset>
 
           <div className="mt-2 grid gap-3 md:grid-cols-2">
             <button
