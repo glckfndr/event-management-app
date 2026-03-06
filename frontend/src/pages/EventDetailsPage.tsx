@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   deleteEvent,
@@ -45,6 +45,7 @@ const toDateAndTimeLocalValues = (isoDate: string) => {
 
 export function EventDetailsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const dispatch = useAppDispatch();
   const event = useAppSelector((state) => state.events.selectedEvent);
@@ -53,6 +54,8 @@ export function EventDetailsPage() {
   const myEvents = useAppSelector((state) => state.events.myEvents);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
+  const returnTo =
+    (location.state as { from?: string } | undefined)?.from || "/events";
 
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -186,7 +189,7 @@ export function EventDetailsPage() {
     try {
       await dispatch(deleteEvent(event.id)).unwrap();
       await dispatch(fetchPublicEvents()).unwrap();
-      navigate("/events");
+      navigate(returnTo);
     } catch {
       setError("Failed to delete event");
       setIsBusy(false);
@@ -432,11 +435,11 @@ export function EventDetailsPage() {
       {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
 
       {isOrganizer && isEditing ? (
-        <form className="mt-6 grid gap-3" onSubmit={handleEditSubmit}>
-          <div className="grid gap-1">
+        <form className="mt-6 grid gap-6" onSubmit={handleEditSubmit}>
+          <div className="grid gap-2">
             <label
               htmlFor="edit-title"
-              className="text-sm font-medium text-slate-700"
+              className="text-[1.05rem] font-semibold text-slate-800"
             >
               Title
             </label>
@@ -444,15 +447,15 @@ export function EventDetailsPage() {
               id="edit-title"
               value={editTitle}
               onChange={(inputEvent) => setEditTitle(inputEvent.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
               placeholder="Title"
               required
             />
           </div>
-          <div className="grid gap-1">
+          <div className="grid gap-2">
             <label
               htmlFor="edit-description"
-              className="text-sm font-medium text-slate-700"
+              className="text-[1.05rem] font-semibold text-slate-800"
             >
               Description
             </label>
@@ -462,16 +465,16 @@ export function EventDetailsPage() {
               onChange={(inputEvent) =>
                 setEditDescription(inputEvent.target.value)
               }
-              className="min-h-24 rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+              className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
               placeholder="Description"
               required
             />
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <div className="grid gap-1">
+            <div className="grid gap-2">
               <label
                 htmlFor="edit-date"
-                className="text-sm font-medium text-slate-700"
+                className="text-[1.05rem] font-semibold text-slate-800"
               >
                 Date
               </label>
@@ -480,14 +483,14 @@ export function EventDetailsPage() {
                 type="date"
                 value={editDate}
                 onChange={(inputEvent) => setEditDate(inputEvent.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+                className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
                 required
               />
             </div>
-            <div className="grid gap-1">
+            <div className="grid gap-2">
               <label
                 htmlFor="edit-time"
-                className="text-sm font-medium text-slate-700"
+                className="text-[1.05rem] font-semibold text-slate-800"
               >
                 Time
               </label>
@@ -496,15 +499,15 @@ export function EventDetailsPage() {
                 type="time"
                 value={editTime}
                 onChange={(inputEvent) => setEditTime(inputEvent.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+                className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700"
                 required
               />
             </div>
           </div>
-          <div className="grid gap-1">
+          <div className="grid gap-2">
             <label
               htmlFor="edit-location"
-              className="text-sm font-medium text-slate-700"
+              className="text-[1.05rem] font-semibold text-slate-800"
             >
               Location
             </label>
@@ -514,15 +517,15 @@ export function EventDetailsPage() {
               onChange={(inputEvent) =>
                 setEditLocation(inputEvent.target.value)
               }
-              className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
               placeholder="Location"
               required
             />
           </div>
-          <div className="grid gap-1">
+          <div className="grid gap-2">
             <label
               htmlFor="edit-capacity"
-              className="text-sm font-medium text-slate-700"
+              className="text-[1.05rem] font-semibold text-slate-800"
             >
               Capacity (optional)
             </label>
@@ -534,13 +537,15 @@ export function EventDetailsPage() {
               onChange={(inputEvent) =>
                 setEditCapacity(inputEvent.target.value)
               }
-              className="rounded-lg border border-slate-300 px-3 py-[0.35rem] text-lg"
+              className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
               placeholder="Capacity (optional)"
             />
           </div>
           <div className="grid gap-2">
-            <p className="text-sm font-medium text-slate-700">Visibility</p>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <p className="text-[1.05rem] font-semibold text-slate-800">
+              Visibility
+            </p>
+            <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
               <input
                 type="radio"
                 value="public"
@@ -549,7 +554,7 @@ export function EventDetailsPage() {
               />
               Public - Anyone can see and join this event
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
               <input
                 type="radio"
                 value="private"
@@ -575,7 +580,7 @@ export function EventDetailsPage() {
             <button
               type="submit"
               disabled={isBusy}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+              className="rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
             >
               Save changes
             </button>

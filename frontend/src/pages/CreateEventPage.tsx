@@ -95,8 +95,8 @@ export function CreateEventPage() {
         capacity: values.capacity ? Number(values.capacity) : null,
       };
 
-      await dispatch(createEvent(payload)).unwrap();
-      navigate("/events");
+      const createdEvent = await dispatch(createEvent(payload)).unwrap();
+      navigate(createdEvent?.id ? `/events/${createdEvent.id}` : "/events");
     } catch (submitErrorValue) {
       if (submitErrorValue instanceof Error && submitErrorValue.message) {
         setSubmitError(submitErrorValue.message);
