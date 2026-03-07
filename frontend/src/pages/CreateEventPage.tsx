@@ -67,6 +67,28 @@ const createEventSchema = yup
 
 type CreateEventFormValues = yup.InferType<typeof createEventSchema>;
 
+const getSafeReturnPath = (from: unknown, fallbackPath = "/events"): string => {
+  if (typeof from !== "string") {
+    return fallbackPath;
+  }
+
+  const trimmedPath = from.trim();
+
+  if (!trimmedPath.startsWith("/")) {
+    return fallbackPath;
+  }
+
+  if (
+    trimmedPath.startsWith("//") ||
+    trimmedPath.includes("://") ||
+    trimmedPath.includes("\\")
+  ) {
+    return fallbackPath;
+  }
+
+  return trimmedPath;
+};
+
 export function CreateEventPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -74,8 +96,10 @@ export function CreateEventPage() {
   const [searchParams] = useSearchParams();
   const status = useAppSelector((state) => state.events.status);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const returnTo =
-    (location.state as { from?: string } | undefined)?.from || "/events";
+  const returnTo = getSafeReturnPath(
+    (location.state as { from?: unknown } | undefined)?.from,
+    "/events",
+  );
 
   const selectedDate = searchParams.get("date");
 
