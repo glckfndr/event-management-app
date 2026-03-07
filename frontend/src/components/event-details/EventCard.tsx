@@ -1,4 +1,5 @@
 import { Button } from "../ui/Button";
+import type { KeyboardEvent } from "react";
 import { CalendarIcon } from "../ui/icons/CalendarIcon";
 import { ClockIcon } from "../ui/icons/ClockIcon";
 import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
@@ -37,6 +38,17 @@ export function EventCard({ event, state, handlers }: EventCardProps) {
   const { token, isOrganizer, isJoined, isBusy } = state;
   const { onOpen, onJoin, onLeave, onRequireLogin } = handlers;
 
+  const handleCardKeyDown = (eventKeyDown: KeyboardEvent<HTMLElement>) => {
+    if (eventKeyDown.target !== eventKeyDown.currentTarget) {
+      return;
+    }
+
+    if (eventKeyDown.key === "Enter" || eventKeyDown.key === " ") {
+      eventKeyDown.preventDefault();
+      onOpen();
+    }
+  };
+
   const isFull =
     event.capacity != null &&
     (event.participants?.length ?? 0) >= event.capacity;
@@ -45,6 +57,10 @@ export function EventCard({ event, state, handlers }: EventCardProps) {
     <article
       className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6"
       onClick={onOpen}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open event details for ${event.title}`}
     >
       {isOrganizer ? (
         <span className="mb-3 inline-block rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold lowercase text-indigo-700">
