@@ -8,6 +8,7 @@ The system allows users to:
 
 - Register and authenticate securely
 - Discover and join public events
+- Access private events only when allowed (organizer or participant)
 - Create, edit, and delete their own events
 - Manage personal schedules using a calendar view
 
@@ -39,8 +40,10 @@ The system allows users to:
 
 - Only authenticated users can create events.
 - Users cannot join the same event twice (unique participant constraint is enforced).
-- Event capacity is stored for events but is not yet enforced when users join.
+- Event capacity is enforced when provided; omitted capacity means unlimited participants.
 - Only organizers can edit or delete their events.
+- Private events are accessible only to authenticated organizers or participants.
+- Participant email addresses are not exposed in event detail responses.
 
 ---
 
@@ -63,6 +66,110 @@ The system allows users to:
 
 - Docker
 - Docker Compose
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+- PostgreSQL 16+ (if running without Docker)
+
+### Quick Start After Clone (Docker Compose)
+
+1. Clone and open the repository root.
+2. Create root `.env` from `.env.example`.
+3. Build and start all services.
+4. Run backend migrations once containers are up.
+
+```bash
+# from repository root
+# Linux/macOS
+cp .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
+
+docker compose up --build
+docker compose exec backend npm run migration:run
+```
+
+App URLs:
+
+- Frontend: `http://localhost:8090`
+- Backend: `http://localhost:3001`
+- Swagger: `http://localhost:3001/api`
+
+If you run Docker in background, use:
+
+```bash
+docker compose up -d --build
+docker compose exec backend npm run migration:run
+```
+
+### Backend (NestJS)
+
+```bash
+# from repository root
+# Linux/macOS
+cp backend/.env.example backend/.env
+
+# Windows PowerShell
+Copy-Item backend/.env.example backend/.env
+
+cd backend
+npm install
+npm run migration:run
+npm run start:dev
+```
+
+Backend runs on `http://localhost:3001` by default.
+
+### Frontend (React)
+
+```bash
+# from repository root
+# Linux/macOS
+cp frontend/.env.example frontend/.env
+
+# Windows PowerShell
+Copy-Item frontend/.env.example frontend/.env
+
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs on `http://localhost:8090` by default.
+If needed, set `VITE_API_URL` to point to backend API.
+
+### Tests and Lint
+
+```bash
+# backend
+cd backend
+npm run lint
+npm run test
+
+# frontend
+cd frontend
+npm run lint
+npm run test:run
+```
+
+---
+
+## Security Notes
+
+- The frontend currently persists access tokens in `localStorage` for session persistence.
+- Tradeoff: this increases token exposure risk in case of XSS.
+- Current mitigations:
+  - Validate and sanitize inputs via DTO/form validation.
+  - Keep JWT expiration short (`JWT_EXPIRES_IN`).
+  - Avoid exposing participant emails in event details responses.
+- Planned improvement: migrate to httpOnly cookie-based auth/session flow with CSRF protections.
 
 ## Architecture Overview
 
@@ -134,10 +241,11 @@ The application is fully containerized using Docker and Docker Compose:
 - NestJS backend container
 - React frontend container
 
-The project can be started with a single command:
+Recommended start command:
 
 ```bash
-docker compose up
+docker compose up --build
+docker compose exec backend npm run migration:run
 ```
 
 ### Docker Compose commands
@@ -157,6 +265,9 @@ for example `http://192.168.0.10:3001`.
 ```bash
 # build images and start all services
 docker compose up --build
+
+# apply database migrations
+docker compose exec backend npm run migration:run
 
 # start in background
 docker compose up -d

@@ -1,5 +1,36 @@
 # React + TypeScript + Vite
 
+## Quick Start After Clone (Frontend only)
+
+From repository root:
+
+```bash
+# Linux/macOS
+cp frontend/.env.example frontend/.env
+
+# Windows PowerShell
+Copy-Item frontend/.env.example frontend/.env
+
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend URL: `http://localhost:8090`
+
+## Run with full stack (Docker Compose from project root)
+
+```bash
+# Linux/macOS
+cp .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
+
+docker compose up --build
+docker compose exec backend npm run migration:run
+```
+
 ## Environment variables
 
 Create a `.env` file in this folder (you can copy from `.env.example`):

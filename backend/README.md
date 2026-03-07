@@ -25,6 +25,39 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Quick Start After Clone (Backend only)
+
+From repository root:
+
+```bash
+# Linux/macOS
+cp backend/.env.example backend/.env
+
+# Windows PowerShell
+Copy-Item backend/.env.example backend/.env
+
+cd backend
+npm install
+npm run migration:run
+npm run start:dev
+```
+
+Backend URL: `http://localhost:3001`
+Swagger URL: `http://localhost:3001/api`
+
+## Quick Start via Docker Compose (from project root)
+
+```bash
+# Linux/macOS
+cp .env.example .env
+
+# Windows PowerShell
+Copy-Item .env.example .env
+
+docker compose up --build
+docker compose exec backend npm run migration:run
+```
+
 ## Project setup
 
 ```bash
@@ -53,6 +86,7 @@ From the project root:
 
 ```bash
 docker compose up --build
+docker compose exec backend npm run migration:run
 ```
 
 Useful commands:
