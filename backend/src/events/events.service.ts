@@ -100,16 +100,26 @@ export class EventsService {
   }
 
   private stripParticipantEmails(event: Event): Event {
-    for (const participant of event.participants ?? []) {
-      if (participant.user) {
-        Reflect.deleteProperty(
-          participant.user as unknown as Record<string, unknown>,
-          'email',
-        );
-      }
-    }
+    const sanitizedParticipants = (event.participants ?? []).map(
+      (participant) => {
+        if (!participant.user) {
+          return { ...participant };
+        }
 
-    return event;
+        const { email, ...userWithoutEmail } = participant.user;
+        void email;
+
+        return {
+          ...participant,
+          user: userWithoutEmail as Participant['user'],
+        };
+      },
+    );
+
+    return {
+      ...event,
+      participants: sanitizedParticipants as Participant[],
+    };
   }
 
   async create(
