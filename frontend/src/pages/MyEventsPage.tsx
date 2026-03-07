@@ -113,6 +113,7 @@ export function MyEventsPage() {
               ? `/events/create?date=${selectedDateKey}`
               : "/events/create"
           }
+          state={{ from: "/my-events" }}
           className="rounded-md bg-indigo-600 px-4 py-2 text-lg font-medium text-white hover:bg-indigo-500"
         >
           + Create Event

@@ -2,7 +2,7 @@ import { Controller, useForm } from "react-hook-form";
 import type { Resolver } from "react-hook-form";
 import { useMemo, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import * as yup from "yup";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
@@ -70,9 +70,12 @@ type CreateEventFormValues = yup.InferType<typeof createEventSchema>;
 export function CreateEventPage() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const status = useAppSelector((state) => state.events.status);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const returnTo =
+    (location.state as { from?: string } | undefined)?.from || "/events";
 
   const selectedDate = searchParams.get("date");
 
@@ -238,7 +241,7 @@ export function CreateEventPage() {
           ) : null}
           <Button
             type="button"
-            onClick={() => navigate("/events")}
+            onClick={() => navigate(returnTo)}
             className="rounded-xl border border-slate-300 px-4 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50"
           >
             Cancel
