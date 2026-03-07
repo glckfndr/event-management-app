@@ -4,24 +4,17 @@ import { useMemo, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import * as yup from "yup";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { createEvent } from "../features/events/eventsSlice";
 import type { CreateEventPayload, EventVisibility } from "../types/event";
 import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
-import { FormField } from "../components/ui/FormField";
-import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
-import { DatePickerInput } from "../components/ui/DatePickerInput";
-import { CalendarIcon } from "../components/ui/icons/CalendarIcon";
-import { ClockIcon } from "../components/ui/icons/ClockIcon";
 import {
-  parseDateValue,
-  parseTimeValue,
-  toDateInputValue,
-  toTimeInputValue,
-} from "../shared/dateTimeInput";
+  EventDateTimePickerField,
+  EventTextareaField,
+  EventTextInputField,
+} from "../components/event-form/EventFormFields";
+import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 const createEventSchema = yup
   .object({
@@ -131,114 +124,66 @@ export function CreateEventPage() {
       </p>
 
       <form className="mt-8 grid gap-6" onSubmit={onSubmit}>
-        <FormField
+        <EventTextInputField
           label="Event Title"
           required
           errorMessage={errors.title?.message}
-        >
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-            placeholder="e.g., Tech Conference 2025"
-            {...register("title")}
-          />
-        </FormField>
+          placeholder="e.g., Tech Conference 2025"
+          {...register("title")}
+        />
 
-        <FormField
+        <EventTextareaField
           label="Description"
           required
           errorMessage={errors.description?.message}
-        >
-          <textarea
-            className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-            placeholder="Describe what makes your event special..."
-            rows={4}
-            {...register("description")}
-          />
-        </FormField>
+          placeholder="Describe what makes your event special..."
+          rows={4}
+          {...register("description")}
+        />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            label="Date"
-            required
-            errorMessage={errors.eventDate?.message}
-          >
-            <Controller
-              name="eventDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  selected={parseDateValue(field.value)}
-                  onChange={(selectedDate) => {
-                    field.onChange(
-                      selectedDate ? toDateInputValue(selectedDate) : "",
-                    );
-                  }}
-                  onBlur={field.onBlur}
-                  placeholderText="Select a date"
-                  dateFormat="MMM d, yyyy"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-[1.05rem] text-slate-700"
-                  calendarClassName="event-datepicker"
-                  popperClassName="event-datepicker-popper"
-                  wrapperClassName="w-full"
-                  customInput={
-                    <DatePickerInput
-                      icon={<CalendarIcon className="h-5 w-5" />}
-                    />
-                  }
-                />
-              )}
-            />
-          </FormField>
+          <Controller
+            name="eventDate"
+            control={control}
+            render={({ field }) => (
+              <EventDateTimePickerField
+                label="Date"
+                required
+                errorMessage={errors.eventDate?.message}
+                mode="date"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
 
-          <FormField
-            label="Time"
-            required
-            errorMessage={errors.eventTime?.message}
-          >
-            <Controller
-              name="eventTime"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  selected={parseTimeValue(field.value)}
-                  onChange={(selectedTime) => {
-                    field.onChange(
-                      selectedTime ? toTimeInputValue(selectedTime) : "",
-                    );
-                  }}
-                  onBlur={field.onBlur}
-                  placeholderText="Select time"
-                  showTimeSelect
-                  showTimeSelectOnly
-                  timeIntervals={15}
-                  timeCaption="Time"
-                  dateFormat="HH:mm"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-[1.05rem] text-slate-700"
-                  calendarClassName="event-datepicker"
-                  popperClassName="event-timepicker-popper"
-                  wrapperClassName="w-full"
-                  customInput={
-                    <DatePickerInput icon={<ClockIcon className="h-5 w-5" />} />
-                  }
-                />
-              )}
-            />
-          </FormField>
+          <Controller
+            name="eventTime"
+            control={control}
+            render={({ field }) => (
+              <EventDateTimePickerField
+                label="Time"
+                required
+                errorMessage={errors.eventTime?.message}
+                mode="time"
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
         </div>
 
-        <FormField
+        <EventTextInputField
           label="Location"
           required
           errorMessage={errors.location?.message}
-        >
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-            placeholder="e.g., Convention Center, San Francisco"
-            {...register("location")}
-          />
-        </FormField>
+          placeholder="e.g., Convention Center, San Francisco"
+          {...register("location")}
+        />
 
-        <FormField
+        <EventTextInputField
           label="Capacity (optional)"
           errorMessage={errors.capacity?.message}
           hint={
@@ -247,15 +192,11 @@ export function CreateEventPage() {
               capacity.
             </p>
           }
-        >
-          <input
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
-            type="number"
-            min={1}
-            placeholder="Leave empty for unlimited"
-            {...register("capacity")}
-          />
-        </FormField>
+          type="number"
+          min={1}
+          placeholder="Leave empty for unlimited"
+          {...register("capacity")}
+        />
 
         <VisibilityFieldset
           className="grid gap-3"
