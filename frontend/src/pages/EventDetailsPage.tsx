@@ -17,6 +17,10 @@ import { EventDetailsSummary } from "../components/event-details/EventDetailsSum
 import { EventEditForm } from "../components/event-details/EventEditForm";
 import type { EventEditFormValues } from "../components/event-details/EventEditForm";
 import { FormErrorText } from "../components/ui/FormErrorText";
+import {
+  normalizeEventCoreValues,
+  validateEventCoreFields,
+} from "../shared/eventValidation";
 
 const toDateTimeLocalValue = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -207,41 +211,21 @@ export function EventDetailsPage() {
   const handleEditSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
     submitEvent.preventDefault();
 
-    const normalizedTitle = editForm.title.trim();
-    const normalizedDescription = editForm.description.trim();
-    const normalizedLocation = editForm.location.trim();
-
-    if (!normalizedTitle) {
-      setError("Title is required");
+    const validationError = validateEventCoreFields(editForm);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (normalizedTitle.length < 3) {
-      setError("Title must be at least 3 characters");
-      return;
-    }
+    const normalizedFormValues = normalizeEventCoreValues(editForm);
 
-    if (!normalizedDescription) {
-      setError("Description is required");
-      return;
-    }
+    const normalizedTitle = normalizedFormValues.title;
+    const normalizedDescription = normalizedFormValues.description;
+    const normalizedLocation = normalizedFormValues.location;
 
-    if (normalizedDescription.length < 10) {
-      setError("Description must be at least 10 characters");
-      return;
-    }
-
-    if (!editForm.date) {
-      setError("Date is required");
-      return;
-    }
-
-    if (!editForm.time) {
-      setError("Time is required");
-      return;
-    }
-
-    const parsedDateTime = new Date(`${editForm.date}T${editForm.time}`);
+    const parsedDateTime = new Date(
+      `${normalizedFormValues.date}T${normalizedFormValues.time}`,
+    );
 
     if (Number.isNaN(parsedDateTime.getTime())) {
       setError("Date or time is invalid");
@@ -253,27 +237,10 @@ export function EventDetailsPage() {
       return;
     }
 
-    if (!normalizedLocation) {
-      setError("Location is required");
-      return;
-    }
-
-    if (normalizedLocation.length < 2) {
-      setError("Location must be at least 2 characters");
-      return;
-    }
-
-    if (editForm.capacity !== "") {
-      const parsedCapacity = Number(editForm.capacity);
-
-      if (!Number.isInteger(parsedCapacity) || parsedCapacity <= 0) {
-        setError("Capacity must be a positive whole number");
-        return;
-      }
-    }
-
     const capacityValue =
-      editForm.capacity === "" ? null : Number(editForm.capacity);
+      normalizedFormValues.capacity === ""
+        ? null
+        : Number(normalizedFormValues.capacity);
 
     if (
       capacityValue != null &&
@@ -295,7 +262,7 @@ export function EventDetailsPage() {
               eventDate: parsedDateTime.toISOString(),
               location: normalizedLocation,
               capacity: capacityValue,
-              visibility: editForm.visibility,
+              visibility: normalizedFormValues.visibility,
             },
           }),
         ).unwrap(),

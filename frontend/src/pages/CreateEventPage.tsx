@@ -14,6 +14,13 @@ import {
   EventTextareaField,
   EventTextInputField,
 } from "../components/event-form/EventFormFields";
+import {
+  EVENT_DESCRIPTION_MIN_LENGTH,
+  EVENT_LOCATION_MIN_LENGTH,
+  EVENT_TITLE_MIN_LENGTH,
+  EVENT_VALIDATION_MESSAGES,
+  isValidPositiveCapacityInput,
+} from "../shared/eventValidation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 const createEventSchema = yup
@@ -21,30 +28,36 @@ const createEventSchema = yup
     title: yup
       .string()
       .trim()
-      .min(3, "Event title must be at least 3 characters")
-      .required("Event title is required"),
+      .min(
+        EVENT_TITLE_MIN_LENGTH,
+        EVENT_VALIDATION_MESSAGES.createTitleMinLength,
+      )
+      .required(EVENT_VALIDATION_MESSAGES.createTitleRequired),
     description: yup
       .string()
       .trim()
-      .min(10, "Description must be at least 10 characters")
-      .required("Description is required"),
-    eventDate: yup.string().required("Date is required"),
-    eventTime: yup.string().required("Time is required"),
+      .min(
+        EVENT_DESCRIPTION_MIN_LENGTH,
+        EVENT_VALIDATION_MESSAGES.descriptionMinLength,
+      )
+      .required(EVENT_VALIDATION_MESSAGES.descriptionRequired),
+    eventDate: yup.string().required(EVENT_VALIDATION_MESSAGES.dateRequired),
+    eventTime: yup.string().required(EVENT_VALIDATION_MESSAGES.timeRequired),
     location: yup
       .string()
       .trim()
-      .min(2, "Location must be at least 2 characters")
-      .required("Location is required"),
+      .min(
+        EVENT_LOCATION_MIN_LENGTH,
+        EVENT_VALIDATION_MESSAGES.locationMinLength,
+      )
+      .required(EVENT_VALIDATION_MESSAGES.locationRequired),
     capacity: yup
       .string()
-      .test("valid-capacity", "Capacity must be a positive number", (value) => {
-        if (!value || value.trim() === "") {
-          return true;
-        }
-
-        const parsed = Number(value);
-        return Number.isInteger(parsed) && parsed > 0;
-      }),
+      .test(
+        "valid-capacity",
+        EVENT_VALIDATION_MESSAGES.createCapacityPositive,
+        (value) => isValidPositiveCapacityInput(value),
+      ),
     visibility: yup
       .mixed<EventVisibility>()
       .oneOf(["public", "private"], "Select event visibility")
