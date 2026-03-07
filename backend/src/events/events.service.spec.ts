@@ -314,40 +314,29 @@ describe('EventsService', () => {
   });
 
   it('findOne includes participant user relations for authenticated public event and strips participant emails', async () => {
-    eventsRepository.findOne
-      .mockResolvedValueOnce({
-        id: 'event-id',
-        visibility: 'public',
-        organizerId: 'organizer-id',
-        participants: [{ userId: 'participant-id' }],
-      })
-      .mockResolvedValueOnce({
-        id: 'event-id',
-        visibility: 'public',
-        organizerId: 'organizer-id',
-        participants: [
-          {
-            userId: 'participant-id',
-            user: {
-              id: 'participant-id',
-              email: 'participant@example.com',
-              name: 'Participant',
-            },
+    eventsRepository.findOne.mockResolvedValueOnce({
+      id: 'event-id',
+      visibility: 'public',
+      organizerId: 'organizer-id',
+      participants: [
+        {
+          userId: 'participant-id',
+          user: {
+            id: 'participant-id',
+            email: 'participant@example.com',
+            name: 'Participant',
           },
-        ],
-      });
+        },
+      ],
+    });
 
     const result = await service.findOne('event-id', {
       sub: 'viewer-id',
       email: 'viewer@example.com',
     });
 
-    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(1, {
-      where: { id: 'event-id' },
-      relations: { organizer: true, participants: true },
-    });
-
-    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(2, {
+    expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
+    expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
       relations: { organizer: true, participants: { user: true } },
     });
@@ -396,28 +385,21 @@ describe('EventsService', () => {
   });
 
   it('findOne returns private event to participant', async () => {
-    eventsRepository.findOne
-      .mockResolvedValueOnce({
-        id: 'event-id',
-        visibility: 'private',
-        organizerId: 'organizer-id',
-        participants: [{ userId: 'participant-id' }],
-      })
-      .mockResolvedValueOnce({
-        id: 'event-id',
-        visibility: 'private',
-        organizerId: 'organizer-id',
-        participants: [
-          {
-            userId: 'participant-id',
-            user: {
-              id: 'participant-id',
-              email: 'participant@example.com',
-              name: 'Participant',
-            },
+    eventsRepository.findOne.mockResolvedValueOnce({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [
+        {
+          userId: 'participant-id',
+          user: {
+            id: 'participant-id',
+            email: 'participant@example.com',
+            name: 'Participant',
           },
-        ],
-      });
+        },
+      ],
+    });
 
     const result = await service.findOne('event-id', {
       sub: 'participant-id',
@@ -430,12 +412,8 @@ describe('EventsService', () => {
       }),
     );
 
-    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(1, {
-      where: { id: 'event-id' },
-      relations: { organizer: true, participants: true },
-    });
-
-    expect(eventsRepository.findOne).toHaveBeenNthCalledWith(2, {
+    expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
+    expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
       relations: { organizer: true, participants: { user: true } },
     });

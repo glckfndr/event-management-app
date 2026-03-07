@@ -64,9 +64,13 @@ export class EventsService {
   }
 
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
+    const relations = user
+      ? { organizer: true, participants: { user: true } }
+      : { organizer: true, participants: true };
+
     const event = await this.eventsRepository.findOne({
       where: { id },
-      relations: { organizer: true, participants: true },
+      relations,
     });
 
     if (!event) {
@@ -92,18 +96,7 @@ export class EventsService {
       }
     }
 
-    if (user) {
-      const eventWithParticipants = await this.eventsRepository.findOne({
-        where: { id },
-        relations: { organizer: true, participants: { user: true } },
-      });
-
-      if (eventWithParticipants) {
-        return this.stripParticipantEmails(eventWithParticipants);
-      }
-    }
-
-    return event;
+    return user ? this.stripParticipantEmails(event) : event;
   }
 
   private stripParticipantEmails(event: Event): Event {
