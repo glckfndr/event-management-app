@@ -36,12 +36,12 @@ export function EventDetailsActions({
                 type="button"
                 disabled={isBusy}
                 onClick={onLeave}
-                className="rounded-md border border-slate-200 bg-slate-100 px-3 py-1.5 text-lg font-semibold text-slate-600 hover:bg-slate-200 disabled:opacity-60"
+                className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60"
               >
                 Leave
               </Button>
             ) : isFull ? (
-              <span className="inline-block rounded-md bg-slate-200 px-3 py-1.5 text-lg font-semibold text-slate-600">
+              <span className="inline-block rounded-xl bg-slate-200 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700">
                 Full
               </span>
             ) : (
@@ -49,7 +49,7 @@ export function EventDetailsActions({
                 type="button"
                 disabled={isBusy}
                 onClick={onJoin}
-                className="rounded-md bg-emerald-600 px-3 py-1.5 text-lg font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                className="rounded-xl bg-emerald-600 px-4 py-2.5 text-[1.05rem] font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
               >
                 Join
               </Button>
@@ -62,7 +62,7 @@ export function EventDetailsActions({
                 type="button"
                 disabled={isBusy}
                 onClick={onToggleEdit}
-                className="inline-flex items-center gap-2 rounded-md border border-rose-300 bg-rose-100 px-3 py-1.5 text-lg font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-rose-100 px-4 py-2.5 text-[1.05rem] font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
               >
                 <EditIcon className="shrink-0" />
                 Edit
@@ -71,7 +71,7 @@ export function EventDetailsActions({
                 type="button"
                 disabled={isBusy}
                 onClick={onOpenDelete}
-                className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-red-100 px-4 py-2.5 text-[1.05rem] font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
               >
                 <TrashIcon className="shrink-0" />
                 Delete
@@ -80,7 +80,7 @@ export function EventDetailsActions({
                 type="button"
                 disabled={isBusy}
                 onClick={onBack}
-                className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+                className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
               >
                 ← Back
               </Button>
@@ -94,7 +94,7 @@ export function EventDetailsActions({
           type="button"
           disabled={isBusy}
           onClick={onBack}
-          className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-lg font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+          className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
         >
           ← Back
         </Button>

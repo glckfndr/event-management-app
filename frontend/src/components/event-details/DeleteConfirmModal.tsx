@@ -27,7 +27,7 @@ export function DeleteConfirmModal({
             type="button"
             disabled={isBusy}
             onClick={onCancel}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            className="rounded-xl border border-slate-300 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
           >
             Cancel
           </Button>
@@ -35,7 +35,7 @@ export function DeleteConfirmModal({
             type="button"
             disabled={isBusy}
             onClick={onConfirm}
-            className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-100 px-3 py-1.5 text-lg font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-red-100 px-4 py-2.5 text-[1.05rem] font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
           >
             <TrashIcon className="shrink-0" />
             Delete
