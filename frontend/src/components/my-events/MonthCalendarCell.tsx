@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import type { EventItem } from "../../types/event";
 import { Button } from "../ui/Button";
 import { formatEventLabel, toLocalDateKey } from "./calendarUtils";
@@ -21,9 +22,24 @@ export function MonthCalendarCell({
 }: MonthCalendarCellProps) {
   const dateKey = toLocalDateKey(date);
 
+  const handleCellKeyDown = (eventKeyDown: KeyboardEvent<HTMLDivElement>) => {
+    if (eventKeyDown.target !== eventKeyDown.currentTarget) {
+      return;
+    }
+
+    if (eventKeyDown.key === "Enter" || eventKeyDown.key === " ") {
+      eventKeyDown.preventDefault();
+      onSelect(dateKey);
+    }
+  };
+
   return (
     <div
       onClick={() => onSelect(dateKey)}
+      onKeyDown={handleCellKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Select ${date.toLocaleDateString()}`}
       className={`min-h-[6.75rem] cursor-pointer border-r border-t border-slate-200 p-2 last:border-r-0 ${
         isSelected ? "bg-indigo-50 ring-2 ring-inset ring-indigo-500" : ""
       }`}
