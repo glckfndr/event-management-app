@@ -217,15 +217,17 @@ export function EventDetailsPage() {
       return;
     }
 
-    const normalizedFormValues = normalizeEventCoreValues(editForm);
+    const {
+      title: normalizedTitle,
+      description: normalizedDescription,
+      date: normalizedDate,
+      time: normalizedTime,
+      location: normalizedLocation,
+      capacity: normalizedCapacity,
+      visibility: normalizedVisibility,
+    } = normalizeEventCoreValues(editForm);
 
-    const normalizedTitle = normalizedFormValues.title;
-    const normalizedDescription = normalizedFormValues.description;
-    const normalizedLocation = normalizedFormValues.location;
-
-    const parsedDateTime = new Date(
-      `${normalizedFormValues.date}T${normalizedFormValues.time}`,
-    );
+    const parsedDateTime = new Date(`${normalizedDate}T${normalizedTime}`);
 
     if (Number.isNaN(parsedDateTime.getTime())) {
       setError("Date or time is invalid");
@@ -238,9 +240,7 @@ export function EventDetailsPage() {
     }
 
     const capacityValue =
-      normalizedFormValues.capacity === ""
-        ? null
-        : Number(normalizedFormValues.capacity);
+      normalizedCapacity === "" ? null : Number(normalizedCapacity);
 
     if (
       capacityValue != null &&
@@ -262,7 +262,7 @@ export function EventDetailsPage() {
               eventDate: parsedDateTime.toISOString(),
               location: normalizedLocation,
               capacity: capacityValue,
-              visibility: normalizedFormValues.visibility,
+              visibility: normalizedVisibility,
             },
           }),
         ).unwrap(),
