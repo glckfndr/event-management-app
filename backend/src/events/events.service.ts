@@ -11,11 +11,13 @@ import { Event, EventVisibility } from './entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Participant } from '../participants/entities/participant.entity';
-
-type AuthenticatedUser = {
-  sub: string;
-  email: string;
-};
+import {
+  assertPrivateEventAccess,
+  AuthenticatedUser,
+  buildFindOneRelations,
+  mergeAndSortCalendarEvents,
+  sanitizeParticipantEmails,
+} from './events.service.helpers';
 
 @Injectable()
 export class EventsService {
@@ -30,7 +32,7 @@ export class EventsService {
     return this.eventsRepository.find({
       where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
-      relations: { organizer: true },
+      relations: { organizer: true, participants: true },
     });
   }
 
@@ -46,53 +48,24 @@ export class EventsService {
       }),
     ]);
 
-    const joinedEvents = participantRows
-      .map((participant) => participant.event)
-      .filter((event): event is Event => Boolean(event));
-
-    const eventsById = new Map<string, Event>();
-
-    for (const event of [...organizedEvents, ...joinedEvents]) {
-      eventsById.set(event.id, event);
-    }
-
-    return [...eventsById.values()].sort(
-      (first, second) =>
-        new Date(first.eventDate).getTime() -
-        new Date(second.eventDate).getTime(),
-    );
+    return mergeAndSortCalendarEvents(organizedEvents, participantRows);
   }
 
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
+    const relations = buildFindOneRelations(user);
+
     const event = await this.eventsRepository.findOne({
       where: { id },
-      relations: { organizer: true, participants: true },
+      relations,
     });
 
     if (!event) {
       throw new NotFoundException('Event not found');
     }
 
-    if (event.visibility === EventVisibility.PRIVATE) {
-      if (!user) {
-        throw new ForbiddenException(
-          'Authentication is required to access private events',
-        );
-      }
+    assertPrivateEventAccess(event, user);
 
-      const isOrganizer = event.organizerId === user.sub;
-      const isParticipant = event.participants.some(
-        (participant) => participant.userId === user.sub,
-      );
-
-      if (!isOrganizer && !isParticipant) {
-        throw new ForbiddenException(
-          'You do not have access to this private event',
-        );
-      }
-    }
-
-    return event;
+    return user ? sanitizeParticipantEmails(event) : event;
   }
 
   async create(

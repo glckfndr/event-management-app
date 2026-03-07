@@ -1,1 +1,70 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @import "tailwindcss";
+
+body {
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.event-datepicker {
+  font-family: inherit;
+  font-size: 1.1rem;
+  border-radius: 0.75rem;
+  background-color: #eff6ff;
+}
+
+.event-datepicker .react-datepicker__header {
+  padding-top: 0.75rem;
+  background-color: #dbeafe;
+}
+
+.event-datepicker .react-datepicker__current-month,
+.event-datepicker .react-datepicker-time__header,
+.event-datepicker .react-datepicker-year-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.event-datepicker .react-datepicker__day-name,
+.event-datepicker .react-datepicker__day,
+.event-datepicker .react-datepicker__time-name {
+  font-size: 1.06rem;
+}
+
+.event-datepicker
+  .react-datepicker__time-container
+  .react-datepicker__time
+  .react-datepicker__time-box
+  ul.react-datepicker__time-list
+  li.react-datepicker__time-list-item {
+  font-size: 1.06rem;
+  line-height: 1.4;
+}
+
+.event-datepicker .react-datepicker__month-container,
+.event-datepicker .react-datepicker__time-container .react-datepicker__time,
+.event-datepicker .react-datepicker__month,
+.event-datepicker .react-datepicker__week {
+  background-color: #eff6ff;
+}
+
+.event-timepicker-popper
+  .react-datepicker--time-only
+  .react-datepicker__time-container {
+  width: 125%;
+}
+
+.event-timepicker-popper
+  .react-datepicker--time-only
+  .react-datepicker__time
+  .react-datepicker__time-box {
+  width: 100%;
+}
