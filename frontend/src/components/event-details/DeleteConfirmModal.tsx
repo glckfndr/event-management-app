@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "../ui/Button";
 import { TrashIcon } from "../ui/icons/TrashIcon";
 
@@ -12,9 +13,33 @@ export function DeleteConfirmModal({
   onCancel,
   onConfirm,
 }: DeleteConfirmModalProps) {
+  useEffect(() => {
+    const handleEscape = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === "Escape" && !isBusy) {
+        onCancel();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isBusy, onCancel]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+      onClick={() => {
+        if (!isBusy) {
+          onCancel();
+        }
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg"
+        onClick={(clickEvent) => clickEvent.stopPropagation()}
+      >
         <h3 className="text-lg font-semibold text-slate-900">
           Confirm deletion
         </h3>
