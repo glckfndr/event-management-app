@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import type { EventItem } from "../../types/event";
 import { Button } from "../ui/Button";
 import { toLocalDateKey } from "./calendarUtils";
@@ -20,9 +21,24 @@ export function WeekCalendarCard({
   const dateKey = toLocalDateKey(date);
   const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
 
+  const handleCardKeyDown = (eventKeyDown: KeyboardEvent<HTMLDivElement>) => {
+    if (eventKeyDown.target !== eventKeyDown.currentTarget) {
+      return;
+    }
+
+    if (eventKeyDown.key === "Enter" || eventKeyDown.key === " ") {
+      eventKeyDown.preventDefault();
+      onSelect(dateKey);
+    }
+  };
+
   return (
     <div
       onClick={() => onSelect(dateKey)}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={`Select ${dayName} ${date.toLocaleDateString()}`}
       className={`min-h-[6.75rem] cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 ${
         isSelected ? "ring-2 ring-indigo-500" : ""
       }`}
