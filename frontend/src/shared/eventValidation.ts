@@ -14,7 +14,7 @@ export const EVENT_VALIDATION_MESSAGES = {
   locationRequired: "Location is required",
   locationMinLength: `Location must be at least ${EVENT_LOCATION_MIN_LENGTH} characters`,
   capacityPositive: "Capacity must be a positive whole number",
-  createCapacityPositive: "Capacity must be a positive number",
+  createCapacityPositive: "Capacity must be a positive whole number",
 };
 
 export type EventCoreValidationValues = {
