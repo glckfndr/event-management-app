@@ -113,6 +113,18 @@ npm run lint
 npm run test:run
 ```
 
+---
+
+## Security Notes
+
+- The frontend currently persists access tokens in `localStorage` for session persistence.
+- Tradeoff: this increases token exposure risk in case of XSS.
+- Current mitigations:
+  - Validate and sanitize inputs via DTO/form validation.
+  - Keep JWT expiration short (`JWT_EXPIRES_IN`).
+  - Avoid exposing participant emails in event details responses.
+- Planned improvement: migrate to httpOnly cookie-based auth/session flow with CSRF protections.
+
 ## Architecture Overview
 
 The application follows a modular full-stack architecture with clear separation of concerns between frontend and backend.
