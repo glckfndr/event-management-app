@@ -8,6 +8,7 @@ The system allows users to:
 
 - Register and authenticate securely
 - Discover and join public events
+- Access private events only when allowed (organizer or participant)
 - Create, edit, and delete their own events
 - Manage personal schedules using a calendar view
 
@@ -39,8 +40,10 @@ The system allows users to:
 
 - Only authenticated users can create events.
 - Users cannot join the same event twice (unique participant constraint is enforced).
-- Event capacity is stored for events but is not yet enforced when users join.
+- Event capacity is enforced when provided; omitted capacity means unlimited participants.
 - Only organizers can edit or delete their events.
+- Private events are accessible only to authenticated organizers or participants.
+- Participant email addresses are not exposed in event detail responses.
 
 ---
 
@@ -63,6 +66,52 @@ The system allows users to:
 
 - Docker
 - Docker Compose
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+- PostgreSQL 16+ (if running without Docker)
+
+### Backend (NestJS)
+
+```bash
+cd backend
+npm install
+npm run migration:run
+npm run start:dev
+```
+
+Backend runs on `http://localhost:3001` by default.
+
+### Frontend (React)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs on `http://localhost:8090` by default.
+If needed, set `VITE_API_URL` to point to backend API.
+
+### Tests and Lint
+
+```bash
+# backend
+cd backend
+npm run lint
+npm run test
+
+# frontend
+cd frontend
+npm run lint
+npm run test:run
+```
 
 ## Architecture Overview
 
