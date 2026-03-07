@@ -2,17 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { fetchMyEvents } from "../features/events/eventsSlice";
+import { MonthCalendarCell } from "../components/my-events/MonthCalendarCell";
+import { WeekCalendarCard } from "../components/my-events/WeekCalendarCard";
 import { Button } from "../components/ui/Button";
-
-const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const toLocalDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
+import {
+  groupEventsByDate,
+  toLocalDateKey,
+  weekDays,
+} from "../components/my-events/calendarUtils";
 
 export function MyEventsPage() {
   const navigate = useNavigate();
@@ -29,32 +26,7 @@ export function MyEventsPage() {
     void dispatch(fetchMyEvents());
   }, [dispatch]);
 
-  const eventsByDate = useMemo(() => {
-    const grouped = myEvents.reduce<Record<string, typeof myEvents>>(
-      (accumulator, event) => {
-        const dateKey = toLocalDateKey(new Date(event.eventDate));
-
-        if (!accumulator[dateKey]) {
-          accumulator[dateKey] = [];
-        }
-
-        accumulator[dateKey].push(event);
-
-        return accumulator;
-      },
-      {},
-    );
-
-    Object.values(grouped).forEach((events) => {
-      events.sort(
-        (first, second) =>
-          new Date(first.eventDate).getTime() -
-          new Date(second.eventDate).getTime(),
-      );
-    });
-
-    return grouped;
-  }, [myEvents]);
+  const eventsByDate = useMemo(() => groupEventsByDate(myEvents), [myEvents]);
 
   const monthCells = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -92,7 +64,6 @@ export function MyEventsPage() {
     });
   }, [currentMonth]);
 
-  const visibleCells = viewMode === "month" ? monthCells : weekCells;
   const hasAnyEvents = useMemo(
     () => Object.keys(eventsByDate).length > 0,
     [eventsByDate],
@@ -114,113 +85,10 @@ export function MyEventsPage() {
     );
   };
 
-  const renderEventLabel = (eventDate: string, eventTitle: string) => {
-    const time = new Date(eventDate).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
+  const openEventFromCalendar = (eventId: string) => {
+    void navigate(`/events/${eventId}`, {
+      state: { from: "/my-events" },
     });
-
-    return `${time} - ${eventTitle}`;
-  };
-
-  const renderCell = (date: Date) => {
-    const dateKey = toLocalDateKey(date);
-    const events = eventsByDate[dateKey] ?? [];
-    const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
-    const isSelected = selectedDateKey === dateKey;
-
-    return (
-      <div
-        key={`${dateKey}-${viewMode}`}
-        onClick={() => setSelectedDateKey(dateKey)}
-        className={`min-h-[6.75rem] cursor-pointer border-r border-t border-slate-200 p-2 last:border-r-0 ${
-          isSelected ? "bg-indigo-50 ring-2 ring-inset ring-indigo-500" : ""
-        }`}
-      >
-        <p
-          className={`text-lg font-bold ${isCurrentMonth ? "text-slate-800" : "text-slate-400"}`}
-        >
-          {date.getDate()}
-        </p>
-
-        <div className="mt-2 space-y-1">
-          {events.slice(0, 2).map((event) => (
-            <Button
-              type="button"
-              key={event.id}
-              onClick={(clickEvent) => {
-                clickEvent.stopPropagation();
-                void navigate(`/events/${event.id}`, {
-                  state: { from: "/my-events" },
-                });
-              }}
-              className="w-full truncate rounded bg-indigo-100 px-2 py-1 text-left text-lg text-indigo-700 hover:bg-indigo-200"
-              title={renderEventLabel(event.eventDate, event.title)}
-            >
-              {renderEventLabel(event.eventDate, event.title)}
-            </Button>
-          ))}
-
-          {events.length > 2 ? (
-            <p className="text-lg text-slate-500">+{events.length - 2} more</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  };
-
-  const renderWeekCard = (date: Date) => {
-    const dateKey = toLocalDateKey(date);
-    const events = eventsByDate[dateKey] ?? [];
-    const isSelected = selectedDateKey === dateKey;
-    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
-
-    return (
-      <div
-        key={`${dateKey}-week`}
-        onClick={() => setSelectedDateKey(dateKey)}
-        className={`min-h-[6.75rem] cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 ${
-          isSelected ? "ring-2 ring-indigo-500" : ""
-        }`}
-      >
-        <p className="text-lg font-bold text-slate-800">{dayName}</p>
-        <p
-          className={`mt-1 text-lg ${isSelected ? "text-indigo-600" : "text-slate-500"}`}
-        >
-          {date.getDate()}
-        </p>
-
-        <div className="mt-3 space-y-2">
-          {events.length === 0 ? (
-            <p className="text-lg text-slate-500">No events</p>
-          ) : (
-            events.slice(0, 1).map((event) => {
-              const time = new Date(event.eventDate).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-
-              return (
-                <Button
-                  type="button"
-                  key={event.id}
-                  onClick={(clickEvent) => {
-                    clickEvent.stopPropagation();
-                    void navigate(`/events/${event.id}`, {
-                      state: { from: "/my-events" },
-                    });
-                  }}
-                  className="w-full rounded-lg bg-indigo-100 px-3 py-2 text-left text-indigo-600 hover:bg-indigo-200"
-                >
-                  <p className="text-lg font-semibold">{time}</p>
-                  <p className="truncate text-lg">{event.title}</p>
-                </Button>
-              );
-            })
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -309,11 +177,40 @@ export function MyEventsPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-7">{visibleCells.map(renderCell)}</div>
+          <div className="grid grid-cols-7">
+            {monthCells.map((date) => {
+              const dateKey = toLocalDateKey(date);
+
+              return (
+                <MonthCalendarCell
+                  key={`${dateKey}-month`}
+                  date={date}
+                  events={eventsByDate[dateKey] ?? []}
+                  isCurrentMonth={date.getMonth() === currentMonth.getMonth()}
+                  isSelected={selectedDateKey === dateKey}
+                  onSelect={setSelectedDateKey}
+                  onOpenEvent={openEventFromCalendar}
+                />
+              );
+            })}
+          </div>
         </div>
       ) : (
         <div className="mt-6 grid gap-4 md:grid-cols-7">
-          {weekCells.map(renderWeekCard)}
+          {weekCells.map((date) => {
+            const dateKey = toLocalDateKey(date);
+
+            return (
+              <WeekCalendarCard
+                key={`${dateKey}-week`}
+                date={date}
+                events={eventsByDate[dateKey] ?? []}
+                isSelected={selectedDateKey === dateKey}
+                onSelect={setSelectedDateKey}
+                onOpenEvent={openEventFromCalendar}
+              />
+            );
+          })}
         </div>
       )}
     </div>
