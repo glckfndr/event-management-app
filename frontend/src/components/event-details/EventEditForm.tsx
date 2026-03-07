@@ -52,6 +52,7 @@ export function EventEditForm({
         label="Description"
         required
         id="edit-description"
+        rows={4}
         value={values.description}
         onChange={(inputEvent) =>
           onFieldChange("description", inputEvent.target.value)

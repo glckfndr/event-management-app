@@ -130,16 +130,19 @@ export function CreateEventPage() {
   });
 
   return (
-    <div className="max-w-4xl rounded-2xl border border-slate-200 bg-white p-8">
-      <h2 className="text-4xl font-bold text-slate-900">Create New Event</h2>
-      <p className="mt-3 text-lg text-slate-500">
+    <div className="max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 md:p-8">
+      <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">
+        Create New Event
+      </h2>
+      <p className="mt-2 text-base text-slate-500 md:text-lg">
         Fill in the details to create an amazing event
       </p>
 
-      <form className="mt-8 grid gap-6" onSubmit={onSubmit}>
+      <form className="mt-6 grid gap-5" onSubmit={onSubmit}>
         <EventTextInputField
           label="Event Title"
           required
+          dense
           errorMessage={errors.title?.message}
           placeholder="e.g., Tech Conference 2025"
           {...register("title")}
@@ -148,13 +151,14 @@ export function CreateEventPage() {
         <EventTextareaField
           label="Description"
           required
+          dense
           errorMessage={errors.description?.message}
           placeholder="Describe what makes your event special..."
-          rows={4}
+          rows={3}
           {...register("description")}
         />
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <Controller
             name="eventDate"
             control={control}
@@ -162,6 +166,7 @@ export function CreateEventPage() {
               <EventDateTimePickerField
                 label="Date"
                 required
+                dense
                 errorMessage={errors.eventDate?.message}
                 mode="date"
                 value={field.value}
@@ -178,6 +183,7 @@ export function CreateEventPage() {
               <EventDateTimePickerField
                 label="Time"
                 required
+                dense
                 errorMessage={errors.eventTime?.message}
                 mode="time"
                 value={field.value}
@@ -191,6 +197,7 @@ export function CreateEventPage() {
         <EventTextInputField
           label="Location"
           required
+          dense
           errorMessage={errors.location?.message}
           placeholder="e.g., Convention Center, San Francisco"
           {...register("location")}
@@ -198,6 +205,7 @@ export function CreateEventPage() {
 
         <EventTextInputField
           label="Capacity (optional)"
+          dense
           errorMessage={errors.capacity?.message}
           hint={
             <p className="text-sm text-slate-500">
@@ -212,7 +220,7 @@ export function CreateEventPage() {
         />
 
         <VisibilityFieldset
-          className="grid gap-3"
+          className="grid gap-2"
           publicControl={
             <input type="radio" value="public" {...register("visibility")} />
           }
@@ -222,7 +230,7 @@ export function CreateEventPage() {
           errorMessage={errors.visibility?.message}
         />
 
-        <div className="mt-2 grid gap-3 md:grid-cols-2">
+        <div className="mt-1 grid gap-2 md:grid-cols-2">
           {submitError ? (
             <FormErrorText className="md:col-span-2">
               {submitError}
@@ -231,14 +239,14 @@ export function CreateEventPage() {
           <Button
             type="button"
             onClick={() => navigate("/events")}
-            className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-xl border border-slate-300 px-4 py-2.5 text-base font-semibold text-slate-700 hover:bg-slate-50"
           >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={status === "loading"}
-            className="rounded-xl bg-indigo-600 px-4 py-3 text-[1.05rem] font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-base font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
           >
             {status === "loading" ? "Creating..." : "Create Event"}
           </Button>

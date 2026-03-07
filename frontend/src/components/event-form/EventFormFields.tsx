@@ -17,6 +17,7 @@ type EventTextInputFieldProps = {
   required?: boolean;
   errorMessage?: string;
   hint?: ReactNode;
+  dense?: boolean;
 } & Omit<ComponentPropsWithoutRef<"input">, "className">;
 
 export function EventTextInputField({
@@ -24,6 +25,7 @@ export function EventTextInputField({
   required,
   errorMessage,
   hint,
+  dense,
   ...inputProps
 }: EventTextInputFieldProps) {
   return (
@@ -34,7 +36,7 @@ export function EventTextInputField({
       hint={hint}
     >
       <input
-        className="rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
+        className={`rounded-xl border border-slate-300 px-4 ${dense ? "py-2" : "py-3"} text-[1.05rem] text-slate-700 placeholder:text-slate-400`}
         {...inputProps}
       />
     </FormField>
@@ -45,18 +47,20 @@ type EventTextareaFieldProps = {
   label: string;
   required?: boolean;
   errorMessage?: string;
+  dense?: boolean;
 } & Omit<ComponentPropsWithoutRef<"textarea">, "className">;
 
 export function EventTextareaField({
   label,
   required,
   errorMessage,
+  dense,
   ...textareaProps
 }: EventTextareaFieldProps) {
   return (
     <FormField label={label} required={required} errorMessage={errorMessage}>
       <textarea
-        className="min-h-32 rounded-xl border border-slate-300 px-4 py-3 text-[1.05rem] text-slate-700 placeholder:text-slate-400"
+        className={`rounded-xl border border-slate-300 px-4 ${dense ? "py-2" : "py-3"} text-[1.05rem] text-slate-700 placeholder:text-slate-400`}
         {...textareaProps}
       />
     </FormField>
@@ -67,6 +71,7 @@ type EventDateTimePickerFieldProps = {
   label: string;
   required?: boolean;
   errorMessage?: string;
+  dense?: boolean;
   mode: "date" | "time";
   value: string;
   onChange: (value: string) => void;
@@ -78,6 +83,7 @@ export function EventDateTimePickerField({
   label,
   required,
   errorMessage,
+  dense,
   mode,
   value,
   onChange,
@@ -110,7 +116,7 @@ export function EventDateTimePickerField({
         showTimeSelectOnly={!isDateMode}
         timeIntervals={15}
         timeCaption="Time"
-        className="w-full rounded-xl border border-slate-300 px-4 py-3 pr-12 text-[1.05rem] text-slate-700"
+        className={`w-full rounded-xl border border-slate-300 px-4 ${dense ? "py-2" : "py-3"} pr-12 text-[1.05rem] text-slate-700`}
         calendarClassName="event-datepicker"
         popperClassName={
           isDateMode ? "event-datepicker-popper" : "event-timepicker-popper"
