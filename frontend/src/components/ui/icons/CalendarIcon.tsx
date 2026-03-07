@@ -1,10 +1,10 @@
 import type { IconProps } from "../../../types/ui";
 
-export function EditIcon({ className }: IconProps) {
+export function CalendarIcon({ className }: IconProps) {
   return (
     <svg
-      width="18"
-      height="18"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -12,19 +12,27 @@ export function EditIcon({ className }: IconProps) {
       className={className}
     >
       <path
-        d="M4 20L8.5 19L19 8.5L15.5 5L5 15.5L4 20Z"
+        d="M8 3V6"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
       <path
-        d="M13.5 7L17 10.5"
+        d="M16 3V6"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
+      <rect
+        x="3"
+        y="5"
+        width="18"
+        height="16"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path d="M3 10H21" stroke="currentColor" strokeWidth="2" />
     </svg>
   );
 }
