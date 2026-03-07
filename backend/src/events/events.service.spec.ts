@@ -352,16 +352,10 @@ describe('EventsService', () => {
       relations: { organizer: true, participants: { user: true } },
     });
 
-    expect(result).toEqual(
+    expect(result.participants?.[0]?.user).toEqual(
       expect.objectContaining({
-        participants: [
-          expect.objectContaining({
-            user: expect.objectContaining({
-              id: 'participant-id',
-              name: 'Participant',
-            }),
-          }),
-        ],
+        id: 'participant-id',
+        name: 'Participant',
       }),
     );
 
