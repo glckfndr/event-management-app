@@ -271,6 +271,70 @@ describe('EventsService', () => {
     expect(result.tags).toHaveLength(2);
   });
 
+  it('update resolves tags and applies them for organizer', async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      title: 'Old title',
+      tags: [],
+    });
+
+    tagsRepository.find.mockResolvedValue([{ id: 'tag-1', name: 'tech' }]);
+    tagsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    tagsRepository.save.mockResolvedValue([{ id: 'tag-2', name: 'art' }]);
+
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+
+    const result = await service.update(
+      'event-id',
+      {
+        title: 'Updated title',
+        eventDate: futureDate,
+        tags: ['Tech', 'Art'],
+      },
+      { sub: 'organizer-id', email: 'organizer@example.com' },
+    );
+
+    expect(tagsRepository.find).toHaveBeenCalledWith({
+      where: [{ name: 'tech' }, { name: 'art' }],
+    });
+    expect(eventsRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Updated title',
+        tags: [
+          expect.objectContaining({ name: 'tech' }),
+          expect.objectContaining({ name: 'art' }),
+        ],
+      }),
+    );
+    expect(result.tags).toHaveLength(2);
+  });
+
+  it('update throws when non-organizer tries to update tags', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      tags: [],
+    });
+
+    await expect(
+      service.update(
+        'event-id',
+        { tags: ['tech'] },
+        { sub: 'another-user', email: 'another@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    expect(tagsRepository.find).not.toHaveBeenCalled();
+    expect(eventsRepository.save).not.toHaveBeenCalled();
+  });
+
   it('findAll applies tags filter when provided', async () => {
     eventsRepository.find.mockResolvedValue([]);
 
