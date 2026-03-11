@@ -22,6 +22,8 @@ import {
 
 @Injectable()
 export class EventsService {
+  private static readonly MAX_FILTER_TAGS = 5;
+
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
@@ -112,10 +114,7 @@ export class EventsService {
     updateEventDto: UpdateEventDto,
     user: AuthenticatedUser,
   ): Promise<Event> {
-    const event = await this.eventsRepository.findOne({
-      where: { id },
-      relations: { tags: true },
-    });
+    const event = await this.eventsRepository.findOne({ where: { id } });
 
     if (!event) {
       throw new NotFoundException('Event not found');
@@ -260,7 +259,7 @@ export class EventsService {
       return [];
     }
 
-    return [
+    const normalizedTags = [
       ...new Set(
         tagsFilter
           .split(',')
@@ -268,6 +267,14 @@ export class EventsService {
           .filter(Boolean),
       ),
     ];
+
+    if (normalizedTags.length > EventsService.MAX_FILTER_TAGS) {
+      throw new BadRequestException(
+        `Maximum ${EventsService.MAX_FILTER_TAGS} filter tags are allowed`,
+      );
+    }
+
+    return normalizedTags;
   }
 
   private async resolveTags(tags?: string[]): Promise<Tag[]> {
@@ -278,6 +285,10 @@ export class EventsService {
     const normalizedTags = [
       ...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
     ];
+
+    if (normalizedTags.length === 0) {
+      return [];
+    }
 
     if (normalizedTags.length > 5) {
       throw new BadRequestException('Maximum 5 tags are allowed per event');
@@ -298,9 +309,26 @@ export class EventsService {
         .filter((tag): tag is Tag => Boolean(tag));
     }
 
-    const newTags = await this.tagsRepository.save(
-      missingNames.map((name) => this.tagsRepository.create({ name })),
-    );
+    let newTags: Tag[] = [];
+
+    try {
+      newTags = await this.tagsRepository.save(
+        missingNames.map((name) => this.tagsRepository.create({ name })),
+      );
+    } catch {
+      // Another request may have inserted the same normalized tag names.
+      const refreshedTags = await this.tagsRepository.find({
+        where: normalizedTags.map((name) => ({ name })),
+      });
+
+      const refreshedByName = new Map(
+        refreshedTags.map((tag) => [tag.name, tag]),
+      );
+
+      return normalizedTags
+        .map((name) => refreshedByName.get(name))
+        .filter((tag): tag is Tag => Boolean(tag));
+    }
 
     for (const tag of newTags) {
       existingByName.set(tag.name, tag);

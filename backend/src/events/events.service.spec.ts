@@ -192,6 +192,36 @@ describe('EventsService', () => {
     expect(eventsRepository.save).not.toHaveBeenCalled();
   });
 
+  it('update without tags uses lean lookup and does not resolve tags', async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      title: 'Old title',
+      location: 'Kyiv',
+    });
+
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+
+    await service.update(
+      'event-id',
+      {
+        title: 'Updated title',
+        eventDate: futureDate,
+      },
+      { sub: 'organizer-id', email: 'organizer@example.com' },
+    );
+
+    expect(eventsRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 'event-id' },
+    });
+    expect(tagsRepository.find).not.toHaveBeenCalled();
+    expect(tagsRepository.save).not.toHaveBeenCalled();
+  });
+
   it('create stores null capacity when omitted (unlimited)', async () => {
     const user = { sub: 'user-id', email: 'user@example.com' };
     const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
@@ -269,6 +299,69 @@ describe('EventsService', () => {
       }),
     );
     expect(result.tags).toHaveLength(2);
+  });
+
+  it('create retries tags lookup when save conflicts', async () => {
+    const user = { sub: 'user-id', email: 'user@example.com' };
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    tagsRepository.find
+      .mockResolvedValueOnce([{ id: 'tag-1', name: 'tech' }])
+      .mockResolvedValueOnce([
+        { id: 'tag-1', name: 'tech' },
+        { id: 'tag-2', name: 'art' },
+      ]);
+    tagsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    tagsRepository.save.mockRejectedValue(new Error('duplicate key value'));
+
+    eventsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+
+    const result = await service.create(
+      {
+        title: 'Conflict-safe tagged event',
+        eventDate: futureDate,
+        location: 'Kyiv',
+        tags: ['Tech', 'Art'],
+      },
+      user,
+    );
+
+    expect(tagsRepository.save).toHaveBeenCalledTimes(1);
+    expect(tagsRepository.find).toHaveBeenCalledTimes(2);
+    expect(result.tags).toHaveLength(2);
+  });
+
+  it('create ignores whitespace-only tags input', async () => {
+    const user = { sub: 'user-id', email: 'user@example.com' };
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    eventsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+
+    const result = await service.create(
+      {
+        title: 'Whitespace tags event',
+        eventDate: futureDate,
+        location: 'Kyiv',
+        tags: [' ', ''],
+      },
+      user,
+    );
+
+    expect(tagsRepository.find).not.toHaveBeenCalled();
+    expect(tagsRepository.save).not.toHaveBeenCalled();
+    expect(result.tags).toEqual([]);
   });
 
   it('update resolves tags and applies them for organizer', async () => {
@@ -367,6 +460,14 @@ describe('EventsService', () => {
       participants: true,
       tags: true,
     });
+  });
+
+  it('findAll throws when tags filter exceeds max allowed tags', async () => {
+    await expect(service.findAll('t1,t2,t3,t4,t5,t6')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(eventsRepository.find).not.toHaveBeenCalled();
   });
 
   it('getCalendarForUser merges organized and joined events, deduplicates by id, and sorts by eventDate', async () => {

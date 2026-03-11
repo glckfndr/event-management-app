@@ -1,0 +1,259 @@
+{
+  "info": {
+    "name": "Event Management - Events Tags API",
+    "_postman_id": "f4ee67df-e0bb-49f5-baf6-52788e7b7a16",
+    "description": "Postman collection for issue #7: create/update events with tags and filter public events by tags.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "email", "value": "organizer@example.com" },
+    { "key": "password", "value": "MyStrongPass123!" },
+    { "key": "outsiderEmail", "value": "outsider@example.com" },
+    { "key": "outsiderPassword", "value": "MyStrongPass123!" },
+    { "key": "token", "value": "" },
+    { "key": "outsiderToken", "value": "" },
+    { "key": "eventId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login (set token)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "const token = body.accessToken || body.token;",
+              "pm.expect(token).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('token', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Create with tags (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["events"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman Tagged Event\",\n  \"description\": \"Event created from Postman collection\",\n  \"eventDate\": \"2027-01-15T12:00:00.000Z\",\n  \"location\": \"Kyiv\",\n  \"visibility\": \"public\",\n  \"tags\": [\"Tech\", \"Business\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body).to.have.property('id');",
+              "pm.expect(body).to.have.property('tags');",
+              "pm.expect(body.tags.length).to.be.greaterThan(0);",
+              "pm.collectionVariables.set('eventId', body.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Update tags (200)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/events/{{eventId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["events", "{{eventId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tags\": [\"Art\", \"Music\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body).to.have.property('tags');",
+              "pm.expect(body.tags.map(t => t.name)).to.include('art');",
+              "pm.expect(body.tags.map(t => t.name)).to.include('music');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login as outsider (set outsiderToken)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{outsiderEmail}}\",\n  \"password\": \"{{outsiderPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "const token = body.accessToken || body.token;",
+              "pm.expect(token).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('outsiderToken', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - List by tags filter (200)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/events?tags=art,music",
+          "host": ["{{baseUrl}}"],
+          "path": ["events"],
+          "query": [{ "key": "tags", "value": "art,music" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body).to.be.an('array');",
+              "if (body.length > 0) {",
+              "  pm.expect(body[0]).to.have.property('tags');",
+              "}",
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Update tags by non-organizer (403)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{outsiderToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/events/{{eventId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["events", "{{eventId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tags\": [\"security\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 403', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Validation max 5 tags (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["events"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Too many tags event\",\n  \"description\": \"Should fail validation\",\n  \"eventDate\": \"2027-02-01T12:00:00.000Z\",\n  \"location\": \"Kyiv\",\n  \"tags\": [\"t1\", \"t2\", \"t3\", \"t4\", \"t5\", \"t6\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 400', function () {",
+              "  pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -62,6 +63,10 @@ export class CreateEventDto {
   @IsArray()
   @ArrayMaxSize(5)
   @IsString({ each: true })
+  @Matches(/\S/, {
+    each: true,
+    message: 'Each tag must contain at least one non-whitespace character',
+  })
   @MaxLength(50, { each: true })
   tags?: string[];
 }
