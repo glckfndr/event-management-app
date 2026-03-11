@@ -83,6 +83,7 @@ The system allows users to:
 2. Create root `.env` from `.env.example`.
 3. Build and start all services.
 4. Run backend migrations once containers are up.
+5. Run seed script to populate demo users and events.
 
 ```bash
 # from repository root
@@ -94,6 +95,7 @@ Copy-Item .env.example .env
 
 docker compose up --build
 docker compose exec backend npm run migration:run
+docker compose exec backend npm run seed
 ```
 
 App URLs:
@@ -107,7 +109,13 @@ If you run Docker in background, use:
 ```bash
 docker compose up -d --build
 docker compose exec backend npm run migration:run
+docker compose exec backend npm run seed
 ```
+
+Seed notes:
+
+- `npm run seed` creates demo users and events when database is empty.
+- Optional env vars for custom demo passwords: `SEED_ALICE_PASSWORD`, `SEED_BOB_PASSWORD`.
 
 ### Backend (NestJS)
 
@@ -122,6 +130,7 @@ Copy-Item backend/.env.example backend/.env
 cd backend
 npm install
 npm run migration:run
+npm run seed
 npm run start:dev
 ```
 
