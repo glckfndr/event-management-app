@@ -17,6 +17,24 @@ type EventTagsFieldProps = {
 
 const normalizeTag = (tag: string) => tag.trim();
 
+const dedupeTagsCaseInsensitive = (tags: string[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const tag of tags.map(normalizeTag).filter(Boolean)) {
+    const canonical = tag.toLowerCase();
+
+    if (seen.has(canonical)) {
+      continue;
+    }
+
+    seen.add(canonical);
+    result.push(tag);
+  }
+
+  return result;
+};
+
 export function EventTagsField({
   label = "Tags",
   errorMessage,
@@ -26,15 +44,12 @@ export function EventTagsField({
 }: EventTagsFieldProps) {
   const [customTag, setCustomTag] = useState("");
 
-  const selectedTags = useMemo(
-    () => [...new Set(value.map(normalizeTag).filter(Boolean))],
-    [value],
-  );
+  const selectedTags = useMemo(() => dedupeTagsCaseInsensitive(value), [value]);
 
   const canAddMore = selectedTags.length < EVENT_MAX_TAGS;
 
   const setNextTags = (nextTags: string[]) => {
-    onChange([...new Set(nextTags.map(normalizeTag).filter(Boolean))]);
+    onChange(dedupeTagsCaseInsensitive(nextTags));
   };
 
   const togglePresetTag = (tag: string) => {
