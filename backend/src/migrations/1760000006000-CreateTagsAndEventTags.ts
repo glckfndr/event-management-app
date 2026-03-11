@@ -34,10 +34,10 @@ export class CreateTagsAndEventTags1760000006000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query('DROP INDEX "public"."IDX_event_tags_tag_id"');
-    await queryRunner.query('DROP INDEX "public"."IDX_event_tags_event_id"');
+    await queryRunner.query('DROP INDEX IF EXISTS "IDX_event_tags_tag_id"');
+    await queryRunner.query('DROP INDEX IF EXISTS "IDX_event_tags_event_id"');
     await queryRunner.query('DROP TABLE "event_tags"');
-    await queryRunner.query('DROP INDEX "public"."IDX_tags_name_ci_unique"');
+    await queryRunner.query('DROP INDEX IF EXISTS "IDX_tags_name_ci_unique"');
     await queryRunner.query('DROP TABLE "tags"');
   }
 }
