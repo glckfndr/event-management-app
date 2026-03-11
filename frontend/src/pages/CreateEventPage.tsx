@@ -145,6 +145,10 @@ export function CreateEventPage() {
     setSubmitError(null);
 
     try {
+      const normalizedTags = (values.tags ?? []).filter(
+        (tag): tag is string => typeof tag === "string",
+      );
+
       const dateTimeIso = new Date(
         `${values.eventDate}T${values.eventTime || "00:00"}`,
       ).toISOString();
@@ -156,7 +160,7 @@ export function CreateEventPage() {
         location: values.location || undefined,
         visibility: values.visibility,
         capacity: values.capacity ? Number(values.capacity) : null,
-        tags: values.tags,
+        tags: normalizedTags,
       };
 
       const createdEvent = await dispatch(createEvent(payload)).unwrap();
@@ -278,7 +282,9 @@ export function CreateEventPage() {
           render={({ field }) => (
             <EventTagsField
               id="create-tags"
-              value={field.value ?? []}
+              value={(field.value ?? []).filter(
+                (tag): tag is string => typeof tag === "string",
+              )}
               onChange={field.onChange}
               errorMessage={errors.tags?.message}
             />
