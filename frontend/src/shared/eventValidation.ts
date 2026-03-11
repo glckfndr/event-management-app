@@ -1,6 +1,7 @@
 export const EVENT_TITLE_MIN_LENGTH = 3;
 export const EVENT_DESCRIPTION_MIN_LENGTH = 10;
 export const EVENT_LOCATION_MIN_LENGTH = 2;
+export const EVENT_MAX_TAGS = 5;
 
 export const EVENT_VALIDATION_MESSAGES = {
   titleRequired: "Title is required",
@@ -15,6 +16,8 @@ export const EVENT_VALIDATION_MESSAGES = {
   locationMinLength: `Location must be at least ${EVENT_LOCATION_MIN_LENGTH} characters`,
   capacityPositive: "Capacity must be a positive whole number",
   createCapacityPositive: "Capacity must be a positive whole number",
+  tagsMaxCount: `You can select up to ${EVENT_MAX_TAGS} tags`,
+  tagMustNotBeEmpty: "Tag cannot be empty",
 };
 
 export type EventCoreValidationValues = {

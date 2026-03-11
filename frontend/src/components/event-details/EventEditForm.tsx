@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import type { EventVisibility } from "../../types/event";
 import {
   EventDateTimePickerField,
+  EventTagsField,
   EventTextareaField,
   EventTextInputField,
 } from "../event-form/EventFormFields";
@@ -16,6 +17,7 @@ export type EventEditFormValues = {
   location: string;
   capacity: string;
   visibility: EventVisibility;
+  tags: string[];
 };
 
 type EventEditFormProps = {
@@ -117,6 +119,12 @@ export function EventEditForm({
             onChange={() => onFieldChange("visibility", "private")}
           />
         }
+      />
+
+      <EventTagsField
+        id="edit-tags"
+        value={values.tags}
+        onChange={(nextTags) => onFieldChange("tags", nextTags)}
       />
 
       <div className="mt-2 grid gap-3 md:grid-cols-2">
