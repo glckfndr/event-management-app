@@ -22,6 +22,16 @@ export class Tag {
   @BeforeInsert()
   @BeforeUpdate()
   normalizeName(): void {
-    this.name = this.name.trim().toLowerCase();
+    if (typeof this.name !== 'string') {
+      throw new Error('Tag name must be a non-empty string');
+    }
+
+    const normalized = this.name.trim().toLowerCase();
+
+    if (!normalized) {
+      throw new Error('Tag name must be a non-empty string');
+    }
+
+    this.name = normalized;
   }
 }
