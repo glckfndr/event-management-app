@@ -1,11 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsEnum,
   IsDateString,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { EventVisibility } from '../entities/event.entity';
@@ -49,4 +52,16 @@ export class CreateEventDto {
   @IsOptional()
   @IsEnum(EventVisibility)
   visibility?: EventVisibility;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Tech', 'Art'],
+    description: 'Optional event tags. Maximum 5 tags.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  tags?: string[];
 }

@@ -8,6 +8,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { EventsService } from './events.service';
 import { Event } from './entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
+import { Tag } from '../tags/entities/tag.entity';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -45,6 +46,11 @@ describe('EventsService', () => {
     find: jest.Mock;
     delete: jest.Mock;
     count: jest.Mock;
+  };
+  let tagsRepository: {
+    find: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -114,6 +120,12 @@ describe('EventsService', () => {
       count: jest.fn(),
     };
 
+    tagsRepository = {
+      find: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
@@ -124,6 +136,10 @@ describe('EventsService', () => {
         {
           provide: getRepositoryToken(Participant),
           useValue: participantsRepository,
+        },
+        {
+          provide: getRepositoryToken(Tag),
+          useValue: tagsRepository,
         },
       ],
     }).compile();
@@ -212,6 +228,83 @@ describe('EventsService', () => {
     );
   });
 
+  it('create resolves tags and attaches them to event', async () => {
+    const user = { sub: 'user-id', email: 'user@example.com' };
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+    tagsRepository.find.mockResolvedValue([{ id: 'tag-1', name: 'tech' }]);
+    tagsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    tagsRepository.save.mockResolvedValue([{ id: 'tag-2', name: 'art' }]);
+
+    eventsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    eventsRepository.save.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+
+    const result = await service.create(
+      {
+        title: 'Tagged event',
+        eventDate: futureDate,
+        location: 'Kyiv',
+        tags: ['Tech', 'Art', 'tech'],
+      },
+      user,
+    );
+
+    expect(tagsRepository.find).toHaveBeenCalledWith({
+      where: [{ name: 'tech' }, { name: 'art' }],
+    });
+    expect(tagsRepository.save).toHaveBeenCalled();
+    expect(eventsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizerId: 'user-id',
+        tags: [
+          expect.objectContaining({ name: 'tech' }),
+          expect.objectContaining({ name: 'art' }),
+        ],
+      }),
+    );
+    expect(result.tags).toHaveLength(2);
+  });
+
+  it('findAll applies tags filter when provided', async () => {
+    eventsRepository.find.mockResolvedValue([]);
+
+    await service.findAll('Tech, Art');
+
+    const mockCalls = eventsRepository.find.mock.calls as unknown;
+    expect(Array.isArray(mockCalls)).toBe(true);
+
+    const [firstCall] = mockCalls as unknown[];
+    expect(firstCall).toBeDefined();
+
+    const [findArgs] = firstCall as [
+      {
+        where: {
+          visibility: string;
+          tags?: unknown;
+        };
+        relations: {
+          organizer: boolean;
+          participants: boolean;
+          tags: boolean;
+        };
+      },
+    ];
+
+    expect(findArgs.where.visibility).toBe('public');
+    expect(findArgs.where.tags).toBeDefined();
+    expect(findArgs.relations).toEqual({
+      organizer: true,
+      participants: true,
+      tags: true,
+    });
+  });
+
   it('getCalendarForUser merges organized and joined events, deduplicates by id, and sorts by eventDate', async () => {
     const userId = 'user-id';
 
@@ -246,12 +339,12 @@ describe('EventsService', () => {
 
     expect(eventsRepository.find).toHaveBeenCalledWith({
       where: { organizerId: userId },
-      relations: { organizer: true },
+      relations: { organizer: true, tags: true },
     });
 
     expect(participantsRepository.find).toHaveBeenCalledWith({
       where: { userId },
-      relations: { event: { organizer: true } },
+      relations: { event: { organizer: true, tags: true } },
     });
 
     expect(result).toHaveLength(3);
@@ -291,7 +384,7 @@ describe('EventsService', () => {
 
     expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
-      relations: { organizer: true, participants: true },
+      relations: { organizer: true, participants: true, tags: true },
     });
   });
 
@@ -308,7 +401,11 @@ describe('EventsService', () => {
     expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
     expect(eventsRepository.findOne).not.toHaveBeenCalledWith(
       expect.objectContaining({
-        relations: { organizer: true, participants: { user: true } },
+        relations: {
+          organizer: true,
+          participants: { user: true },
+          tags: true,
+        },
       }),
     );
   });
@@ -338,7 +435,7 @@ describe('EventsService', () => {
     expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
     expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
-      relations: { organizer: true, participants: { user: true } },
+      relations: { organizer: true, participants: { user: true }, tags: true },
     });
 
     expect(result.participants?.[0]?.user).toEqual(
@@ -415,7 +512,7 @@ describe('EventsService', () => {
     expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
     expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
-      relations: { organizer: true, participants: { user: true } },
+      relations: { organizer: true, participants: { user: true }, tags: true },
     });
 
     expect(result.participants?.[0]?.user).not.toHaveProperty('email');

@@ -10,14 +10,15 @@ export type AuthenticatedUser = {
 type EventFindOneRelations = {
   organizer: true;
   participants: true | { user: true };
+  tags: true;
 };
 
 export function buildFindOneRelations(
   user?: AuthenticatedUser,
 ): EventFindOneRelations {
   return user
-    ? { organizer: true, participants: { user: true } }
-    : { organizer: true, participants: true };
+    ? { organizer: true, participants: { user: true }, tags: true }
+    : { organizer: true, participants: true, tags: true };
 }
 
 export function mergeAndSortCalendarEvents(
