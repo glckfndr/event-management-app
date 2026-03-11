@@ -16,12 +16,14 @@ import {
 } from "../components/event-form/EventFormFields";
 import {
   EVENT_DESCRIPTION_MIN_LENGTH,
+  EVENT_MAX_TAGS,
   EVENT_LOCATION_MIN_LENGTH,
   EVENT_TITLE_MIN_LENGTH,
   EVENT_VALIDATION_MESSAGES,
   isValidPositiveCapacityInput,
 } from "../shared/eventValidation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
+import { EventTagsField } from "../components/event-form/EventTagsField";
 
 const createEventSchema = yup
   .object({
@@ -62,6 +64,17 @@ const createEventSchema = yup
       .mixed<EventVisibility>()
       .oneOf(["public", "private"], "Select event visibility")
       .required("Visibility is required"),
+    tags: yup
+      .array()
+      .of(
+        yup
+          .string()
+          .trim()
+          .min(1, EVENT_VALIDATION_MESSAGES.tagMustNotBeEmpty)
+          .max(50),
+      )
+      .max(EVENT_MAX_TAGS, EVENT_VALIDATION_MESSAGES.tagsMaxCount)
+      .default([]),
   })
   .required();
 
@@ -124,6 +137,7 @@ export function CreateEventPage() {
       location: "",
       capacity: "",
       visibility: "public",
+      tags: [],
     },
   });
 
@@ -142,6 +156,7 @@ export function CreateEventPage() {
         location: values.location || undefined,
         visibility: values.visibility,
         capacity: values.capacity ? Number(values.capacity) : null,
+        tags: values.tags,
       };
 
       const createdEvent = await dispatch(createEvent(payload)).unwrap();
@@ -255,6 +270,19 @@ export function CreateEventPage() {
             <input type="radio" value="private" {...register("visibility")} />
           }
           errorMessage={errors.visibility?.message}
+        />
+
+        <Controller
+          name="tags"
+          control={control}
+          render={({ field }) => (
+            <EventTagsField
+              id="create-tags"
+              value={field.value ?? []}
+              onChange={field.onChange}
+              errorMessage={errors.tags?.message}
+            />
+          )}
         />
 
         <div className="mt-1 grid gap-2 md:grid-cols-2">

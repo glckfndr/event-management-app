@@ -18,6 +18,7 @@ import { EventEditForm } from "../components/event-details/EventEditForm";
 import type { EventEditFormValues } from "../components/event-details/EventEditForm";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import {
+  EVENT_MAX_TAGS,
   normalizeEventCoreValues,
   validateEventCoreFields,
 } from "../shared/eventValidation";
@@ -102,6 +103,7 @@ export function EventDetailsPage() {
     location: "",
     capacity: "",
     visibility: "public",
+    tags: [],
   });
 
   const joinedEventIds = useMemo(
@@ -138,6 +140,7 @@ export function EventDetailsPage() {
           ? ""
           : String(event.capacity),
       visibility: event.visibility,
+      tags: (event.tags ?? []).map((tag) => tag.name),
     });
   }, [event]);
 
@@ -251,6 +254,15 @@ export function EventDetailsPage() {
       visibility: normalizedVisibility,
     } = normalizeEventCoreValues(editForm);
 
+    const normalizedTags = [
+      ...new Set(editForm.tags.map((tag) => tag.trim()).filter(Boolean)),
+    ];
+
+    if (normalizedTags.length > EVENT_MAX_TAGS) {
+      setError(`You can select up to ${EVENT_MAX_TAGS} tags`);
+      return;
+    }
+
     const parsedDateTime = new Date(`${normalizedDate}T${normalizedTime}`);
 
     if (Number.isNaN(parsedDateTime.getTime())) {
@@ -287,6 +299,7 @@ export function EventDetailsPage() {
               location: normalizedLocation,
               capacity: capacityValue,
               visibility: normalizedVisibility,
+              tags: normalizedTags,
             },
           }),
         ).unwrap(),

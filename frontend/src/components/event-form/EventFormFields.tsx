@@ -11,6 +11,7 @@ import { FormField } from "../ui/FormField";
 import { DatePickerInput } from "../ui/DatePickerInput";
 import { CalendarIcon } from "../ui/icons/CalendarIcon";
 import { ClockIcon } from "../ui/icons/ClockIcon";
+export { EventTagsField } from "./EventTagsField";
 
 type EventTextInputFieldProps = {
   label: string;
