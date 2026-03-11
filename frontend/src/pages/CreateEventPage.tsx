@@ -11,6 +11,7 @@ import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import {
   EventDateTimePickerField,
+  EventTagsField,
   EventTextareaField,
   EventTextInputField,
 } from "../components/event-form/EventFormFields";
@@ -23,7 +24,6 @@ import {
   isValidPositiveCapacityInput,
 } from "../shared/eventValidation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
-import { EventTagsField } from "../components/event-form/EventTagsField";
 
 const createEventSchema = yup
   .object({
