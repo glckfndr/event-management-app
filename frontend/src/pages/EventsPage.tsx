@@ -21,20 +21,60 @@ export function EventsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((event) => event.id)),
     [myEvents],
   );
 
-  const filteredEvents = useMemo(() => {
-    const value = searchTerm.trim().toLowerCase();
+  const availableTags = useMemo(() => {
+    const seen = new Set<string>();
+    const tags: string[] = [];
 
-    if (!value) {
-      return publicEvents;
+    for (const event of publicEvents) {
+      for (const tag of event.tags ?? []) {
+        const normalized = tag.name.trim();
+
+        if (!normalized) {
+          continue;
+        }
+
+        const canonical = normalized.toLowerCase();
+
+        if (seen.has(canonical)) {
+          continue;
+        }
+
+        seen.add(canonical);
+        tags.push(normalized);
+      }
     }
 
+    return tags.sort((first, second) => first.localeCompare(second));
+  }, [publicEvents]);
+
+  const filteredEvents = useMemo(() => {
+    const value = searchTerm.trim().toLowerCase();
+    const normalizedSelectedTags = selectedTags.map((tag) => tag.toLowerCase());
+
     return publicEvents.filter((event) => {
+      const eventTags = new Set(
+        (event.tags ?? []).map((tag) => tag.name.trim().toLowerCase()),
+      );
+
+      const matchesTags =
+        normalizedSelectedTags.length === 0 ||
+        normalizedSelectedTags.every((tag) => eventTags.has(tag));
+
+      if (!matchesTags) {
+        return false;
+      }
+
+      if (!value) {
+        return true;
+      }
+
       const searchable = [
         event.title,
         event.description,
@@ -48,7 +88,7 @@ export function EventsPage() {
 
       return searchable.includes(value);
     });
-  }, [publicEvents, searchTerm]);
+  }, [publicEvents, searchTerm, selectedTags]);
 
   useEffect(() => {
     void dispatch(fetchPublicEvents());
@@ -106,6 +146,24 @@ export function EventsPage() {
     );
   };
 
+  const toggleTag = (tag: string) => {
+    const canonical = tag.toLowerCase();
+
+    setSelectedTags((previous) => {
+      const exists = previous.some(
+        (selected) => selected.toLowerCase() === canonical,
+      );
+
+      if (exists) {
+        return previous.filter(
+          (selected) => selected.toLowerCase() !== canonical,
+        );
+      }
+
+      return [...previous, tag];
+    });
+  };
+
   return (
     <div>
       <h2 className="text-4xl font-bold text-slate-900">Discover Events</h2>
@@ -125,12 +183,44 @@ export function EventsPage() {
         />
       </div>
 
+      {availableTags.length > 0 ? (
+        <div className="mt-5">
+          <p className="text-sm font-semibold text-slate-600">Filter by tags</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {availableTags.map((tag) => {
+              const isSelected = selectedTags.some(
+                (selected) => selected.toLowerCase() === tag.toLowerCase(),
+              );
+
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleTag(tag)}
+                  className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
+                    isSelected
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {status === "loading" ? <p className="mt-6">Loading events...</p> : null}
       {error ? <p className="mt-6 text-red-600">{error}</p> : null}
       {actionError ? <p className="mt-6 text-red-600">{actionError}</p> : null}
 
       {filteredEvents.length === 0 && status !== "loading" ? (
-        <p className="mt-6 text-slate-600">No events found.</p>
+        <p className="mt-6 text-slate-600">
+          {selectedTags.length > 0
+            ? "No events match the selected tags."
+            : "No events found."}
+        </p>
       ) : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">

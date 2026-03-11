@@ -33,6 +33,54 @@ afterEach(() => {
 });
 
 describe("EventDetailsPage", () => {
+  it("shows all event tags in details view", async () => {
+    const event = createInitialEvent();
+    event.tags = [
+      { id: "tag-1", name: "Business" },
+      { id: "tag-2", name: "Tech" },
+    ];
+
+    vi.spyOn(api, "get").mockImplementation(async (url: string) => {
+      if (url === "/events/evt-1") {
+        return { data: event };
+      }
+
+      if (url === "/users/me/events") {
+        return { data: [] };
+      }
+
+      throw new Error(`Unexpected GET url: ${url}`);
+    });
+
+    const store = createTestStore({
+      auth: {
+        token: "test-token",
+        user: { email: "organizer@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        publicEvents: [],
+        myEvents: [],
+        selectedEvent: null,
+        status: "idle",
+        error: null,
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events/evt-1"]}>
+        <Routes>
+          <Route path="/events/:id" element={<EventDetailsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    expect(await screen.findByText("Business")).toBeInTheDocument();
+    expect(screen.getByText("Tech")).toBeInTheDocument();
+  });
+
   it("keeps existing validation behavior in edit mode", async () => {
     const event = createInitialEvent();
 

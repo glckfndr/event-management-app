@@ -52,6 +52,11 @@ export function EventCard({ event, state, handlers }: EventCardProps) {
   const isFull =
     event.capacity != null &&
     (event.participants?.length ?? 0) >= event.capacity;
+  const visibleTags = (event.tags ?? []).slice(0, 3);
+  const hiddenTagsCount = Math.max(
+    (event.tags?.length ?? 0) - visibleTags.length,
+    0,
+  );
 
   return (
     <article
@@ -74,6 +79,24 @@ export function EventCard({ event, state, handlers }: EventCardProps) {
       <p className="mt-[0.675rem] text-lg text-slate-500">
         {shortDescription(event.description)}
       </p>
+
+      {visibleTags.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {visibleTags.map((tag) => (
+            <span
+              key={tag.id}
+              className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700"
+            >
+              {tag.name}
+            </span>
+          ))}
+          {hiddenTagsCount > 0 ? (
+            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              +{hiddenTagsCount}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-5 space-y-2 text-lg text-slate-500">
         <p className="flex items-center gap-2">

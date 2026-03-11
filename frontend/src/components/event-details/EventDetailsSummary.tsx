@@ -36,6 +36,19 @@ export function EventDetailsSummary({
         {event.description || "No description"}
       </p>
 
+      {event.tags?.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {event.tags.map((tag) => (
+            <span
+              key={tag.id}
+              className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700"
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
       <div className="mt-5 space-y-2 text-lg text-slate-500">
         <p className="flex items-center gap-2">
           <CalendarIcon className="text-slate-500" />
