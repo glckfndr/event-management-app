@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -18,6 +19,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateEventDto } from './dto/create-event.dto';
+import { FindEventsQueryDto } from './dto/find-events-query.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event } from './entities/event.entity';
 import { EventsService } from './events.service';
@@ -30,8 +32,8 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'Fetch list of public events' })
   @ApiResponse({ status: 200, description: 'List of events' })
-  findAll(): Promise<Event[]> {
-    return this.eventsService.findAll();
+  findAll(@Query() query: FindEventsQueryDto): Promise<Event[]> {
+    return this.eventsService.findAll(query.tags);
   }
 
   @Get(':id')

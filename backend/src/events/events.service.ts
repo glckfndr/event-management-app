@@ -6,11 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Event, EventVisibility } from './entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Participant } from '../participants/entities/participant.entity';
+import { Tag } from '../tags/entities/tag.entity';
 import {
   assertPrivateEventAccess,
   AuthenticatedUser,
@@ -21,18 +22,37 @@ import {
 
 @Injectable()
 export class EventsService {
+  private static readonly MAX_FILTER_TAGS = 5;
+
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
     @InjectRepository(Participant)
     private readonly participantsRepository: Repository<Participant>,
+    @InjectRepository(Tag)
+    private readonly tagsRepository: Repository<Tag>,
   ) {}
 
-  async findAll(): Promise<Event[]> {
+  async findAll(tagsFilter?: string): Promise<Event[]> {
+    const normalizedTagFilters = this.parseTagsFilter(tagsFilter);
+
+    if (normalizedTagFilters.length > 0) {
+      return this.eventsRepository.find({
+        where: {
+          visibility: EventVisibility.PUBLIC,
+          tags: {
+            name: In(normalizedTagFilters),
+          },
+        },
+        order: { eventDate: 'ASC' },
+        relations: { organizer: true, participants: true, tags: true },
+      });
+    }
+
     return this.eventsRepository.find({
       where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
-      relations: { organizer: true, participants: true },
+      relations: { organizer: true, participants: true, tags: true },
     });
   }
 
@@ -40,11 +60,11 @@ export class EventsService {
     const [organizedEvents, participantRows] = await Promise.all([
       this.eventsRepository.find({
         where: { organizerId: userId },
-        relations: { organizer: true },
+        relations: { organizer: true, tags: true },
       }),
       this.participantsRepository.find({
         where: { userId },
-        relations: { event: { organizer: true } },
+        relations: { event: { organizer: true, tags: true } },
       }),
     ]);
 
@@ -73,6 +93,7 @@ export class EventsService {
     user: AuthenticatedUser,
   ): Promise<Event> {
     const eventDate = this.parseAndValidateEventDate(createEventDto.eventDate);
+    const tags = await this.resolveTags(createEventDto.tags);
 
     const event = this.eventsRepository.create({
       title: createEventDto.title,
@@ -82,6 +103,7 @@ export class EventsService {
       capacity: createEventDto.capacity ?? null,
       visibility: createEventDto.visibility ?? EventVisibility.PUBLIC,
       organizerId: user.sub,
+      tags,
     });
 
     return this.eventsRepository.save(event);
@@ -126,6 +148,10 @@ export class EventsService {
       event.eventDate = this.parseAndValidateEventDate(
         updateEventDto.eventDate,
       );
+    }
+
+    if (updateEventDto.tags !== undefined) {
+      event.tags = await this.resolveTags(updateEventDto.tags);
     }
 
     return this.eventsRepository.save(event);
@@ -226,5 +252,90 @@ export class EventsService {
     }
 
     return parsedDate;
+  }
+
+  private parseTagsFilter(tagsFilter?: string): string[] {
+    if (!tagsFilter?.trim()) {
+      return [];
+    }
+
+    const normalizedTags = [
+      ...new Set(
+        tagsFilter
+          .split(',')
+          .map((tag) => tag.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    ];
+
+    if (normalizedTags.length > EventsService.MAX_FILTER_TAGS) {
+      throw new BadRequestException(
+        `Maximum ${EventsService.MAX_FILTER_TAGS} filter tags are allowed`,
+      );
+    }
+
+    return normalizedTags;
+  }
+
+  private async resolveTags(tags?: string[]): Promise<Tag[]> {
+    if (!tags || tags.length === 0) {
+      return [];
+    }
+
+    const normalizedTags = [
+      ...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
+    ];
+
+    if (normalizedTags.length === 0) {
+      return [];
+    }
+
+    if (normalizedTags.length > 5) {
+      throw new BadRequestException('Maximum 5 tags are allowed per event');
+    }
+
+    const existingTags = await this.tagsRepository.find({
+      where: normalizedTags.map((name) => ({ name })),
+    });
+
+    const existingByName = new Map(existingTags.map((tag) => [tag.name, tag]));
+    const missingNames = normalizedTags.filter(
+      (name) => !existingByName.has(name),
+    );
+
+    if (missingNames.length === 0) {
+      return normalizedTags
+        .map((name) => existingByName.get(name))
+        .filter((tag): tag is Tag => Boolean(tag));
+    }
+
+    let newTags: Tag[] = [];
+
+    try {
+      newTags = await this.tagsRepository.save(
+        missingNames.map((name) => this.tagsRepository.create({ name })),
+      );
+    } catch {
+      // Another request may have inserted the same normalized tag names.
+      const refreshedTags = await this.tagsRepository.find({
+        where: normalizedTags.map((name) => ({ name })),
+      });
+
+      const refreshedByName = new Map(
+        refreshedTags.map((tag) => [tag.name, tag]),
+      );
+
+      return normalizedTags
+        .map((name) => refreshedByName.get(name))
+        .filter((tag): tag is Tag => Boolean(tag));
+    }
+
+    for (const tag of newTags) {
+      existingByName.set(tag.name, tag);
+    }
+
+    return normalizedTags
+      .map((name) => existingByName.get(name))
+      .filter((tag): tag is Tag => Boolean(tag));
   }
 }
