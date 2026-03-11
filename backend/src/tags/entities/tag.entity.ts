@@ -3,7 +3,6 @@ import {
   BeforeUpdate,
   Column,
   Entity,
-  Index,
   ManyToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -14,7 +13,6 @@ export class Tag {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Index('IDX_tags_name_unique', { unique: true })
   @Column({ type: 'varchar', length: 50 })
   name!: string;
 

@@ -43,6 +43,10 @@ describe('Database tables relations', () => {
 
     await dataSource.initialize();
 
+    await dataSource.query(
+      'CREATE UNIQUE INDEX "IDX_tags_name_ci_unique" ON "tags" (LOWER("name"))',
+    );
+
     usersRepository = dataSource.getRepository(User);
     eventsRepository = dataSource.getRepository(Event);
     participantsRepository = dataSource.getRepository(Participant);
@@ -64,10 +68,10 @@ describe('Database tables relations', () => {
   });
 
   it('enforces case-insensitive unique tag names', async () => {
-    await tagsRepository.save(tagsRepository.create({ name: 'Tech' }));
+    await dataSource.query('INSERT INTO "tags" ("name") VALUES ($1)', ['Tech']);
 
     await expect(
-      tagsRepository.save(tagsRepository.create({ name: 'tech' })),
+      dataSource.query('INSERT INTO "tags" ("name") VALUES ($1)', ['tech']),
     ).rejects.toThrow();
   });
 
