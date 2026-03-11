@@ -17,7 +17,7 @@ export const EVENT_VALIDATION_MESSAGES = {
   capacityPositive: "Capacity must be a positive whole number",
   createCapacityPositive: "Capacity must be a positive whole number",
   tagsMaxCount: `You can select up to ${EVENT_MAX_TAGS} tags`,
-  tagMustNotBeEmpty: "Tags cannot be empty",
+  tagMustNotBeEmpty: "Tag cannot be empty",
 };
 
 export type EventCoreValidationValues = {

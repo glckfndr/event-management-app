@@ -19,6 +19,7 @@ import type { EventEditFormValues } from "../components/event-details/EventEditF
 import { FormErrorText } from "../components/ui/FormErrorText";
 import {
   EVENT_MAX_TAGS,
+  EVENT_VALIDATION_MESSAGES,
   normalizeEventCoreValues,
   validateEventCoreFields,
 } from "../shared/eventValidation";
@@ -259,7 +260,7 @@ export function EventDetailsPage() {
     ];
 
     if (normalizedTags.length > EVENT_MAX_TAGS) {
-      setError(`You can select up to ${EVENT_MAX_TAGS} tags`);
+      setError(EVENT_VALIDATION_MESSAGES.tagsMaxCount);
       return;
     }
 
