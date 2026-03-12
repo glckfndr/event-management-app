@@ -11,6 +11,40 @@ import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
 import { getTagAccentClassNames } from "../shared/tagAccent";
 
+const getEventDateSearchText = (eventDate: string) => {
+  const date = new Date(eventDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const monthLong = date.toLocaleDateString("en-US", { month: "long" });
+  const monthShort = date.toLocaleDateString("en-US", { month: "short" });
+  const day = String(date.getDate());
+  const dayPadded = String(date.getDate()).padStart(2, "0");
+  const hour24 = String(date.getHours());
+  const hour24Padded = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const time24 = `${hour24Padded}:${minute}`;
+  const time12 = date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return [
+    monthLong,
+    monthShort,
+    day,
+    dayPadded,
+    hour24,
+    hour24Padded,
+    time24,
+    time12,
+  ]
+    .join(" ")
+    .toLowerCase();
+};
+
 export function EventsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -82,6 +116,7 @@ export function EventsPage() {
         event.location,
         event.organizer?.name,
         event.organizer?.email,
+        getEventDateSearchText(event.eventDate),
       ]
         .filter(Boolean)
         .join(" ")
