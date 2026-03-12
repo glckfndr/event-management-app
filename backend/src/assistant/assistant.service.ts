@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Event as EventEntity } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
+import { mergeAndSortCalendarEvents } from '../events/events.service.helpers';
 import {
   AssistantContextSnapshot,
   AssistantLlmService,
@@ -79,19 +80,12 @@ export class AssistantService {
       }),
     ]);
 
-    const eventsById = new Map<string, EventEntity>();
+    const mergedEvents = mergeAndSortCalendarEvents(
+      organizedEvents,
+      participantRows,
+    );
 
-    for (const event of organizedEvents) {
-      eventsById.set(event.id, event);
-    }
-
-    for (const participantRow of participantRows) {
-      if (participantRow.event) {
-        eventsById.set(participantRow.event.id, participantRow.event);
-      }
-    }
-
-    return [...eventsById.values()]
+    return mergedEvents
       .map((event) => ({
         // TypeORM relation typing can be narrower than runtime-loaded relations.
         relationData: event as EventEntity & {
@@ -112,11 +106,7 @@ export class AssistantService {
         participantIds: (relationData.participants ?? []).map(
           (participant) => participant.userId,
         ),
-      }))
-      .sort(
-        (first, second) =>
-          first.eventDate.getTime() - second.eventDate.getTime(),
-      );
+      }));
   }
 
   private buildSnapshot(

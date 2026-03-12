@@ -212,6 +212,36 @@ describe('AssistantService', () => {
     expect(result.answer).toBe('You have 3 events in total.');
   });
 
+  it('ignores participant rows without event relation', async () => {
+    participantsRepository.find.mockResolvedValueOnce([
+      {
+        id: 'part-1',
+        userId: 'user-1',
+        event: {
+          id: 'event-3',
+          title: 'Design Sync',
+          eventDate: new Date('2026-03-15T15:30:00.000Z'),
+          visibility: EventVisibility.PUBLIC,
+          organizerId: 'user-2',
+          tags: [{ name: 'design' }, { name: 'tech' }],
+          participants: [{ userId: 'user-1' }, { userId: 'user-4' }],
+        },
+      },
+      {
+        id: 'part-2',
+        userId: 'user-1',
+        event: null,
+      },
+    ]);
+
+    const result = await service.answerQuestion(
+      'How many events do I have?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe('You have 3 events in total.');
+  });
+
   it('performs read-only operations', async () => {
     await service.answerQuestion('How many events do I have?', 'user-1');
 
