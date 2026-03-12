@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength, MaxLength } from 'class-validator';
+import { IsString, Matches, MaxLength } from 'class-validator';
 
 export class AssistantQuestionDto {
   @ApiProperty({
@@ -7,7 +7,9 @@ export class AssistantQuestionDto {
     description: 'Natural-language question about the current user events.',
   })
   @IsString()
-  @MinLength(1)
+  @Matches(/\S/, {
+    message: 'Question must contain at least one non-whitespace character',
+  })
   @MaxLength(500)
   question!: string;
 }
