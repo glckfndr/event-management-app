@@ -4,13 +4,12 @@ export const ASSISTANT_FALLBACK_MESSAGE =
   'Sorry, I didn’t understand that. Please try rephrasing your question.';
 
 type AssistantContextEvent = {
-  id: string;
   title: string;
   eventDate: string;
   visibility: 'public' | 'private';
   tags: string[];
   participantCount: number;
-  participantIds: string[];
+  participantIds?: string[];
 };
 
 export type AssistantContextSnapshot = {

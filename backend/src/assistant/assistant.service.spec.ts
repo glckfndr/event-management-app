@@ -201,6 +201,36 @@ describe('AssistantService', () => {
     expect(result.answer).toBe('You have 3 events and 2 upcoming.');
   });
 
+  it('omits participant identifiers in llm snapshot for non-participant questions', async () => {
+    llmService.askQuestion.mockResolvedValueOnce('You have 3 events in total.');
+
+    await service.answerQuestion('How many events do I have?', 'user-1');
+
+    const snapshot = llmService.askQuestion.mock.calls[0][1] as {
+      events: Array<Record<string, unknown>>;
+    };
+
+    expect(snapshot.events[0]).not.toHaveProperty('id');
+    expect(snapshot.events[0]).not.toHaveProperty('organizerId');
+    expect(snapshot.events[0]).not.toHaveProperty('participantIds');
+    expect(snapshot.events[0]).toHaveProperty('participantCount');
+  });
+
+  it('includes participant identifiers in llm snapshot for participant questions', async () => {
+    llmService.askQuestion.mockResolvedValueOnce('Participants listed.');
+
+    await service.answerQuestion(
+      'Show participants for "Tech Meetup"',
+      'user-1',
+    );
+
+    const snapshot = llmService.askQuestion.mock.calls[0][1] as {
+      events: Array<Record<string, unknown>>;
+    };
+
+    expect(snapshot.events[0]).toHaveProperty('participantIds');
+  });
+
   it('falls back to local supported answer when llm returns fallback text', async () => {
     llmService.askQuestion.mockResolvedValueOnce(ASSISTANT_FALLBACK_MESSAGE);
 

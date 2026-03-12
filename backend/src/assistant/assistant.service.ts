@@ -42,7 +42,11 @@ export class AssistantService {
       return { answer: ASSISTANT_FALLBACK_MESSAGE };
     }
 
-    const snapshot = this.buildSnapshot(events, now);
+    const snapshot = this.buildSnapshot(
+      events,
+      now,
+      this.isParticipantsQuestion(question),
+    );
 
     const llmAnswer = await this.assistantLlmService.askQuestion(
       question,
@@ -112,6 +116,7 @@ export class AssistantService {
   private buildSnapshot(
     events: AssistantEvent[],
     now: Date,
+    includeParticipantIdentifiers: boolean,
   ): AssistantContextSnapshot {
     const sortedDates = events
       .map((event) => event.eventDate)
@@ -131,16 +136,32 @@ export class AssistantService {
       },
       eventCount: events.length,
       tags,
-      events: events.map((event) => ({
-        id: event.id,
-        title: event.title,
-        eventDate: event.eventDate.toISOString(),
-        visibility: event.visibility,
-        tags: event.tags,
-        participantCount: event.participantIds.length,
-        participantIds: event.participantIds,
-      })),
+      events: events.map((event) => {
+        const eventSnapshot = {
+          title: event.title,
+          eventDate: event.eventDate.toISOString(),
+          visibility: event.visibility,
+          tags: event.tags,
+          participantCount: event.participantIds.length,
+        };
+
+        if (includeParticipantIdentifiers) {
+          return {
+            ...eventSnapshot,
+            participantIds: event.participantIds,
+          };
+        }
+
+        return eventSnapshot;
+      }),
     };
+  }
+
+  private isParticipantsQuestion(question: string): boolean {
+    const normalizedQuestion = question.trim().toLowerCase();
+    return /participants?|attendees?|who joined|who is joining/.test(
+      normalizedQuestion,
+    );
   }
 
   private answerFromRules(
