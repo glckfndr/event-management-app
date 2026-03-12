@@ -3,6 +3,7 @@ import { CalendarIcon } from "../ui/icons/CalendarIcon";
 import { ClockIcon } from "../ui/icons/ClockIcon";
 import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
 import { UsersGroupIcon } from "../ui/icons/UsersGroupIcon";
+import { getTagAccentClassNames } from "../../shared/tagAccent";
 
 type EventDetailsSummaryProps = {
   event: EventItem;
@@ -41,7 +42,10 @@ export function EventDetailsSummary({
           {event.tags.map((tag) => (
             <span
               key={tag.id}
-              className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700"
+              className={`rounded-full border px-3 py-1 text-sm font-semibold ${getTagAccentClassNames(
+                tag.name,
+                "soft",
+              )}`}
             >
               {tag.name}
             </span>

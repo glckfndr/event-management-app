@@ -5,6 +5,7 @@ import { ClockIcon } from "../ui/icons/ClockIcon";
 import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
 import { UsersGroupIcon } from "../ui/icons/UsersGroupIcon";
 import type { EventItem } from "../../types/event";
+import { getTagAccentClassNames } from "../../shared/tagAccent";
 
 type EventCardProps = {
   event: EventItem;
@@ -85,7 +86,10 @@ export function EventCard({ event, state, handlers }: EventCardProps) {
           {visibleTags.map((tag) => (
             <span
               key={tag.id}
-              className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700"
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getTagAccentClassNames(
+                tag.name,
+                "soft",
+              )}`}
             >
               {tag.name}
             </span>

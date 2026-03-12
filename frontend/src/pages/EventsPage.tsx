@@ -9,6 +9,7 @@ import {
 } from "../features/events/eventsSlice";
 import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
+import { getTagAccentClassNames } from "../shared/tagAccent";
 
 export function EventsPage() {
   const navigate = useNavigate();
@@ -214,8 +215,8 @@ export function EventsPage() {
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
                     isSelected
-                      ? "border-indigo-600 bg-indigo-600 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      ? getTagAccentClassNames(tag, "solid")
+                      : getTagAccentClassNames(tag, "soft")
                   }`}
                 >
                   {tag}
