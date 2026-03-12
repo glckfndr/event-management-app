@@ -179,16 +179,12 @@ export class AssistantService {
     now: Date,
   ): string | null {
     const normalizedQuestion = question.trim().toLowerCase();
+    const isCountQuestion =
+      /(how many|count|total)/.test(normalizedQuestion) &&
+      /events?/.test(normalizedQuestion);
 
     if (!normalizedQuestion) {
       return null;
-    }
-
-    if (
-      /(how many|count|total)/.test(normalizedQuestion) &&
-      /events?/.test(normalizedQuestion)
-    ) {
-      return `You have ${events.length} event${events.length === 1 ? '' : 's'} in total.`;
     }
 
     if (
@@ -205,10 +201,36 @@ export class AssistantService {
       dates.length >= 2;
 
     if (hasDateRangeIntent) {
+      if (isCountQuestion) {
+        const startDate = new Date(`${dates[0]}T00:00:00.000Z`);
+        const endDate = new Date(`${dates[1]}T23:59:59.999Z`);
+        const matchingEvents = events.filter(
+          (event) => event.eventDate >= startDate && event.eventDate <= endDate,
+        );
+
+        return this.formatFilteredCount(
+          `Events from ${dates[0]} to ${dates[1]}`,
+          matchingEvents.length,
+        );
+      }
+
       return this.answerDateRangeQuestion(dates[0], dates[1], events);
     }
 
     if (dates.length === 1 && /(on|for|date|day)/.test(normalizedQuestion)) {
+      if (isCountQuestion) {
+        const start = new Date(`${dates[0]}T00:00:00.000Z`);
+        const end = new Date(`${dates[0]}T23:59:59.999Z`);
+        const matchingEvents = events.filter(
+          (event) => event.eventDate >= start && event.eventDate <= end,
+        );
+
+        return this.formatFilteredCount(
+          `Events on ${dates[0]}`,
+          matchingEvents.length,
+        );
+      }
+
       return this.answerSingleDayQuestion(dates[0], events);
     }
 
@@ -218,6 +240,13 @@ export class AssistantService {
         (event) => event.eventDate >= start && event.eventDate < now,
       );
 
+      if (isCountQuestion) {
+        return this.formatFilteredCount(
+          'Events from the previous week',
+          matchingEvents.length,
+        );
+      }
+
       return this.formatEventList(
         matchingEvents,
         'Events from the previous week',
@@ -226,11 +255,24 @@ export class AssistantService {
 
     if (/past events?/.test(normalizedQuestion)) {
       const matchingEvents = events.filter((event) => event.eventDate < now);
+
+      if (isCountQuestion) {
+        return this.formatFilteredCount('Past events', matchingEvents.length);
+      }
+
       return this.formatEventList(matchingEvents, 'Past events');
     }
 
     if (/upcoming|next|future/.test(normalizedQuestion)) {
       const matchingEvents = events.filter((event) => event.eventDate >= now);
+
+      if (isCountQuestion) {
+        return this.formatFilteredCount(
+          'Upcoming events',
+          matchingEvents.length,
+        );
+      }
+
       return this.formatEventList(matchingEvents, 'Upcoming events');
     }
 
@@ -252,13 +294,28 @@ export class AssistantService {
         event.tags.some((tag) => matchedTags.includes(tag.toLowerCase())),
       );
 
+      if (isCountQuestion) {
+        return this.formatFilteredCount(
+          `Events with tag ${matchedTags.join(', ')}`,
+          matchingEvents.length,
+        );
+      }
+
       return this.formatEventList(
         matchingEvents,
         `Events with tag ${matchedTags.join(', ')}`,
       );
     }
 
+    if (isCountQuestion) {
+      return `You have ${events.length} event${events.length === 1 ? '' : 's'} in total.`;
+    }
+
     return null;
+  }
+
+  private formatFilteredCount(title: string, count: number): string {
+    return `${title}: ${count} event${count === 1 ? '' : 's'}.`;
   }
 
   private answerParticipantsQuestion(

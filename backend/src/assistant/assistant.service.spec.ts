@@ -126,6 +126,33 @@ describe('AssistantService', () => {
     expect(llmService.askQuestion).not.toHaveBeenCalled();
   });
 
+  it('counts upcoming events instead of total for specific count question', async () => {
+    const result = await service.answerQuestion(
+      'How many upcoming events do I have?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe('Upcoming events: 2 events.');
+  });
+
+  it('counts events by tag instead of total for specific count question', async () => {
+    const result = await service.answerQuestion(
+      'How many events with tag tech do I have?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe('Events with tag tech: 2 events.');
+  });
+
+  it('counts events on specific day instead of total for specific count question', async () => {
+    const result = await service.answerQuestion(
+      'How many events do I have on 2026-03-13?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe('Events on 2026-03-13: 1 event.');
+  });
+
   it('lists upcoming events', async () => {
     const result = await service.answerQuestion(
       'List my upcoming events',
