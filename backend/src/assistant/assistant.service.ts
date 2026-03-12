@@ -37,9 +37,10 @@ export class AssistantService {
     const events = await this.loadUserEvents(userId);
     const now = new Date();
     const localAnswer = this.answerFromRules(question, events, now);
+    const shouldUseLlmForSupported = this.shouldUseLlmForSupportedAnswers();
 
-    if (!localAnswer) {
-      return { answer: ASSISTANT_FALLBACK_MESSAGE };
+    if (localAnswer && !shouldUseLlmForSupported) {
+      return { answer: localAnswer };
     }
 
     const snapshot = this.buildSnapshot(
@@ -62,9 +63,17 @@ export class AssistantService {
       return { answer: normalizedLlmAnswer };
     }
 
+    if (!localAnswer) {
+      return { answer: ASSISTANT_FALLBACK_MESSAGE };
+    }
+
     return {
       answer: localAnswer,
     };
+  }
+
+  private shouldUseLlmForSupportedAnswers(): boolean {
+    return process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED === 'true';
   }
 
   private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {

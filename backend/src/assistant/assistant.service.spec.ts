@@ -33,6 +33,7 @@ describe('AssistantService', () => {
   beforeEach(async () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-03-12T10:00:00.000Z'));
+    delete process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED;
 
     eventsRepository = {
       find: jest.fn(),
@@ -112,6 +113,7 @@ describe('AssistantService', () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    delete process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED;
   });
 
   it('returns count for total events', async () => {
@@ -121,6 +123,7 @@ describe('AssistantService', () => {
     );
 
     expect(result.answer).toBe('You have 3 events in total.');
+    expect(llmService.askQuestion).not.toHaveBeenCalled();
   });
 
   it('lists upcoming events', async () => {
@@ -185,23 +188,26 @@ describe('AssistantService', () => {
     );
 
     expect(result.answer).toBe(ASSISTANT_FALLBACK_MESSAGE);
-    expect(llmService.askQuestion).not.toHaveBeenCalled();
+    expect(llmService.askQuestion).toHaveBeenCalledTimes(1);
   });
 
-  it('returns llm response when available', async () => {
+  it('returns llm response for unsupported query when available', async () => {
     llmService.askQuestion.mockResolvedValueOnce(
-      'You have 3 events and 2 upcoming.',
+      'I can help summarize your events and suggest follow-up questions.',
     );
 
     const result = await service.answerQuestion(
-      'List my upcoming events',
+      'Summarize my schedule with extra insights',
       'user-1',
     );
 
-    expect(result.answer).toBe('You have 3 events and 2 upcoming.');
+    expect(result.answer).toBe(
+      'I can help summarize your events and suggest follow-up questions.',
+    );
   });
 
   it('omits participant identifiers in llm snapshot for non-participant questions', async () => {
+    process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED = 'true';
     llmService.askQuestion.mockResolvedValueOnce('You have 3 events in total.');
 
     await service.answerQuestion('How many events do I have?', 'user-1');
@@ -217,6 +223,7 @@ describe('AssistantService', () => {
   });
 
   it('includes participant identifiers in llm snapshot for participant questions', async () => {
+    process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED = 'true';
     llmService.askQuestion.mockResolvedValueOnce('Participants listed.');
 
     await service.answerQuestion(
