@@ -51,8 +51,10 @@ export function MonthCalendarCell({
         {date.getDate()}
       </p>
 
-      <div className="mt-2 space-y-1">
-        {events.slice(0, 2).map((event) => (
+      <div
+        className={`mt-2 space-y-1 ${events.length > 2 ? "max-h-20 overflow-y-auto pr-1" : ""}`}
+      >
+        {events.map((event) => (
           <Button
             type="button"
             key={event.id}
@@ -68,10 +70,6 @@ export function MonthCalendarCell({
             {formatEventLabel(event.eventDate, event.title)}
           </Button>
         ))}
-
-        {events.length > 2 ? (
-          <p className="text-lg text-slate-500">+{events.length - 2} more</p>
-        ) : null}
       </div>
     </div>
   );
