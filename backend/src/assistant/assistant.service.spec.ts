@@ -185,6 +185,7 @@ describe('AssistantService', () => {
     );
 
     expect(result.answer).toBe(ASSISTANT_FALLBACK_MESSAGE);
+    expect(llmService.askQuestion).not.toHaveBeenCalled();
   });
 
   it('returns llm response when available', async () => {
@@ -193,11 +194,22 @@ describe('AssistantService', () => {
     );
 
     const result = await service.answerQuestion(
-      'summarize my events',
+      'List my upcoming events',
       'user-1',
     );
 
     expect(result.answer).toBe('You have 3 events and 2 upcoming.');
+  });
+
+  it('falls back to local supported answer when llm returns fallback text', async () => {
+    llmService.askQuestion.mockResolvedValueOnce(ASSISTANT_FALLBACK_MESSAGE);
+
+    const result = await service.answerQuestion(
+      'How many events do I have?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe('You have 3 events in total.');
   });
 
   it('performs read-only operations', async () => {

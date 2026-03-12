@@ -35,6 +35,12 @@ export class AssistantService {
   ): Promise<{ answer: string }> {
     const events = await this.loadUserEvents(userId);
     const now = new Date();
+    const localAnswer = this.answerFromRules(question, events, now);
+
+    if (!localAnswer) {
+      return { answer: ASSISTANT_FALLBACK_MESSAGE };
+    }
+
     const snapshot = this.buildSnapshot(events, now);
 
     const llmAnswer = await this.assistantLlmService.askQuestion(
@@ -42,14 +48,17 @@ export class AssistantService {
       snapshot,
     );
 
-    if (llmAnswer && llmAnswer.trim()) {
-      return { answer: llmAnswer.trim() };
+    const normalizedLlmAnswer = llmAnswer?.trim();
+
+    if (
+      normalizedLlmAnswer &&
+      normalizedLlmAnswer !== ASSISTANT_FALLBACK_MESSAGE
+    ) {
+      return { answer: normalizedLlmAnswer };
     }
 
-    const localAnswer = this.answerFromRules(question, events, now);
-
     return {
-      answer: localAnswer ?? ASSISTANT_FALLBACK_MESSAGE,
+      answer: localAnswer,
     };
   }
 
