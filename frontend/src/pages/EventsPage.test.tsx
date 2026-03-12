@@ -141,6 +141,64 @@ describe("EventsPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("searches by month, day and hour tokens", async () => {
+    const events: EventItem[] = [
+      buildEvent({
+        id: "evt-1",
+        title: "Morning Workshop",
+        eventDate: "2099-03-20T09:30:00.000Z",
+      }),
+      buildEvent({
+        id: "evt-2",
+        title: "Evening Talk",
+        eventDate: "2099-11-03T18:00:00.000Z",
+      }),
+    ];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    const store = createTestStore({
+      auth: { token: null, user: null, status: "idle", error: null },
+      events: {
+        publicEvents: [],
+        myEvents: [],
+        selectedEvent: null,
+        status: "idle",
+        error: null,
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("Morning Workshop");
+    await screen.findByText("Evening Talk");
+
+    const searchInput = screen.getByPlaceholderText("Search events...");
+    const firstEventDayToken = String(new Date(events[0].eventDate).getDate());
+    const secondEventHourToken = String(
+      new Date(events[1].eventDate).getHours(),
+    );
+
+    await userEvent.type(searchInput, "november");
+    expect(await screen.findByText("Evening Talk")).toBeInTheDocument();
+    expect(screen.queryByText("Morning Workshop")).not.toBeInTheDocument();
+
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, firstEventDayToken);
+    expect(await screen.findByText("Morning Workshop")).toBeInTheDocument();
+
+    await userEvent.clear(searchInput);
+    await userEvent.type(searchInput, secondEventHourToken);
+    expect(await screen.findByText("Evening Talk")).toBeInTheDocument();
+  });
+
   it("prunes stale selected tags after events refresh", async () => {
     const firstResponse: EventItem[] = [
       buildEvent({

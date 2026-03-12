@@ -4,6 +4,7 @@ import {
   EVENT_MAX_TAGS,
   EVENT_VALIDATION_MESSAGES,
 } from "../../shared/eventValidation";
+import { getTagAccentClassNames } from "../../shared/tagAccent";
 
 const PRESET_TAGS = ["Tech", "Art", "Business", "Music", "Marketing"];
 
@@ -119,8 +120,8 @@ export function EventTagsField({
                 disabled={!isSelected && !canAddMore}
                 className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
                   isSelected
-                    ? "border-indigo-600 bg-indigo-600 text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                    ? getTagAccentClassNames(tag, "solid")
+                    : `${getTagAccentClassNames(tag, "soft")} disabled:opacity-50`
                 }`}
               >
                 {tag}
@@ -168,7 +169,10 @@ export function EventTagsField({
                     ),
                   )
                 }
-                className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-sm font-semibold text-indigo-700"
+                className={`rounded-full border px-3 py-1 text-sm font-semibold ${getTagAccentClassNames(
+                  tag,
+                  "soft",
+                )}`}
                 title="Remove tag"
               >
                 {tag} x

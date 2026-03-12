@@ -9,6 +9,51 @@ import {
 } from "../features/events/eventsSlice";
 import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
+import { getTagAccentClassNames } from "../shared/tagAccent";
+
+const monthLongFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+});
+
+const monthShortFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+});
+
+const time12Formatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+const getEventDateSearchText = (eventDate: string) => {
+  const date = new Date(eventDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const monthLong = monthLongFormatter.format(date);
+  const monthShort = monthShortFormatter.format(date);
+  const day = String(date.getDate());
+  const dayPadded = String(date.getDate()).padStart(2, "0");
+  const hour24 = String(date.getHours());
+  const hour24Padded = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const time24 = `${hour24Padded}:${minute}`;
+  const time12 = time12Formatter.format(date);
+
+  return [
+    monthLong,
+    monthShort,
+    day,
+    dayPadded,
+    hour24,
+    hour24Padded,
+    time24,
+    time12,
+  ]
+    .join(" ")
+    .toLowerCase();
+};
 
 export function EventsPage() {
   const navigate = useNavigate();
@@ -54,6 +99,16 @@ export function EventsPage() {
     return tags.sort((first, second) => first.localeCompare(second));
   }, [publicEvents]);
 
+  const eventDateSearchById = useMemo(() => {
+    const dateSearchById = new Map<string, string>();
+
+    for (const event of publicEvents) {
+      dateSearchById.set(event.id, getEventDateSearchText(event.eventDate));
+    }
+
+    return dateSearchById;
+  }, [publicEvents]);
+
   const filteredEvents = useMemo(() => {
     const value = searchTerm.trim().toLowerCase();
     const normalizedSelectedTags = selectedTags.map((tag) => tag.toLowerCase());
@@ -81,6 +136,7 @@ export function EventsPage() {
         event.location,
         event.organizer?.name,
         event.organizer?.email,
+        eventDateSearchById.get(event.id),
       ]
         .filter(Boolean)
         .join(" ")
@@ -88,7 +144,7 @@ export function EventsPage() {
 
       return searchable.includes(value);
     });
-  }, [publicEvents, searchTerm, selectedTags]);
+  }, [eventDateSearchById, publicEvents, searchTerm, selectedTags]);
 
   useEffect(() => {
     void dispatch(fetchPublicEvents());
@@ -214,8 +270,8 @@ export function EventsPage() {
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
                     isSelected
-                      ? "border-indigo-600 bg-indigo-600 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      ? getTagAccentClassNames(tag, "solid")
+                      : getTagAccentClassNames(tag, "soft")
                   }`}
                 >
                   {tag}
