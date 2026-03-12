@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import type { EventItem } from "../../types/event";
 import { Button } from "../ui/Button";
+import { getCalendarEventAccentClassNames } from "./calendarTagAccent";
 import { formatEventLabel, toLocalDateKey } from "./calendarUtils";
 
 type MonthCalendarCellProps = {
@@ -59,7 +60,9 @@ export function MonthCalendarCell({
               clickEvent.stopPropagation();
               onOpenEvent(event.id);
             }}
-            className="w-full truncate rounded bg-indigo-100 px-2 py-1 text-left text-lg text-indigo-700 hover:bg-indigo-200"
+            className={`w-full truncate rounded border px-2 py-1 text-left text-lg font-medium ${getCalendarEventAccentClassNames(
+              event,
+            )}`}
             title={formatEventLabel(event.eventDate, event.title)}
           >
             {formatEventLabel(event.eventDate, event.title)}

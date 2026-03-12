@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import type { EventItem } from "../../types/event";
 import { Button } from "../ui/Button";
+import { getCalendarEventAccentClassNames } from "./calendarTagAccent";
 import { toLocalDateKey } from "./calendarUtils";
 
 type WeekCalendarCardProps = {
@@ -68,7 +69,9 @@ export function WeekCalendarCard({
                   clickEvent.stopPropagation();
                   onOpenEvent(event.id);
                 }}
-                className="w-full rounded-lg bg-indigo-100 px-3 py-2 text-left text-indigo-600 hover:bg-indigo-200"
+                className={`w-full rounded-lg border px-3 py-2 text-left ${getCalendarEventAccentClassNames(
+                  event,
+                )}`}
               >
                 <p className="text-lg font-semibold">{time}</p>
                 <p className="truncate text-lg">{event.title}</p>
