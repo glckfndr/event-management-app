@@ -11,6 +11,19 @@ import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
 import { getTagAccentClassNames } from "../shared/tagAccent";
 
+const monthLongFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+});
+
+const monthShortFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+});
+
+const time12Formatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 const getEventDateSearchText = (eventDate: string) => {
   const date = new Date(eventDate);
 
@@ -18,18 +31,15 @@ const getEventDateSearchText = (eventDate: string) => {
     return "";
   }
 
-  const monthLong = date.toLocaleDateString("en-US", { month: "long" });
-  const monthShort = date.toLocaleDateString("en-US", { month: "short" });
+  const monthLong = monthLongFormatter.format(date);
+  const monthShort = monthShortFormatter.format(date);
   const day = String(date.getDate());
   const dayPadded = String(date.getDate()).padStart(2, "0");
   const hour24 = String(date.getHours());
   const hour24Padded = String(date.getHours()).padStart(2, "0");
   const minute = String(date.getMinutes()).padStart(2, "0");
   const time24 = `${hour24Padded}:${minute}`;
-  const time12 = date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const time12 = time12Formatter.format(date);
 
   return [
     monthLong,
@@ -89,6 +99,16 @@ export function EventsPage() {
     return tags.sort((first, second) => first.localeCompare(second));
   }, [publicEvents]);
 
+  const eventDateSearchById = useMemo(() => {
+    const dateSearchById = new Map<string, string>();
+
+    for (const event of publicEvents) {
+      dateSearchById.set(event.id, getEventDateSearchText(event.eventDate));
+    }
+
+    return dateSearchById;
+  }, [publicEvents]);
+
   const filteredEvents = useMemo(() => {
     const value = searchTerm.trim().toLowerCase();
     const normalizedSelectedTags = selectedTags.map((tag) => tag.toLowerCase());
@@ -116,7 +136,7 @@ export function EventsPage() {
         event.location,
         event.organizer?.name,
         event.organizer?.email,
-        getEventDateSearchText(event.eventDate),
+        eventDateSearchById.get(event.id),
       ]
         .filter(Boolean)
         .join(" ")
@@ -124,7 +144,7 @@ export function EventsPage() {
 
       return searchable.includes(value);
     });
-  }, [publicEvents, searchTerm, selectedTags]);
+  }, [eventDateSearchById, publicEvents, searchTerm, selectedTags]);
 
   useEffect(() => {
     void dispatch(fetchPublicEvents());
