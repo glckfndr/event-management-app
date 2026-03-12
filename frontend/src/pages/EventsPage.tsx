@@ -100,6 +100,20 @@ export function EventsPage() {
     }
   }, [dispatch, token]);
 
+  useEffect(() => {
+    const availableTagSet = new Set(
+      availableTags.map((tag) => tag.toLowerCase()),
+    );
+
+    setSelectedTags((previous) => {
+      const next = previous.filter((tag) =>
+        availableTagSet.has(tag.toLowerCase()),
+      );
+
+      return next.length === previous.length ? previous : next;
+    });
+  }, [availableTags]);
+
   const refreshEvents = async () => {
     await Promise.all([
       dispatch(fetchPublicEvents()).unwrap(),
@@ -196,6 +210,7 @@ export function EventsPage() {
                 <button
                   key={tag}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => toggleTag(tag)}
                   className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
                     isSelected

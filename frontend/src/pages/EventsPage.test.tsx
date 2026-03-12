@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { api } from "../shared/api";
 import { EventsPage } from "./EventsPage";
+import { fetchPublicEvents } from "../features/events/eventsSlice";
 import {
   createTestStore,
   renderWithProviders,
@@ -138,5 +139,65 @@ describe("EventsPage", () => {
     expect(
       await screen.findByText("No events match the selected tags."),
     ).toBeInTheDocument();
+  });
+
+  it("prunes stale selected tags after events refresh", async () => {
+    const firstResponse: EventItem[] = [
+      buildEvent({
+        id: "evt-1",
+        title: "Tech Meetup",
+        tags: [{ id: "t-1", name: "Tech" }],
+      }),
+    ];
+    const secondResponse: EventItem[] = [
+      buildEvent({
+        id: "evt-2",
+        title: "Art Night",
+        tags: [{ id: "t-2", name: "Art" }],
+      }),
+    ];
+
+    const getSpy = vi.spyOn(api, "get");
+    getSpy.mockResolvedValueOnce({ data: firstResponse });
+    getSpy.mockResolvedValueOnce({ data: secondResponse });
+
+    const store = createTestStore({
+      auth: { token: null, user: null, status: "idle", error: null },
+      events: {
+        publicEvents: [],
+        myEvents: [],
+        selectedEvent: null,
+        status: "idle",
+        error: null,
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("Tech Meetup");
+    await userEvent.click(screen.getByRole("button", { name: "Tech" }));
+
+    expect(
+      screen.queryByText("No events match the selected tags."),
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      await store.dispatch(fetchPublicEvents());
+    });
+
+    await screen.findByText("Art Night");
+    expect(
+      screen.queryByRole("button", { name: "Tech" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No events match the selected tags."),
+    ).not.toBeInTheDocument();
   });
 });
