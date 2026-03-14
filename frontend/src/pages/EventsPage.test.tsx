@@ -350,4 +350,109 @@ describe("EventsPage", () => {
 
     expect(postSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("shows loading state while assistant request is in progress", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    let resolveRequest: ((value: { data: { answer: string } }) => void) | null =
+      null;
+    const pendingRequest = new Promise<{ data: { answer: string } }>(
+      (resolve) => {
+        resolveRequest = resolve;
+      },
+    );
+
+    vi.spyOn(api, "post").mockReturnValue(pendingRequest);
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    await userEvent.type(
+      screen.getByPlaceholderText("Ask about your events..."),
+      "How many events do I have?",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    expect(
+      await screen.findByText("Getting assistant answer..."),
+    ).toBeInTheDocument();
+
+    resolveRequest?.({ data: { answer: "You have 3 events in total." } });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Getting assistant answer..."),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders backend fallback message under assistant answer", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+    vi.spyOn(api, "post").mockResolvedValue({
+      data: {
+        answer:
+          "Sorry, I didn’t understand that. Please try rephrasing your question.",
+      },
+    });
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    await userEvent.type(
+      screen.getByPlaceholderText("Ask about your events..."),
+      "random unclear request",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    expect(await screen.findByText("Assistant answer")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Sorry, I didn’t understand that. Please try rephrasing your question.",
+      ),
+    ).toBeInTheDocument();
+  });
 });
