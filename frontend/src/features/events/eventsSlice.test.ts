@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CreateEventPayload, EventItem } from "../../types/event";
 import {
+  askAssistantQuestion,
   createEvent,
   deleteEvent,
   eventsReducer,
@@ -137,5 +138,45 @@ describe("eventsSlice", () => {
     expect(next.publicEvents).toHaveLength(0);
     expect(next.myEvents).toHaveLength(0);
     expect(next.selectedEvent).toBeNull();
+  });
+
+  it("tracks askAssistantQuestion loading and stores answer", () => {
+    const question = "How many events do I have?";
+
+    const pendingState = eventsReducer(
+      undefined,
+      askAssistantQuestion.pending("request-1", question),
+    );
+
+    expect(pendingState.assistantStatus).toBe("loading");
+    expect(pendingState.assistantError).toBeNull();
+
+    const fulfilledState = eventsReducer(
+      pendingState,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "You have 3 events in total." },
+        "request-1",
+        question,
+      ),
+    );
+
+    expect(fulfilledState.assistantStatus).toBe("idle");
+    expect(fulfilledState.assistantAnswer).toBe("You have 3 events in total.");
+  });
+
+  it("sets assistant error on askAssistantQuestion rejection", () => {
+    const question = "List my upcoming events";
+
+    const next = eventsReducer(
+      undefined,
+      askAssistantQuestion.rejected(
+        new Error("network"),
+        "request-2",
+        question,
+      ),
+    );
+
+    expect(next.assistantStatus).toBe("failed");
+    expect(next.assistantError).toBe("Failed to get assistant answer");
   });
 });
