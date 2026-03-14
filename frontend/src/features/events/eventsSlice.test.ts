@@ -161,6 +161,7 @@ describe("eventsSlice", () => {
     );
 
     expect(fulfilledState.assistantStatus).toBe("idle");
+    expect(fulfilledState.assistantError).toBeNull();
     expect(fulfilledState.assistantAnswer).toBe("You have 3 events in total.");
   });
 
@@ -177,6 +178,59 @@ describe("eventsSlice", () => {
     );
 
     expect(next.assistantStatus).toBe("failed");
+    expect(next.assistantAnswer).toBeNull();
     expect(next.assistantError).toBe("Failed to get assistant answer");
+  });
+
+  it("clears stale assistant error after successful response", () => {
+    const question = "How many events are public?";
+
+    const failedState = eventsReducer(
+      undefined,
+      askAssistantQuestion.rejected(
+        new Error("network"),
+        "request-3",
+        question,
+      ),
+    );
+
+    const recoveredState = eventsReducer(
+      failedState,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "There are 2 public events." },
+        "request-4",
+        question,
+      ),
+    );
+
+    expect(recoveredState.assistantStatus).toBe("idle");
+    expect(recoveredState.assistantError).toBeNull();
+    expect(recoveredState.assistantAnswer).toBe("There are 2 public events.");
+  });
+
+  it("clears stale assistant answer after failed response", () => {
+    const question = "List my private events";
+
+    const successfulState = eventsReducer(
+      undefined,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "You have 1 private event." },
+        "request-5",
+        question,
+      ),
+    );
+
+    const failedState = eventsReducer(
+      successfulState,
+      askAssistantQuestion.rejected(
+        new Error("timeout"),
+        "request-6",
+        question,
+      ),
+    );
+
+    expect(failedState.assistantStatus).toBe("failed");
+    expect(failedState.assistantAnswer).toBeNull();
+    expect(failedState.assistantError).toBe("Failed to get assistant answer");
   });
 });
