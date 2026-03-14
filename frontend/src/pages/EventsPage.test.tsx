@@ -30,6 +30,17 @@ const buildEvent = (overrides: Partial<EventItem>): EventItem => ({
   ...overrides,
 });
 
+const createInitialEventsState = () => ({
+  publicEvents: [],
+  myEvents: [],
+  selectedEvent: null,
+  status: "idle" as const,
+  error: null,
+  assistantAnswer: null,
+  assistantStatus: "idle" as const,
+  assistantError: null,
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -52,11 +63,7 @@ describe("EventsPage", () => {
     const store = createTestStore({
       auth: { token: null, user: null, status: "idle", error: null },
       events: {
-        publicEvents: [],
-        myEvents: [],
-        selectedEvent: null,
-        status: "idle",
-        error: null,
+        ...createInitialEventsState(),
       },
     });
 
@@ -104,11 +111,7 @@ describe("EventsPage", () => {
     const store = createTestStore({
       auth: { token: null, user: null, status: "idle", error: null },
       events: {
-        publicEvents: [],
-        myEvents: [],
-        selectedEvent: null,
-        status: "idle",
-        error: null,
+        ...createInitialEventsState(),
       },
     });
 
@@ -160,11 +163,7 @@ describe("EventsPage", () => {
     const store = createTestStore({
       auth: { token: null, user: null, status: "idle", error: null },
       events: {
-        publicEvents: [],
-        myEvents: [],
-        selectedEvent: null,
-        status: "idle",
-        error: null,
+        ...createInitialEventsState(),
       },
     });
 
@@ -222,11 +221,7 @@ describe("EventsPage", () => {
     const store = createTestStore({
       auth: { token: null, user: null, status: "idle", error: null },
       events: {
-        publicEvents: [],
-        myEvents: [],
-        selectedEvent: null,
-        status: "idle",
-        error: null,
+        ...createInitialEventsState(),
       },
     });
 
@@ -257,5 +252,102 @@ describe("EventsPage", () => {
     expect(
       screen.queryByText("No events match the selected tags."),
     ).not.toBeInTheDocument();
+  });
+
+  it("submits assistant question and renders returned answer", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    const getSpy = vi.spyOn(api, "get");
+    getSpy.mockResolvedValue({ data: events });
+
+    const postSpy = vi.spyOn(api, "post");
+    postSpy.mockResolvedValue({
+      data: { answer: "You have 3 events in total." },
+    });
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    await userEvent.type(
+      screen.getByPlaceholderText("Ask about your events..."),
+      "How many events do I have?",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    expect(await screen.findByText("Assistant answer")).toBeInTheDocument();
+    expect(screen.getByText("You have 3 events in total.")).toBeInTheDocument();
+
+    expect(postSpy).toHaveBeenCalledWith(
+      "/assistant/questions",
+      { question: "How many events do I have?" },
+      {
+        headers: { Authorization: "Bearer token" },
+      },
+    );
+  });
+
+  it("shows assistant error when API request fails", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    const getSpy = vi.spyOn(api, "get");
+    getSpy.mockResolvedValue({ data: events });
+
+    const postSpy = vi.spyOn(api, "post");
+    postSpy.mockRejectedValue(new Error("Request failed"));
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    await userEvent.type(
+      screen.getByPlaceholderText("Ask about your events..."),
+      "How many upcoming events?",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    expect(
+      await screen.findByText("Failed to get assistant answer"),
+    ).toBeInTheDocument();
+
+    expect(postSpy).toHaveBeenCalledTimes(1);
   });
 });
