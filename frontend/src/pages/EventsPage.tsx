@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
+  askAssistantQuestion,
   fetchMyEvents,
   fetchPublicEvents,
   joinEvent,
@@ -61,12 +62,20 @@ export function EventsPage() {
   const { publicEvents, myEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
+  const assistantAnswer = useAppSelector(
+    (state) => state.events.assistantAnswer,
+  );
+  const assistantStatus = useAppSelector(
+    (state) => state.events.assistantStatus,
+  );
+  const assistantError = useAppSelector((state) => state.events.assistantError);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [assistantQuestion, setAssistantQuestion] = useState("");
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((event) => event.id)),
@@ -234,6 +243,23 @@ export function EventsPage() {
     });
   };
 
+  const handleAssistantSubmit = async (submitEvent: FormEvent) => {
+    submitEvent.preventDefault();
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const question = assistantQuestion.trim();
+
+    if (!question) {
+      return;
+    }
+
+    await dispatch(askAssistantQuestion(question));
+  };
+
   return (
     <div>
       <h2 className="text-4xl font-bold text-slate-900">Discover Events</h2>
@@ -252,6 +278,63 @@ export function EventsPage() {
           placeholder="Search events..."
         />
       </div>
+
+      {token ? (
+        <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
+          <h3 className="text-xl font-semibold text-slate-900">AI Assistant</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Ask natural-language questions about your events.
+          </p>
+
+          <form
+            className="mt-4 flex flex-col gap-3 sm:flex-row"
+            onSubmit={handleAssistantSubmit}
+          >
+            <input
+              value={assistantQuestion}
+              onChange={(inputEvent) =>
+                setAssistantQuestion(inputEvent.target.value)
+              }
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
+              placeholder="Ask about your events..."
+            />
+            <button
+              type="submit"
+              disabled={
+                assistantStatus === "loading" ||
+                assistantQuestion.trim().length === 0
+              }
+              className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {assistantStatus === "loading" ? "Asking..." : "Ask"}
+            </button>
+          </form>
+
+          {assistantStatus === "loading" ? (
+            <p className="mt-3 text-sm text-slate-600">
+              Getting assistant answer...
+            </p>
+          ) : null}
+
+          {assistantError ? (
+            <p className="mt-3 text-sm text-red-600">{assistantError}</p>
+          ) : null}
+
+          <div
+            aria-live="polite"
+            className={assistantAnswer ? "mt-3 rounded-lg bg-slate-50 p-3" : ""}
+          >
+            {assistantAnswer ? (
+              <>
+                <p className="text-sm font-semibold text-slate-700">
+                  Assistant answer
+                </p>
+                <p className="mt-1 text-sm text-slate-700">{assistantAnswer}</p>
+              </>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {availableTags.length > 0 ? (
         <div className="mt-5">

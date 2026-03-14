@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { CreateEventPayload, EventItem } from "../../types/event";
 import {
+  askAssistantQuestion,
   createEvent,
   deleteEvent,
   eventsReducer,
@@ -137,5 +138,99 @@ describe("eventsSlice", () => {
     expect(next.publicEvents).toHaveLength(0);
     expect(next.myEvents).toHaveLength(0);
     expect(next.selectedEvent).toBeNull();
+  });
+
+  it("tracks askAssistantQuestion loading and stores answer", () => {
+    const question = "How many events do I have?";
+
+    const pendingState = eventsReducer(
+      undefined,
+      askAssistantQuestion.pending("request-1", question),
+    );
+
+    expect(pendingState.assistantStatus).toBe("loading");
+    expect(pendingState.assistantError).toBeNull();
+
+    const fulfilledState = eventsReducer(
+      pendingState,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "You have 3 events in total." },
+        "request-1",
+        question,
+      ),
+    );
+
+    expect(fulfilledState.assistantStatus).toBe("idle");
+    expect(fulfilledState.assistantError).toBeNull();
+    expect(fulfilledState.assistantAnswer).toBe("You have 3 events in total.");
+  });
+
+  it("sets assistant error on askAssistantQuestion rejection", () => {
+    const question = "List my upcoming events";
+
+    const next = eventsReducer(
+      undefined,
+      askAssistantQuestion.rejected(
+        new Error("network"),
+        "request-2",
+        question,
+      ),
+    );
+
+    expect(next.assistantStatus).toBe("failed");
+    expect(next.assistantAnswer).toBeNull();
+    expect(next.assistantError).toBe("Failed to get assistant answer");
+  });
+
+  it("clears stale assistant error after successful response", () => {
+    const question = "How many events are public?";
+
+    const failedState = eventsReducer(
+      undefined,
+      askAssistantQuestion.rejected(
+        new Error("network"),
+        "request-3",
+        question,
+      ),
+    );
+
+    const recoveredState = eventsReducer(
+      failedState,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "There are 2 public events." },
+        "request-4",
+        question,
+      ),
+    );
+
+    expect(recoveredState.assistantStatus).toBe("idle");
+    expect(recoveredState.assistantError).toBeNull();
+    expect(recoveredState.assistantAnswer).toBe("There are 2 public events.");
+  });
+
+  it("clears stale assistant answer after failed response", () => {
+    const question = "List my private events";
+
+    const successfulState = eventsReducer(
+      undefined,
+      askAssistantQuestion.fulfilled(
+        { question, answer: "You have 1 private event." },
+        "request-5",
+        question,
+      ),
+    );
+
+    const failedState = eventsReducer(
+      successfulState,
+      askAssistantQuestion.rejected(
+        new Error("timeout"),
+        "request-6",
+        question,
+      ),
+    );
+
+    expect(failedState.assistantStatus).toBe("failed");
+    expect(failedState.assistantAnswer).toBeNull();
+    expect(failedState.assistantError).toBe("Failed to get assistant answer");
   });
 });
