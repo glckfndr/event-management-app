@@ -246,6 +246,11 @@ export function EventsPage() {
   const handleAssistantSubmit = async (submitEvent: FormEvent) => {
     submitEvent.preventDefault();
 
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const question = assistantQuestion.trim();
 
     if (!question) {
@@ -274,55 +279,57 @@ export function EventsPage() {
         />
       </div>
 
-      <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="text-xl font-semibold text-slate-900">AI Assistant</h3>
-        <p className="mt-1 text-sm text-slate-600">
-          Ask natural-language questions about your events.
-        </p>
-
-        <form
-          className="mt-4 flex flex-col gap-3 sm:flex-row"
-          onSubmit={handleAssistantSubmit}
-        >
-          <input
-            value={assistantQuestion}
-            onChange={(inputEvent) =>
-              setAssistantQuestion(inputEvent.target.value)
-            }
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
-            placeholder="Ask about your events..."
-          />
-          <button
-            type="submit"
-            disabled={
-              assistantStatus === "loading" ||
-              assistantQuestion.trim().length === 0
-            }
-            className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {assistantStatus === "loading" ? "Asking..." : "Ask"}
-          </button>
-        </form>
-
-        {assistantStatus === "loading" ? (
-          <p className="mt-3 text-sm text-slate-600">
-            Getting assistant answer...
+      {token ? (
+        <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
+          <h3 className="text-xl font-semibold text-slate-900">AI Assistant</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Ask natural-language questions about your events.
           </p>
-        ) : null}
 
-        {assistantError ? (
-          <p className="mt-3 text-sm text-red-600">{assistantError}</p>
-        ) : null}
+          <form
+            className="mt-4 flex flex-col gap-3 sm:flex-row"
+            onSubmit={handleAssistantSubmit}
+          >
+            <input
+              value={assistantQuestion}
+              onChange={(inputEvent) =>
+                setAssistantQuestion(inputEvent.target.value)
+              }
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
+              placeholder="Ask about your events..."
+            />
+            <button
+              type="submit"
+              disabled={
+                assistantStatus === "loading" ||
+                assistantQuestion.trim().length === 0
+              }
+              className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {assistantStatus === "loading" ? "Asking..." : "Ask"}
+            </button>
+          </form>
 
-        {assistantAnswer ? (
-          <div className="mt-3 rounded-lg bg-slate-50 p-3" aria-live="polite">
-            <p className="text-sm font-semibold text-slate-700">
-              Assistant answer
+          {assistantStatus === "loading" ? (
+            <p className="mt-3 text-sm text-slate-600">
+              Getting assistant answer...
             </p>
-            <p className="mt-1 text-sm text-slate-700">{assistantAnswer}</p>
-          </div>
-        ) : null}
-      </section>
+          ) : null}
+
+          {assistantError ? (
+            <p className="mt-3 text-sm text-red-600">{assistantError}</p>
+          ) : null}
+
+          {assistantAnswer ? (
+            <div className="mt-3 rounded-lg bg-slate-50 p-3" aria-live="polite">
+              <p className="text-sm font-semibold text-slate-700">
+                Assistant answer
+              </p>
+              <p className="mt-1 text-sm text-slate-700">{assistantAnswer}</p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {availableTags.length > 0 ? (
         <div className="mt-5">
