@@ -320,14 +320,19 @@ export function EventsPage() {
             <p className="mt-3 text-sm text-red-600">{assistantError}</p>
           ) : null}
 
-          {assistantAnswer ? (
-            <div className="mt-3 rounded-lg bg-slate-50 p-3" aria-live="polite">
-              <p className="text-sm font-semibold text-slate-700">
-                Assistant answer
-              </p>
-              <p className="mt-1 text-sm text-slate-700">{assistantAnswer}</p>
-            </div>
-          ) : null}
+          <div
+            aria-live="polite"
+            className={assistantAnswer ? "mt-3 rounded-lg bg-slate-50 p-3" : ""}
+          >
+            {assistantAnswer ? (
+              <>
+                <p className="text-sm font-semibold text-slate-700">
+                  Assistant answer
+                </p>
+                <p className="mt-1 text-sm text-slate-700">{assistantAnswer}</p>
+              </>
+            ) : null}
+          </div>
         </section>
       ) : null}
 

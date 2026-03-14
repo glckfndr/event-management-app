@@ -337,6 +337,40 @@ describe("EventsPage", () => {
     );
   });
 
+  it("keeps assistant live region mounted before answer updates", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    const liveRegion = document.querySelector('[aria-live="polite"]');
+
+    expect(liveRegion).not.toBeNull();
+    expect(screen.queryByText("Assistant answer")).not.toBeInTheDocument();
+  });
+
   it("shows assistant error when API request fails", async () => {
     const events: EventItem[] = [buildEvent({ id: "evt-1" })];
 
