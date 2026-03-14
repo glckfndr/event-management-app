@@ -168,6 +168,34 @@ npm run lint
 npm run test:run
 ```
 
+Focused Stage 2 checks:
+
+```bash
+# backend assistant behavior (fallback/read-only/tags/date-range)
+cd backend
+npx jest assistant.service.spec.ts --watchAll=false
+
+# frontend assistant/tags flow on Events page
+cd ../frontend
+npx vitest run src/pages/EventsPage.test.tsx
+```
+
+### AI Assistant Environment
+
+The backend assistant can run in deterministic local mode or with LLM intent classification.
+
+- `AI_API_KEY`: enables LLM classification when set; local rules/fallback are used when missing.
+- `AI_PROVIDER`: LLM provider id (for example `groq`, `openai`, `openrouter`).
+- `AI_MODEL`: model name passed to provider API.
+
+Example:
+
+```bash
+AI_API_KEY=your_api_key_here
+AI_PROVIDER=groq
+AI_MODEL=llama-3.3-70b-versatile
+```
+
 ---
 
 ## Security Notes

@@ -421,8 +421,7 @@ describe("EventsPage", () => {
 
     vi.spyOn(api, "get").mockResolvedValue({ data: events });
 
-    let resolveRequest: ((value: { data: { answer: string } }) => void) | null =
-      null;
+    let resolveRequest!: (value: { data: { answer: string } }) => void;
     const pendingRequest = new Promise<{ data: { answer: string } }>(
       (resolve) => {
         resolveRequest = resolve;
@@ -464,7 +463,7 @@ describe("EventsPage", () => {
       await screen.findByText("Getting assistant answer..."),
     ).toBeInTheDocument();
 
-    resolveRequest?.({ data: { answer: "You have 3 events in total." } });
+    resolveRequest({ data: { answer: "You have 3 events in total." } });
 
     await waitFor(() => {
       expect(
