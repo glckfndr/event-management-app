@@ -46,6 +46,37 @@ afterEach(() => {
 });
 
 describe("EventsPage", () => {
+  it("hides AI Assistant section for unauthenticated users", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    const store = createTestStore({
+      auth: { token: null, user: null, status: "idle", error: null },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    expect(
+      screen.queryByRole("heading", { name: "AI Assistant" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("Ask about your events..."),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows tag chips on event cards", async () => {
     const events: EventItem[] = [
       buildEvent({
