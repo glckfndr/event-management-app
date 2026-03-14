@@ -272,10 +272,12 @@ const eventsSlice = createSlice({
       })
       .addCase(askAssistantQuestion.fulfilled, (state, action) => {
         state.assistantStatus = "idle";
+        state.assistantError = null;
         state.assistantAnswer = action.payload.answer;
       })
       .addCase(askAssistantQuestion.rejected, (state) => {
         state.assistantStatus = "failed";
+        state.assistantAnswer = null;
         state.assistantError = "Failed to get assistant answer";
       });
   },
