@@ -223,7 +223,7 @@ describe('AssistantService', () => {
       'user-1',
     );
 
-    expect(result.answer).toBe('Events on 2026-03-13: 1 event.');
+    expect(result.answer).toBe('Events on 13-03-2026: 1 event.');
   });
 
   it('lists upcoming events', async () => {
@@ -244,7 +244,7 @@ describe('AssistantService', () => {
       'user-1',
     );
 
-    expect(result.answer).toContain('Events on 2026-03-13:');
+    expect(result.answer).toContain('Events on 13-03-2026:');
     expect(result.answer).toContain('Tech Meetup');
     expect(result.answer).not.toContain('Design Sync');
   });
@@ -350,6 +350,18 @@ describe('AssistantService', () => {
     expect(result.answer).toBe('"Open House" has no participants yet.');
   });
 
+  it('answers participants for "who is attending" phrasing', async () => {
+    process.env.AI_API_KEY = 'test-key';
+    llmService.classifyQuestion.mockResolvedValueOnce({ intent: 'fallback' });
+
+    const result = await service.answerQuestion(
+      'Who is attending the Vegetable?',
+      'user-2',
+    );
+
+    expect(result.answer).toBe('"Vegetable" has no participants yet.');
+  });
+
   it('infers event title for show_participants intent when classifier omits eventTitle', async () => {
     process.env.AI_API_KEY = 'test-key';
     llmService.classifyQuestion.mockResolvedValueOnce({
@@ -416,7 +428,7 @@ describe('AssistantService', () => {
       'user-1',
     );
 
-    expect(result.answer).toContain('Events from 2026-03-10 to 2026-03-20:');
+    expect(result.answer).toContain('Events from 10-03-2026 to 20-03-2026:');
     expect(result.answer).toContain('Tech Meetup');
     expect(result.answer).toContain('Design Sync');
     expect(result.answer).not.toContain('Retro Review');
