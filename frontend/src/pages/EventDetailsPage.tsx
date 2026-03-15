@@ -11,6 +11,7 @@ import type { EventEditFormValues } from "../components/event-details/EventEditF
 import { AsyncSection } from "../components/layout/AsyncSection";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import { getSafeReturnPath } from "../shared/navigation";
+import type { EventItem } from "../types/event";
 
 const toDateTimeLocalValue = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -39,6 +40,24 @@ const toDateAndTimeLocalValues = (isoDate: string) => {
   return {
     date: date ?? "",
     time: time ?? "",
+  };
+};
+
+const toEditFormValues = (event: EventItem): EventEditFormValues => {
+  const { date, time } = toDateAndTimeLocalValues(event.eventDate);
+
+  return {
+    title: event.title,
+    description: event.description ?? "",
+    date,
+    time,
+    location: event.location ?? "",
+    capacity:
+      event.capacity == null || Number.isNaN(event.capacity)
+        ? ""
+        : String(event.capacity),
+    visibility: event.visibility,
+    tags: (event.tags ?? []).map((tag) => tag.name),
   };
 };
 
@@ -93,27 +112,6 @@ export function EventDetailsPage() {
     }
   }, [dispatch, token]);
 
-  useEffect(() => {
-    if (!currentEvent) {
-      return;
-    }
-
-    const { date, time } = toDateAndTimeLocalValues(currentEvent.eventDate);
-    setEditForm({
-      title: currentEvent.title,
-      description: currentEvent.description ?? "",
-      date,
-      time,
-      location: currentEvent.location ?? "",
-      capacity:
-        currentEvent.capacity == null || Number.isNaN(currentEvent.capacity)
-          ? ""
-          : String(currentEvent.capacity),
-      visibility: currentEvent.visibility,
-      tags: (currentEvent.tags ?? []).map((tag) => tag.name),
-    });
-  }, [currentEvent]);
-
   const updateEditFormField = <K extends keyof EventEditFormValues>(
     field: K,
     value: EventEditFormValues[K],
@@ -123,10 +121,6 @@ export function EventDetailsPage() {
       [field]: value,
     }));
   };
-
-  if (!id) {
-    return <p>Event id is missing.</p>;
-  }
 
   const isOrganizer =
     Boolean(currentUserEmail) &&
@@ -158,6 +152,24 @@ export function EventDetailsPage() {
     onEditFinished: () => setIsEditing(false),
   });
 
+  const handleToggleEdit = () => {
+    setError(null);
+
+    setIsEditing((value) => {
+      const nextValue = !value;
+
+      if (nextValue && currentEvent) {
+        setEditForm(toEditFormValues(currentEvent));
+      }
+
+      return nextValue;
+    });
+  };
+
+  if (!id) {
+    return <p>Event id is missing.</p>;
+  }
+
   return (
     <AsyncSection
       isLoading={isPageLoading}
@@ -184,7 +196,7 @@ export function EventDetailsPage() {
               onJoin: () => void handleJoin(),
               onLeave: () => void handleLeave(),
               onOpenDelete: () => setIsDeleteModalOpen(true),
-              onToggleEdit: () => setIsEditing((value) => !value),
+              onToggleEdit: handleToggleEdit,
               onBack: () => navigate(returnTo),
             }}
           />

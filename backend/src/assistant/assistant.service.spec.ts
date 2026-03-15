@@ -127,7 +127,7 @@ describe('AssistantService', () => {
       },
     ];
 
-    eventsRepository.find.mockImplementation(async (options?: unknown) => {
+    eventsRepository.find.mockImplementation((options?: unknown) => {
       const where = (options as { where?: Record<string, unknown> } | undefined)
         ?.where;
 
@@ -151,37 +151,30 @@ describe('AssistantService', () => {
       return organizedEvents;
     });
 
-    participantsRepository.find.mockImplementation(
-      async (options?: unknown) => {
-        const where = (
-          options as { where?: Record<string, unknown> } | undefined
-        )?.where;
+    participantsRepository.find.mockImplementation((options?: unknown) => {
+      const where = (options as { where?: Record<string, unknown> } | undefined)
+        ?.where;
 
-        if (where?.userId === 'user-2') {
-          return [];
-        }
+      if (where?.userId === 'user-2') {
+        return [];
+      }
 
-        return [
-          {
-            id: 'part-1',
-            userId: 'user-1',
-            event: {
-              id: 'event-3',
-              title: 'Design Sync',
-              eventDate: new Date('2026-03-15T15:30:00.000Z'),
-              visibility: EventVisibility.PUBLIC,
-              organizerId: 'user-2',
-              tags: [
-                { name: 'design' },
-                { name: 'tech' },
-                { name: 'marketing' },
-              ],
-              participants: [{ userId: 'user-1' }, { userId: 'user-4' }],
-            },
+      return [
+        {
+          id: 'part-1',
+          userId: 'user-1',
+          event: {
+            id: 'event-3',
+            title: 'Design Sync',
+            eventDate: new Date('2026-03-15T15:30:00.000Z'),
+            visibility: EventVisibility.PUBLIC,
+            organizerId: 'user-2',
+            tags: [{ name: 'design' }, { name: 'tech' }, { name: 'marketing' }],
+            participants: [{ userId: 'user-1' }, { userId: 'user-4' }],
           },
-        ];
-      },
-    );
+        },
+      ];
+    });
   });
 
   afterEach(() => {
@@ -516,17 +509,31 @@ describe('AssistantService', () => {
 
     await service.answerQuestion('How many events do I have?', 'user-1');
 
-    const snapshot = llmService.classifyQuestion.mock.calls[0][1] as {
+    const classifyCalls = llmService.classifyQuestion.mock.calls as Array<
+      [
+        string,
+        { currentUserId: string; events: Array<Record<string, unknown>> },
+      ]
+    >;
+    const snapshot = classifyCalls[0]?.[1];
+
+    expect(snapshot).toBeDefined();
+
+    if (!snapshot) {
+      throw new Error('Expected classifyQuestion snapshot payload');
+    }
+
+    const typedSnapshot = snapshot as {
       currentUserId: string;
       events: Array<Record<string, unknown>>;
     };
 
-    expect(snapshot.currentUserId).toBe('user-1');
-    expect(snapshot.events[0]).not.toHaveProperty('id');
-    expect(snapshot.events[0]).not.toHaveProperty('organizerId');
-    expect(snapshot.events[0]).not.toHaveProperty('participantIds');
-    expect(snapshot.events[0]).toHaveProperty('relationToUser');
-    expect(snapshot.events[0]).toHaveProperty('participantCount');
+    expect(typedSnapshot.currentUserId).toBe('user-1');
+    expect(typedSnapshot.events[0]).not.toHaveProperty('id');
+    expect(typedSnapshot.events[0]).not.toHaveProperty('organizerId');
+    expect(typedSnapshot.events[0]).not.toHaveProperty('participantIds');
+    expect(typedSnapshot.events[0]).toHaveProperty('relationToUser');
+    expect(typedSnapshot.events[0]).toHaveProperty('participantCount');
   });
 
   it('includes participant identifiers in llm snapshot for participant questions', async () => {
@@ -541,11 +548,22 @@ describe('AssistantService', () => {
       'user-1',
     );
 
-    const snapshot = llmService.classifyQuestion.mock.calls[0][1] as {
+    const classifyCalls = llmService.classifyQuestion.mock.calls as Array<
+      [string, { events: Array<Record<string, unknown>> }]
+    >;
+    const snapshot = classifyCalls[0]?.[1];
+
+    expect(snapshot).toBeDefined();
+
+    if (!snapshot) {
+      throw new Error('Expected classifyQuestion snapshot payload');
+    }
+
+    const typedSnapshot = snapshot as {
       events: Array<Record<string, unknown>>;
     };
 
-    expect(snapshot.events[0]).toHaveProperty('participantIds');
+    expect(typedSnapshot.events[0]).toHaveProperty('participantIds');
   });
 
   it('returns fallback when llm returns fallback text for supported query', async () => {
