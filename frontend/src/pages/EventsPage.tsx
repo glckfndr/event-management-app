@@ -295,7 +295,7 @@ export function EventsPage() {
               onChange={(inputEvent) =>
                 setAssistantQuestion(inputEvent.target.value)
               }
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-[1.05rem] text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
               placeholder="Ask about your events..."
             />
             <button
@@ -304,7 +304,7 @@ export function EventsPage() {
                 assistantStatus === "loading" ||
                 assistantQuestion.trim().length === 0
               }
-              className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-[1.05rem] font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {assistantStatus === "loading" ? "Asking..." : "Ask"}
             </button>
