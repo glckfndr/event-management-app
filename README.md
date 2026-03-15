@@ -180,6 +180,13 @@ cd ../frontend
 npx vitest run src/pages/EventsPage.test.tsx
 ```
 
+Assistant UX notes (Events page):
+
+- `Try asking` section provides built-in question examples for quick input.
+- `Recent questions` stores up to 5 latest unique questions.
+- Recent questions are persisted in browser `localStorage` and restored on reload.
+- Both helper sections are compact dropdown panels to reduce page clutter.
+
 ### AI Assistant Environment
 
 The backend assistant can run in deterministic local mode or with LLM intent classification.
@@ -265,6 +272,7 @@ The frontend follows a feature-based structure:
 - **Component Structure**
   - Pages: Events List, Event Details, Create Event, My Events
   - Reusable UI components (cards, forms, modals)
+  - Assistant panel with quick suggestions and persisted recent-question history
 
 The frontend communicates with the backend via a centralized Axios API layer.
 
@@ -294,6 +302,12 @@ DB_PASSWORD=your_strong_password_here
 BACKEND_PUBLIC_URL=http://localhost:3001
 JWT_SECRET=replace_with_a_long_random_secret
 JWT_EXPIRES_IN=1h
+
+# optional assistant LLM config
+AI_PROVIDER=groq
+AI_API_KEY=
+AI_MODEL=llama-3.3-70b-versatile
+# AI_BASE_URL=
 ```
 
 For access from another device in your local network, set `BACKEND_PUBLIC_URL` to your host IP,

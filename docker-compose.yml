@@ -38,6 +38,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       DB_DATABASE: event_management
       DB_SYNCHRONIZE: "false"
+      AI_PROVIDER: ${AI_PROVIDER:-groq}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-llama-3.3-70b-versatile}
+      AI_BASE_URL: ${AI_BASE_URL:-}
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules

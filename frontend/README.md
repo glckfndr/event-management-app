@@ -48,6 +48,10 @@ Events page tests include:
 - combined search + tag filtering behavior
 - assistant UI flow (submit, loading, success, fallback, error)
 - assistant visibility rules for unauthenticated users
+- predefined assistant suggestion prompts (`Try asking`)
+- persisted recent assistant questions (`Recent questions`) via `localStorage`
+- restore of recent assistant questions after page reload
+- compact dropdown behavior for assistant helper sections
 
 Run focused suite:
 
