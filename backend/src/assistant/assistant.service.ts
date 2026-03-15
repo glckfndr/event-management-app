@@ -1,27 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Event as EventEntity } from '../events/entities/event.entity';
+import {
+  Event as EventEntity,
+  EventVisibility,
+} from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { mergeAndSortCalendarEvents } from '../events/events.service.helpers';
 import {
-  AssistantContextSnapshot,
+  answerFromIntent,
+  answerFromRules,
+  answerParticipantsFromQuestion,
+  answerWhereIsFromQuestion,
+} from './assistant-answer.helpers';
+import {
   AssistantLlmService,
   ASSISTANT_FALLBACK_MESSAGE,
+  type AssistantContextSnapshot,
 } from './assistant-llm.service';
-
-type AssistantEvent = {
-  id: string;
-  title: string;
-  eventDate: Date;
-  visibility: 'public' | 'private';
-  organizerId: string;
-  tags: string[];
-  participantIds: string[];
-};
+import {
+  isParticipantsQuestionText,
+  isWhereIsQuestionText,
+  shouldUseDateFallbackQuestion,
+  shouldUseGlobalDateScopeQuestion,
+} from './assistant-text.helpers';
+import type {
+  AssistantEvent,
+  AssistantQuestionIntent,
+} from './assistant.types';
 
 @Injectable()
 export class AssistantService {
+  private readonly logger = new Logger(AssistantService.name);
+
   constructor(
     @InjectRepository(EventEntity)
     private readonly eventsRepository: Repository<EventEntity>,
@@ -34,46 +45,151 @@ export class AssistantService {
     question: string,
     userId: string,
   ): Promise<{ answer: string }> {
+    const normalizedQuestion = question.trim();
     const events = await this.loadUserEvents(userId);
-    const now = new Date();
-    const localAnswer = this.answerFromRules(question, events, now);
-    const shouldUseLlmForSupported = this.shouldUseLlmForSupportedAnswers();
-
-    if (localAnswer && !shouldUseLlmForSupported) {
-      return { answer: localAnswer };
-    }
-
-    const snapshot = this.buildSnapshot(
-      events,
-      now,
-      this.isParticipantsQuestion(question),
-    );
-
-    const llmAnswer = await this.assistantLlmService.askQuestion(
+    const scopedEvents = await this.resolveEventsForQuestionScope(
       question,
-      snapshot,
+      events,
+    );
+    const now = new Date();
+    const shouldQueryLlm = Boolean(process.env.AI_API_KEY?.trim());
+
+    this.trace(
+      `Assistant request: llmEnabled=${shouldQueryLlm}, questionLength=${normalizedQuestion.length}`,
     );
 
-    const normalizedLlmAnswer = llmAnswer?.trim();
+    if (!shouldQueryLlm) {
+      const localAnswer = answerFromRules(question, scopedEvents, now);
 
-    if (
-      normalizedLlmAnswer &&
-      normalizedLlmAnswer !== ASSISTANT_FALLBACK_MESSAGE
-    ) {
-      return { answer: normalizedLlmAnswer };
-    }
+      if (localAnswer) {
+        this.trace('Assistant response source: local-rules (no AI_API_KEY)');
+        return { answer: localAnswer };
+      }
 
-    if (!localAnswer) {
+      this.trace(
+        'Assistant response source: fallback (no AI_API_KEY, no local match)',
+      );
       return { answer: ASSISTANT_FALLBACK_MESSAGE };
     }
 
-    return {
-      answer: localAnswer,
-    };
+    const snapshot = this.buildSnapshot(
+      scopedEvents,
+      now,
+      userId,
+      isParticipantsQuestionText(question),
+    );
+
+    const intent = await this.classifyQuestion(question, snapshot);
+
+    if (!intent || intent.intent === 'fallback') {
+      const lookupEvents = await this.resolveLookupEventsForQuestion(
+        question,
+        scopedEvents,
+      );
+      const fallbackResolution = this.resolveFallbackAnswer(
+        question,
+        lookupEvents,
+        now,
+      );
+
+      if (fallbackResolution.answer) {
+        this.trace(`Assistant response source: ${fallbackResolution.source}`);
+        return { answer: fallbackResolution.answer };
+      }
+
+      this.trace('Assistant response source: fallback (llm unclear intent)');
+      return { answer: ASSISTANT_FALLBACK_MESSAGE };
+    }
+
+    if (
+      intent.intent === 'where_is_event' ||
+      intent.intent === 'show_participants'
+    ) {
+      const lookupEvents = await this.loadWhereIsLookupEvents(events);
+      const lookupAnswer = answerFromIntent(
+        intent,
+        lookupEvents,
+        now,
+        userId,
+        question,
+      );
+
+      if (!lookupAnswer) {
+        const fallbackResolution = this.resolveFallbackAnswer(
+          question,
+          lookupEvents,
+          now,
+        );
+
+        if (fallbackResolution.answer) {
+          this.trace(`Assistant response source: ${fallbackResolution.source}`);
+          return { answer: fallbackResolution.answer };
+        }
+
+        this.trace('Assistant response source: fallback (intent unsupported)');
+        return { answer: ASSISTANT_FALLBACK_MESSAGE };
+      }
+
+      this.trace(`Assistant response source: llm-intent (${intent.intent})`);
+      return { answer: lookupAnswer };
+    }
+
+    const answer = answerFromIntent(
+      intent,
+      scopedEvents,
+      now,
+      userId,
+      question,
+    );
+
+    if (!answer) {
+      const lookupEvents = await this.resolveLookupEventsForQuestion(
+        question,
+        scopedEvents,
+      );
+      const fallbackResolution = this.resolveFallbackAnswer(
+        question,
+        lookupEvents,
+        now,
+      );
+
+      if (fallbackResolution.answer) {
+        this.trace(`Assistant response source: ${fallbackResolution.source}`);
+        return { answer: fallbackResolution.answer };
+      }
+
+      this.trace('Assistant response source: fallback (intent unsupported)');
+      return { answer: ASSISTANT_FALLBACK_MESSAGE };
+    }
+
+    this.trace(`Assistant response source: llm-intent (${intent.intent})`);
+    return { answer };
   }
 
-  private shouldUseLlmForSupportedAnswers(): boolean {
-    return process.env.ASSISTANT_USE_LLM_FOR_SUPPORTED === 'true';
+  private async resolveEventsForQuestionScope(
+    question: string,
+    userEvents: AssistantEvent[],
+  ): Promise<AssistantEvent[]> {
+    if (!shouldUseGlobalDateScopeQuestion(question)) {
+      return userEvents;
+    }
+
+    return this.loadWhereIsLookupEvents(userEvents);
+  }
+
+  private async classifyQuestion(
+    question: string,
+    snapshot: AssistantContextSnapshot,
+  ): Promise<AssistantQuestionIntent | null> {
+    return this.assistantLlmService.classifyQuestion(question, snapshot);
+  }
+
+  private trace(message: string): void {
+    if (process.env.ASSISTANT_TRACE_LOGS?.trim().toLowerCase() !== 'true') {
+      return;
+    }
+
+    this.logger.debug(message);
   }
 
   private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {
@@ -98,20 +214,31 @@ export class AssistantService {
       participantRows,
     );
 
-    return mergedEvents
+    this.trace(`DB response: loaded ${mergedEvents.length} events`);
+
+    return this.toAssistantEvents(mergedEvents);
+  }
+
+  private toAssistantEvents(events: EventEntity[]): AssistantEvent[] {
+    return events
       .map((event) => ({
         // TypeORM relation typing can be narrower than runtime-loaded relations.
         relationData: event as EventEntity & {
           tags?: Array<{ name: string }>;
-          participants?: Array<{ userId: string }>;
+          participants?: Array<{
+            userId: string;
+            user?: { name?: string | null; email?: string | null };
+          }>;
         },
         id: event.id,
         title: event.title,
         eventDate: new Date(event.eventDate),
         visibility: event.visibility,
+        location: event.location,
         organizerId: event.organizerId,
         tags: [],
         participantIds: [],
+        participantLabels: [],
       }))
       .map(({ relationData, ...event }) => ({
         ...event,
@@ -119,12 +246,112 @@ export class AssistantService {
         participantIds: (relationData.participants ?? []).map(
           (participant) => participant.userId,
         ),
+        participantLabels: (relationData.participants ?? []).map(
+          (participant) => {
+            const name = participant.user?.name?.trim();
+
+            if (name) {
+              return name;
+            }
+
+            const email = participant.user?.email?.trim();
+
+            if (email) {
+              return email;
+            }
+
+            return participant.userId;
+          },
+        ),
       }));
+  }
+
+  private async loadWhereIsLookupEvents(
+    userEvents: AssistantEvent[],
+  ): Promise<AssistantEvent[]> {
+    const publicEvents = await this.eventsRepository.find({
+      where: { visibility: EventVisibility.PUBLIC },
+      relations: ['tags', 'participants', 'participants.user'],
+    });
+
+    const mappedPublicEvents = this.toAssistantEvents(publicEvents);
+    const byId = new Map<string, AssistantEvent>();
+
+    userEvents.forEach((event) => byId.set(event.id, event));
+    mappedPublicEvents.forEach((event) => {
+      if (!byId.has(event.id)) {
+        byId.set(event.id, event);
+      }
+    });
+
+    return [...byId.values()];
+  }
+
+  private async resolveLookupEventsForQuestion(
+    question: string,
+    userEvents: AssistantEvent[],
+  ): Promise<AssistantEvent[]> {
+    const shouldUseGlobalLookup =
+      isWhereIsQuestionText(question) || isParticipantsQuestionText(question);
+
+    if (!shouldUseGlobalLookup) {
+      return userEvents;
+    }
+
+    return this.loadWhereIsLookupEvents(userEvents);
+  }
+
+  private resolveFallbackAnswer(
+    question: string,
+    events: AssistantEvent[],
+    now: Date,
+  ): {
+    source:
+      | 'heuristic-participants'
+      | 'heuristic-where-is'
+      | 'heuristic-fallback'
+      | 'local-rules-fallback';
+    answer: string | null;
+  } {
+    const participantsAnswer = answerParticipantsFromQuestion(question, events);
+
+    if (participantsAnswer) {
+      return {
+        source: 'heuristic-participants',
+        answer: participantsAnswer,
+      };
+    }
+
+    const locationAnswer = answerWhereIsFromQuestion(question, events);
+
+    if (locationAnswer) {
+      return {
+        source: 'heuristic-where-is',
+        answer: locationAnswer,
+      };
+    }
+
+    if (shouldUseDateFallbackQuestion(question)) {
+      const localFallbackAnswer = answerFromRules(question, events, now);
+
+      if (localFallbackAnswer) {
+        return {
+          source: 'local-rules-fallback',
+          answer: localFallbackAnswer,
+        };
+      }
+    }
+
+    return {
+      source: 'heuristic-fallback',
+      answer: null,
+    };
   }
 
   private buildSnapshot(
     events: AssistantEvent[],
     now: Date,
+    userId: string,
     includeParticipantIdentifiers: boolean,
   ): AssistantContextSnapshot {
     const sortedDates = events
@@ -138,6 +365,7 @@ export class AssistantService {
     ].sort();
 
     return {
+      currentUserId: userId,
       generatedAt: now.toISOString(),
       dateWindow: {
         earliestEventDate: sortedDates[0]?.toISOString() ?? null,
@@ -150,6 +378,13 @@ export class AssistantService {
           title: event.title,
           eventDate: event.eventDate.toISOString(),
           visibility: event.visibility,
+          relationToUser:
+            event.organizerId === userId
+              ? ('organizer' as const)
+              : event.participantIds.includes(userId)
+                ? ('participant' as const)
+                : ('unrelated' as const),
+          location: event.location,
           tags: event.tags,
           participantCount: event.participantIds.length,
         };
@@ -164,237 +399,5 @@ export class AssistantService {
         return eventSnapshot;
       }),
     };
-  }
-
-  private isParticipantsQuestion(question: string): boolean {
-    const normalizedQuestion = question.trim().toLowerCase();
-    return /participants?|attendees?|who joined|who is joining/.test(
-      normalizedQuestion,
-    );
-  }
-
-  private answerFromRules(
-    question: string,
-    events: AssistantEvent[],
-    now: Date,
-  ): string | null {
-    const normalizedQuestion = question.trim().toLowerCase();
-    const isCountQuestion =
-      /(how many|count|total)/.test(normalizedQuestion) &&
-      /events?/.test(normalizedQuestion);
-
-    if (!normalizedQuestion) {
-      return null;
-    }
-
-    if (
-      /participants?|attendees?|who joined|who is joining/.test(
-        normalizedQuestion,
-      )
-    ) {
-      return this.answerParticipantsQuestion(normalizedQuestion, events);
-    }
-
-    const dates = this.extractIsoDates(normalizedQuestion);
-    const hasDateRangeIntent =
-      /(from|between).*(to|and)|date range/.test(normalizedQuestion) &&
-      dates.length >= 2;
-
-    if (hasDateRangeIntent) {
-      if (isCountQuestion) {
-        const startDate = new Date(`${dates[0]}T00:00:00.000Z`);
-        const endDate = new Date(`${dates[1]}T23:59:59.999Z`);
-        const matchingEvents = events.filter(
-          (event) => event.eventDate >= startDate && event.eventDate <= endDate,
-        );
-
-        return this.formatFilteredCount(
-          `Events from ${dates[0]} to ${dates[1]}`,
-          matchingEvents.length,
-        );
-      }
-
-      return this.answerDateRangeQuestion(dates[0], dates[1], events);
-    }
-
-    if (dates.length === 1 && /(on|for|date|day)/.test(normalizedQuestion)) {
-      if (isCountQuestion) {
-        const start = new Date(`${dates[0]}T00:00:00.000Z`);
-        const end = new Date(`${dates[0]}T23:59:59.999Z`);
-        const matchingEvents = events.filter(
-          (event) => event.eventDate >= start && event.eventDate <= end,
-        );
-
-        return this.formatFilteredCount(
-          `Events on ${dates[0]}`,
-          matchingEvents.length,
-        );
-      }
-
-      return this.answerSingleDayQuestion(dates[0], events);
-    }
-
-    if (/previous week|past week|last week/.test(normalizedQuestion)) {
-      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const matchingEvents = events.filter(
-        (event) => event.eventDate >= start && event.eventDate < now,
-      );
-
-      if (isCountQuestion) {
-        return this.formatFilteredCount(
-          'Events from the previous week',
-          matchingEvents.length,
-        );
-      }
-
-      return this.formatEventList(
-        matchingEvents,
-        'Events from the previous week',
-      );
-    }
-
-    if (/past events?/.test(normalizedQuestion)) {
-      const matchingEvents = events.filter((event) => event.eventDate < now);
-
-      if (isCountQuestion) {
-        return this.formatFilteredCount('Past events', matchingEvents.length);
-      }
-
-      return this.formatEventList(matchingEvents, 'Past events');
-    }
-
-    if (/upcoming|next|future/.test(normalizedQuestion)) {
-      const matchingEvents = events.filter((event) => event.eventDate >= now);
-
-      if (isCountQuestion) {
-        return this.formatFilteredCount(
-          'Upcoming events',
-          matchingEvents.length,
-        );
-      }
-
-      return this.formatEventList(matchingEvents, 'Upcoming events');
-    }
-
-    if (/tag/.test(normalizedQuestion)) {
-      const tags = [
-        ...new Set(
-          events.flatMap((event) => event.tags.map((tag) => tag.toLowerCase())),
-        ),
-      ];
-      const matchedTags = tags.filter((tag) =>
-        normalizedQuestion.includes(tag),
-      );
-
-      if (matchedTags.length === 0) {
-        return 'I could not find the requested tag in your events.';
-      }
-
-      const matchingEvents = events.filter((event) =>
-        event.tags.some((tag) => matchedTags.includes(tag.toLowerCase())),
-      );
-
-      if (isCountQuestion) {
-        return this.formatFilteredCount(
-          `Events with tag ${matchedTags.join(', ')}`,
-          matchingEvents.length,
-        );
-      }
-
-      return this.formatEventList(
-        matchingEvents,
-        `Events with tag ${matchedTags.join(', ')}`,
-      );
-    }
-
-    if (isCountQuestion) {
-      return `You have ${events.length} event${events.length === 1 ? '' : 's'} in total.`;
-    }
-
-    return null;
-  }
-
-  private formatFilteredCount(title: string, count: number): string {
-    return `${title}: ${count} event${count === 1 ? '' : 's'}.`;
-  }
-
-  private answerParticipantsQuestion(
-    normalizedQuestion: string,
-    events: AssistantEvent[],
-  ): string {
-    const quotedTitleMatch = normalizedQuestion.match(/"([^"]+)"/);
-    const requestedTitle = quotedTitleMatch?.[1]?.trim();
-
-    const matchedEvent = requestedTitle
-      ? events.find((event) =>
-          event.title.toLowerCase().includes(requestedTitle),
-        )
-      : events.find((event) =>
-          normalizedQuestion.includes(event.title.toLowerCase()),
-        );
-
-    if (!matchedEvent) {
-      return ASSISTANT_FALLBACK_MESSAGE;
-    }
-
-    if (matchedEvent.participantIds.length === 0) {
-      return `"${matchedEvent.title}" has no participants yet.`;
-    }
-
-    const list = matchedEvent.participantIds.slice(0, 10).join(', ');
-    return `Participants for "${matchedEvent.title}": ${list}.`;
-  }
-
-  private answerDateRangeQuestion(
-    startDateIso: string,
-    endDateIso: string,
-    events: AssistantEvent[],
-  ): string {
-    const startDate = new Date(`${startDateIso}T00:00:00.000Z`);
-    const endDate = new Date(`${endDateIso}T23:59:59.999Z`);
-
-    const matchingEvents = events.filter(
-      (event) => event.eventDate >= startDate && event.eventDate <= endDate,
-    );
-
-    return this.formatEventList(
-      matchingEvents,
-      `Events from ${startDateIso} to ${endDateIso}`,
-    );
-  }
-
-  private answerSingleDayQuestion(
-    dateIso: string,
-    events: AssistantEvent[],
-  ): string {
-    const start = new Date(`${dateIso}T00:00:00.000Z`);
-    const end = new Date(`${dateIso}T23:59:59.999Z`);
-
-    const matchingEvents = events.filter(
-      (event) => event.eventDate >= start && event.eventDate <= end,
-    );
-
-    return this.formatEventList(matchingEvents, `Events on ${dateIso}`);
-  }
-
-  private formatEventList(events: AssistantEvent[], title: string): string {
-    if (events.length === 0) {
-      return `${title}: none.`;
-    }
-
-    const conciseList = events
-      .slice(0, 8)
-      .map(
-        (event) =>
-          `${event.title} (${event.eventDate.toISOString().slice(0, 16).replace('T', ' ')})`,
-      )
-      .join('; ');
-
-    return `${title}: ${conciseList}.`;
-  }
-
-  private extractIsoDates(value: string): string[] {
-    const matches = value.match(/\b\d{4}-\d{2}-\d{2}\b/g);
-    return matches ? [...new Set(matches)] : [];
   }
 }

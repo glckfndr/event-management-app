@@ -7,12 +7,15 @@ type AssistantContextEvent = {
   title: string;
   eventDate: string;
   visibility: 'public' | 'private';
+  relationToUser: 'organizer' | 'participant' | 'unrelated';
+  location?: string | null;
   tags: string[];
   participantCount: number;
   participantIds?: string[];
 };
 
 export type AssistantContextSnapshot = {
+  currentUserId: string;
   generatedAt: string;
   dateWindow: {
     earliestEventDate: string | null;
@@ -33,21 +36,46 @@ type LlmResponse = {
   choices?: LlmChoice[];
 };
 
+export type AssistantIntentName =
+  | 'count_total'
+  | 'list_upcoming'
+  | 'list_on_date'
+  | 'list_in_range'
+  | 'list_previous_week'
+  | 'list_by_tag'
+  | 'show_participants'
+  | 'next_event'
+  | 'where_is_event'
+  | 'list_organized'
+  | 'list_attending_this_week'
+  | 'fallback';
+
+export type AssistantQuestionIntent = {
+  intent: AssistantIntentName;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  tag?: string;
+  eventTitle?: string;
+  visibility?: 'public' | 'private';
+  timeRange?: 'this_weekend' | 'this_week';
+};
+
 @Injectable()
 export class AssistantLlmService {
   private readonly logger = new Logger(AssistantLlmService.name);
 
-  async askQuestion(
+  async classifyQuestion(
     question: string,
     snapshot: AssistantContextSnapshot,
-  ): Promise<string | null> {
+  ): Promise<AssistantQuestionIntent | null> {
     const apiKey = process.env.AI_API_KEY?.trim();
 
     if (!apiKey) {
       return null;
     }
 
-    const provider = (process.env.AI_PROVIDER ?? 'openai').trim().toLowerCase();
+    const provider = (process.env.AI_PROVIDER ?? 'groq').trim().toLowerCase();
     const baseUrl = this.resolveBaseUrl(provider);
     const model =
       process.env.AI_MODEL?.trim() ??
@@ -55,13 +83,12 @@ export class AssistantLlmService {
 
     const payload = {
       model,
-      temperature: 0.2,
+      temperature: 0,
       messages: [
         {
           role: 'system',
           content:
-            'You are an event assistant. Answer only with concise read-only information from provided context. If the question is unclear or unsupported, reply exactly with: ' +
-            ASSISTANT_FALLBACK_MESSAGE,
+            'You classify event assistant questions into JSON intent only. Return strict JSON with shape: {"intent": string, "date"?: "YYYY-MM-DD", "startDate"?: "YYYY-MM-DD", "endDate"?: "YYYY-MM-DD", "tag"?: string, "eventTitle"?: string, "visibility"?: "public"|"private", "timeRange"?: "this_weekend"|"this_week"}. Allowed intents: count_total, list_upcoming, list_on_date, list_in_range, list_previous_week, list_by_tag, show_participants, next_event, where_is_event, list_organized, list_attending_this_week, fallback. Use fallback when unsupported/unclear.',
         },
         {
           role: 'user',
@@ -90,18 +117,15 @@ export class AssistantLlmService {
       }
 
       const data = (await response.json()) as LlmResponse;
-      const answer = data.choices?.[0]?.message?.content?.trim();
+      const content = data.choices?.[0]?.message?.content?.trim();
 
-      if (!answer) {
+      if (!content) {
         return null;
       }
 
-      return answer.slice(0, 700);
+      return this.parseIntent(content);
     } catch (error) {
-      this.logger.warn(
-        'LLM request failed, using local fallback parser',
-        error,
-      );
+      this.logger.warn('LLM request failed, using fallback intent', error);
       return null;
     } finally {
       clearTimeout(timeout);
@@ -118,5 +142,53 @@ export class AssistantLlmService {
     }
 
     return 'https://api.openai.com/v1';
+  }
+
+  private parseIntent(value: string): AssistantQuestionIntent | null {
+    try {
+      const maybeJson = value.replace(/^```json\s*|```$/g, '').trim();
+      const parsed = JSON.parse(maybeJson) as Partial<AssistantQuestionIntent>;
+
+      if (!parsed.intent || !this.isAllowedIntent(parsed.intent)) {
+        return null;
+      }
+
+      return {
+        intent: parsed.intent,
+        date: parsed.date,
+        startDate: parsed.startDate,
+        endDate: parsed.endDate,
+        tag: parsed.tag,
+        eventTitle: parsed.eventTitle,
+        visibility:
+          parsed.visibility === 'public' || parsed.visibility === 'private'
+            ? parsed.visibility
+            : undefined,
+        timeRange:
+          parsed.timeRange === 'this_week' ||
+          parsed.timeRange === 'this_weekend'
+            ? parsed.timeRange
+            : undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private isAllowedIntent(intent: string): intent is AssistantIntentName {
+    return [
+      'count_total',
+      'list_upcoming',
+      'list_on_date',
+      'list_in_range',
+      'list_previous_week',
+      'list_by_tag',
+      'show_participants',
+      'next_event',
+      'where_is_event',
+      'list_organized',
+      'list_attending_this_week',
+      'fallback',
+    ].includes(intent);
   }
 }

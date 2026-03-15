@@ -78,7 +78,17 @@ DB_USERNAME=event_user
 DB_PASSWORD=your_strong_password_here
 DB_DATABASE=event_management
 DB_SYNCHRONIZE=false
+
+# AI assistant (optional)
+AI_API_KEY=your_api_key_here
+AI_PROVIDER=groq
+AI_MODEL=llama-3.3-70b-versatile
 ```
+
+AI assistant notes:
+
+- If `AI_API_KEY` is not set, assistant answers use local deterministic rules and fallback messages.
+- If `AI_API_KEY` is set, LLM intent classification is used with read-only execution on backend data.
 
 ## Quick start (Docker Compose)
 
@@ -123,6 +133,19 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+Stage 2 focused suite:
+
+```bash
+$ npx jest assistant.service.spec.ts --watchAll=false
+```
+
+This suite covers:
+
+- tags constraints and tag-based event filtering
+- assistant fallback behavior for unclear/unsupported intents
+- read-only assistant behavior (no write operations)
+- date/day query handling and scope differences (`events` vs `my events`)
 
 ## Database migrations
 

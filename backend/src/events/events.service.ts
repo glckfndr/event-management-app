@@ -1,6 +1,4 @@
 import {
-  BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -19,11 +17,20 @@ import {
   mergeAndSortCalendarEvents,
   sanitizeParticipantEmails,
 } from './events.service.helpers';
+import {
+  assertCapacityAvailable,
+  assertEventFound,
+  assertNotJoinedYet,
+  assertUserCanJoinEvent,
+} from './events-participation.helpers';
+import { resolveEventTags } from './events-tags.helpers';
+import {
+  parseAndValidateEventDate,
+  parseTagsFilter,
+} from './events-validation.helpers';
 
 @Injectable()
 export class EventsService {
-  private static readonly MAX_FILTER_TAGS = 5;
-
   constructor(
     @InjectRepository(Event)
     private readonly eventsRepository: Repository<Event>,
@@ -34,7 +41,7 @@ export class EventsService {
   ) {}
 
   async findAll(tagsFilter?: string): Promise<Event[]> {
-    const normalizedTagFilters = this.parseTagsFilter(tagsFilter);
+    const normalizedTagFilters = parseTagsFilter(tagsFilter);
 
     if (normalizedTagFilters.length > 0) {
       return this.eventsRepository.find({
@@ -92,8 +99,11 @@ export class EventsService {
     createEventDto: CreateEventDto,
     user: AuthenticatedUser,
   ): Promise<Event> {
-    const eventDate = this.parseAndValidateEventDate(createEventDto.eventDate);
-    const tags = await this.resolveTags(createEventDto.tags);
+    const eventDate = parseAndValidateEventDate(createEventDto.eventDate);
+    const tags = await resolveEventTags(
+      this.tagsRepository,
+      createEventDto.tags,
+    );
 
     const event = this.eventsRepository.create({
       title: createEventDto.title,
@@ -145,13 +155,14 @@ export class EventsService {
     }
 
     if (updateEventDto.eventDate !== undefined) {
-      event.eventDate = this.parseAndValidateEventDate(
-        updateEventDto.eventDate,
-      );
+      event.eventDate = parseAndValidateEventDate(updateEventDto.eventDate);
     }
 
     if (updateEventDto.tags !== undefined) {
-      event.tags = await this.resolveTags(updateEventDto.tags);
+      event.tags = await resolveEventTags(
+        this.tagsRepository,
+        updateEventDto.tags,
+      );
     }
 
     return this.eventsRepository.save(event);
@@ -183,15 +194,8 @@ export class EventsService {
         .where('event.id = :id', { id })
         .getOne();
 
-      if (!event) {
-        throw new NotFoundException('Event not found');
-      }
-
-      if (event.organizerId === user.sub) {
-        throw new ForbiddenException(
-          'Organizer cannot join their own event as participant',
-        );
-      }
+      const existingEvent = assertEventFound(event);
+      assertUserCanJoinEvent(existingEvent, user.sub);
 
       const existingParticipant =
         await transactionalParticipantsRepository.findOne({
@@ -201,20 +205,12 @@ export class EventsService {
           },
         });
 
-      if (existingParticipant) {
-        throw new ConflictException('User already joined this event');
-      }
+      assertNotJoinedYet(Boolean(existingParticipant));
 
-      if (event.capacity !== null && event.capacity !== undefined) {
-        const participantCount =
-          await transactionalParticipantsRepository.count({
-            where: { eventId: id },
-          });
-
-        if (participantCount >= event.capacity) {
-          throw new ConflictException('Event capacity reached');
-        }
-      }
+      const participantCount = await transactionalParticipantsRepository.count({
+        where: { eventId: id },
+      });
+      assertCapacityAvailable(existingEvent, participantCount);
 
       const participant = transactionalParticipantsRepository.create({
         eventId: id,
@@ -238,104 +234,5 @@ export class EventsService {
     }
 
     await this.participantsRepository.delete({ id: participant.id });
-  }
-
-  private parseAndValidateEventDate(value: string): Date {
-    const parsedDate = new Date(value);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      throw new BadRequestException('Event date is invalid');
-    }
-
-    if (parsedDate.getTime() <= Date.now()) {
-      throw new BadRequestException('Event date cannot be in the past');
-    }
-
-    return parsedDate;
-  }
-
-  private parseTagsFilter(tagsFilter?: string): string[] {
-    if (!tagsFilter?.trim()) {
-      return [];
-    }
-
-    const normalizedTags = [
-      ...new Set(
-        tagsFilter
-          .split(',')
-          .map((tag) => tag.trim().toLowerCase())
-          .filter(Boolean),
-      ),
-    ];
-
-    if (normalizedTags.length > EventsService.MAX_FILTER_TAGS) {
-      throw new BadRequestException(
-        `Maximum ${EventsService.MAX_FILTER_TAGS} filter tags are allowed`,
-      );
-    }
-
-    return normalizedTags;
-  }
-
-  private async resolveTags(tags?: string[]): Promise<Tag[]> {
-    if (!tags || tags.length === 0) {
-      return [];
-    }
-
-    const normalizedTags = [
-      ...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
-    ];
-
-    if (normalizedTags.length === 0) {
-      return [];
-    }
-
-    if (normalizedTags.length > 5) {
-      throw new BadRequestException('Maximum 5 tags are allowed per event');
-    }
-
-    const existingTags = await this.tagsRepository.find({
-      where: normalizedTags.map((name) => ({ name })),
-    });
-
-    const existingByName = new Map(existingTags.map((tag) => [tag.name, tag]));
-    const missingNames = normalizedTags.filter(
-      (name) => !existingByName.has(name),
-    );
-
-    if (missingNames.length === 0) {
-      return normalizedTags
-        .map((name) => existingByName.get(name))
-        .filter((tag): tag is Tag => Boolean(tag));
-    }
-
-    let newTags: Tag[] = [];
-
-    try {
-      newTags = await this.tagsRepository.save(
-        missingNames.map((name) => this.tagsRepository.create({ name })),
-      );
-    } catch {
-      // Another request may have inserted the same normalized tag names.
-      const refreshedTags = await this.tagsRepository.find({
-        where: normalizedTags.map((name) => ({ name })),
-      });
-
-      const refreshedByName = new Map(
-        refreshedTags.map((tag) => [tag.name, tag]),
-      );
-
-      return normalizedTags
-        .map((name) => refreshedByName.get(name))
-        .filter((tag): tag is Tag => Boolean(tag));
-    }
-
-    for (const tag of newTags) {
-      existingByName.set(tag.name, tag);
-    }
-
-    return normalizedTags
-      .map((name) => existingByName.get(name))
-      .filter((tag): tag is Tag => Boolean(tag));
   }
 }
