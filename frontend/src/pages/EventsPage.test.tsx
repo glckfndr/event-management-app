@@ -5,6 +5,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import { api } from "../shared/api";
 import { EventsPage } from "./EventsPage";
 import { fetchPublicEvents } from "../features/events/eventsSlice";
+import { useAssistantUiStore } from "../features/events/assistantUiStore";
 import {
   createTestStore,
   renderWithProviders,
@@ -43,6 +44,7 @@ const createInitialEventsState = () => ({
 
 afterEach(() => {
   vi.restoreAllMocks();
+  useAssistantUiStore.getState().resetAssistantUiState();
   window.localStorage.clear();
 });
 

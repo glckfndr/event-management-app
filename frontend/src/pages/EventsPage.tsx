@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
@@ -8,14 +8,12 @@ import {
 } from "../features/events/eventsSlice";
 import { useEventFilters } from "../features/events/useEventFilters";
 import { useEventParticipationActions } from "../features/events/useEventParticipationActions";
+import { useAssistantUiStore } from "../features/events/assistantUiStore";
 import { AssistantPanel } from "../components/assistant/AssistantPanel";
 import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
 import { getTagAccentClassNames } from "../shared/tagAccent";
 
-const MAX_RECENT_ASSISTANT_QUESTIONS = 5;
-const RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY =
-  "events.recentAssistantQuestions";
 const ASSISTANT_QUESTION_SUGGESTIONS = [
   "What events am I attending this week?",
   "When is my next event?",
@@ -40,40 +38,21 @@ export function EventsPage() {
   const assistantError = useAppSelector((state) => state.events.assistantError);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
-  const [assistantQuestion, setAssistantQuestion] = useState("");
-  const [recentAssistantQuestions, setRecentAssistantQuestions] = useState<
-    string[]
-  >(() => {
-    if (typeof window === "undefined") {
-      return [];
-    }
-
-    const storedValue = window.localStorage.getItem(
-      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
-    );
-
-    if (!storedValue) {
-      return [];
-    }
-
-    try {
-      const parsed = JSON.parse(storedValue);
-
-      if (!Array.isArray(parsed)) {
-        window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
-        return [];
-      }
-
-      return parsed
-        .filter((value): value is string => typeof value === "string")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .slice(0, MAX_RECENT_ASSISTANT_QUESTIONS);
-    } catch {
-      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
-      return [];
-    }
-  });
+  const assistantQuestion = useAssistantUiStore(
+    (state) => state.assistantQuestion,
+  );
+  const setAssistantQuestion = useAssistantUiStore(
+    (state) => state.setAssistantQuestion,
+  );
+  const recentAssistantQuestions = useAssistantUiStore(
+    (state) => state.recentAssistantQuestions,
+  );
+  const initializeRecentAssistantQuestions = useAssistantUiStore(
+    (state) => state.initializeRecentAssistantQuestions,
+  );
+  const recordAssistantQuestion = useAssistantUiStore(
+    (state) => state.recordAssistantQuestion,
+  );
   const {
     searchTerm,
     setSearchTerm,
@@ -101,20 +80,8 @@ export function EventsPage() {
   }, [dispatch, token]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (recentAssistantQuestions.length === 0) {
-      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
-      return;
-    }
-
-    window.localStorage.setItem(
-      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
-      JSON.stringify(recentAssistantQuestions),
-    );
-  }, [recentAssistantQuestions]);
+    initializeRecentAssistantQuestions();
+  }, [initializeRecentAssistantQuestions]);
 
   const handleAssistantSubmit = async (submitEvent: FormEvent) => {
     submitEvent.preventDefault();
@@ -130,16 +97,7 @@ export function EventsPage() {
       return;
     }
 
-    setRecentAssistantQuestions((previous) => {
-      const withoutDuplicate = previous.filter(
-        (value) => value.toLowerCase() !== question.toLowerCase(),
-      );
-
-      return [question, ...withoutDuplicate].slice(
-        0,
-        MAX_RECENT_ASSISTANT_QUESTIONS,
-      );
-    });
+    recordAssistantQuestion(question);
 
     await dispatch(askAssistantQuestion(question));
   };
