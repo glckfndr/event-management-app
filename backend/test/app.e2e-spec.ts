@@ -9,6 +9,7 @@ import { EventsController } from './../src/events/events.controller';
 import { EventsService } from './../src/events/events.service';
 import { Event, EventVisibility } from './../src/events/entities/event.entity';
 import { Participant } from './../src/participants/entities/participant.entity';
+import { Tag } from './../src/tags/entities/tag.entity';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -56,6 +57,11 @@ describe('EventsController (e2e)', () => {
     save: jest.Mock;
     delete: jest.Mock;
   };
+  let tagsRepository: {
+    findBy: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+  };
 
   beforeAll(async () => {
     eventsRepository = {
@@ -77,6 +83,12 @@ describe('EventsController (e2e)', () => {
       delete: jest.fn(),
     };
 
+    tagsRepository = {
+      findBy: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [EventsController],
       providers: [
@@ -88,6 +100,10 @@ describe('EventsController (e2e)', () => {
         {
           provide: getRepositoryToken(Participant),
           useValue: participantsRepository,
+        },
+        {
+          provide: getRepositoryToken(Tag),
+          useValue: tagsRepository,
         },
       ],
     }).compile();
