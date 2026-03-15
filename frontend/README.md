@@ -59,6 +59,26 @@ Run focused suite:
 npx vitest run src/pages/EventsPage.test.tsx
 ```
 
+## Storybook
+
+Run Storybook locally:
+
+```bash
+npm run storybook
+```
+
+Build static Storybook output:
+
+```bash
+npm run build-storybook
+```
+
+Initial stories are available for:
+
+- `Button`
+- `FormField`
+- `DeleteConfirmModal`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
