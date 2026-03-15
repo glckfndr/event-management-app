@@ -45,6 +45,7 @@ export class AssistantService {
     question: string,
     userId: string,
   ): Promise<{ answer: string }> {
+    const normalizedQuestion = question.trim();
     const events = await this.loadUserEvents(userId);
     const scopedEvents = await this.resolveEventsForQuestionScope(
       question,
@@ -54,7 +55,7 @@ export class AssistantService {
     const shouldQueryLlm = Boolean(process.env.AI_API_KEY?.trim());
 
     this.trace(
-      `Assistant request: llmEnabled=${shouldQueryLlm}, question="${question.trim()}"`,
+      `Assistant request: llmEnabled=${shouldQueryLlm}, questionLength=${normalizedQuestion.length}`,
     );
 
     if (!shouldQueryLlm) {
@@ -180,18 +181,15 @@ export class AssistantService {
     question: string,
     snapshot: AssistantContextSnapshot,
   ): Promise<AssistantQuestionIntent | null> {
-    const classifier = this.assistantLlmService as {
-      classifyQuestion: (
-        value: string,
-        context: AssistantContextSnapshot,
-      ) => Promise<AssistantQuestionIntent | null>;
-    };
-
-    return classifier.classifyQuestion(question, snapshot);
+    return this.assistantLlmService.classifyQuestion(question, snapshot);
   }
 
   private trace(message: string): void {
-    this.logger.log(message);
+    if (process.env.ASSISTANT_TRACE_LOGS?.trim().toLowerCase() !== 'true') {
+      return;
+    }
+
+    this.logger.debug(message);
   }
 
   private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {
@@ -216,11 +214,7 @@ export class AssistantService {
       participantRows,
     );
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(
-        `[AssistantService] DB response: loaded ${mergedEvents.length} events for user ${userId}`,
-      );
-    }
+    this.trace(`DB response: loaded ${mergedEvents.length} events`);
 
     return this.toAssistantEvents(mergedEvents);
   }
