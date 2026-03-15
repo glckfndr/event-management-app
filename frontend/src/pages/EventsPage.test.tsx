@@ -43,6 +43,7 @@ const createInitialEventsState = () => ({
 
 afterEach(() => {
   vi.restoreAllMocks();
+  window.localStorage.clear();
 });
 
 describe("EventsPage", () => {
@@ -518,5 +519,176 @@ describe("EventsPage", () => {
         "Sorry, I didn’t understand that. Please try rephrasing your question.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("shows recent assistant questions and allows selecting one", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+    vi.spyOn(api, "post").mockResolvedValue({
+      data: { answer: "You have 3 events in total." },
+    });
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    const firstQuestion = "How many events do I have?";
+    const secondQuestion = "List my upcoming events";
+    const assistantInput = screen.getByPlaceholderText(
+      "Ask about your events...",
+    );
+
+    await userEvent.type(assistantInput, firstQuestion);
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    await screen.findByText("Assistant answer");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Recent questions" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: firstQuestion }),
+    ).toBeInTheDocument();
+
+    await userEvent.clear(assistantInput);
+    await userEvent.type(assistantInput, secondQuestion);
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+
+    expect(
+      await screen.findByRole("button", { name: secondQuestion }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: firstQuestion }),
+    ).toBeInTheDocument();
+
+    await userEvent.clear(assistantInput);
+    await userEvent.click(screen.getByRole("button", { name: firstQuestion }));
+
+    expect(assistantInput).toHaveValue(firstQuestion);
+    expect(
+      JSON.parse(
+        window.localStorage.getItem("events.recentAssistantQuestions") ?? "[]",
+      ),
+    ).toEqual([secondQuestion, firstQuestion]);
+  });
+
+  it("loads recent assistant questions from localStorage", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    window.localStorage.setItem(
+      "events.recentAssistantQuestions",
+      JSON.stringify(["How many upcoming events?", "Show my tech events"]),
+    );
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    const assistantInput = screen.getByPlaceholderText(
+      "Ask about your events...",
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Recent questions" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "How many upcoming events?" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Show my tech events" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Show my tech events" }),
+    );
+
+    expect(assistantInput).toHaveValue("Show my tech events");
+  });
+
+  it("shows predefined assistant suggestions and fills input on click", async () => {
+    const events: EventItem[] = [buildEvent({ id: "evt-1" })];
+
+    vi.spyOn(api, "get").mockResolvedValue({ data: events });
+
+    const store = createTestStore({
+      auth: {
+        token: "token",
+        user: { email: "alice@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        ...createInitialEventsState(),
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("React Meetup");
+
+    const suggestion = "When is my next event?";
+    const assistantInput = screen.getByPlaceholderText(
+      "Ask about your events...",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Try asking" }));
+
+    expect(
+      screen.getByRole("button", { name: suggestion }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: suggestion }));
+
+    expect(assistantInput).toHaveValue(suggestion);
   });
 });

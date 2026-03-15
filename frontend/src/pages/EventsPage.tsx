@@ -13,6 +13,18 @@ import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
 import { getTagAccentClassNames } from "../shared/tagAccent";
 
+const MAX_RECENT_ASSISTANT_QUESTIONS = 5;
+const RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY =
+  "events.recentAssistantQuestions";
+const ASSISTANT_QUESTION_SUGGESTIONS = [
+  "What events am I attending this week?",
+  "When is my next event?",
+  "List all events I organize.",
+  "Show public tech events this weekend.",
+  "Who’s attending the Marketing Meetup?",
+  "Where is the Design Sprint?",
+];
+
 export function EventsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -29,6 +41,37 @@ export function EventsPage() {
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const [assistantQuestion, setAssistantQuestion] = useState("");
+  const [recentAssistantQuestions, setRecentAssistantQuestions] = useState<
+    string[]
+  >(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    const storedValue = window.localStorage.getItem(
+      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(storedValue);
+
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, MAX_RECENT_ASSISTANT_QUESTIONS);
+    } catch {
+      return [];
+    }
+  });
   const {
     searchTerm,
     setSearchTerm,
@@ -55,6 +98,22 @@ export function EventsPage() {
     }
   }, [dispatch, token]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (recentAssistantQuestions.length === 0) {
+      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
+      JSON.stringify(recentAssistantQuestions),
+    );
+  }, [recentAssistantQuestions]);
+
   const handleAssistantSubmit = async (submitEvent: FormEvent) => {
     submitEvent.preventDefault();
 
@@ -68,6 +127,17 @@ export function EventsPage() {
     if (!question) {
       return;
     }
+
+    setRecentAssistantQuestions((previous) => {
+      const withoutDuplicate = previous.filter(
+        (value) => value.toLowerCase() !== question.toLowerCase(),
+      );
+
+      return [question, ...withoutDuplicate].slice(
+        0,
+        MAX_RECENT_ASSISTANT_QUESTIONS,
+      );
+    });
 
     await dispatch(askAssistantQuestion(question));
   };
@@ -98,6 +168,9 @@ export function EventsPage() {
           assistantStatus={assistantStatus}
           assistantError={assistantError}
           assistantAnswer={assistantAnswer}
+          suggestedQuestions={ASSISTANT_QUESTION_SUGGESTIONS}
+          recentQuestions={recentAssistantQuestions}
+          onSelectRecentQuestion={setAssistantQuestion}
           onSubmit={handleAssistantSubmit}
         />
       ) : null}

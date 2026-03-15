@@ -1,4 +1,4 @@
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 
 type AssistantPanelProps = {
   assistantQuestion: string;
@@ -6,6 +6,9 @@ type AssistantPanelProps = {
   assistantStatus: "idle" | "loading" | "failed";
   assistantError: string | null;
   assistantAnswer: string | null;
+  suggestedQuestions: string[];
+  recentQuestions: string[];
+  onSelectRecentQuestion: (question: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
 };
 
@@ -15,8 +18,14 @@ export function AssistantPanel({
   assistantStatus,
   assistantError,
   assistantAnswer,
+  suggestedQuestions,
+  recentQuestions,
+  onSelectRecentQuestion,
   onSubmit,
 }: AssistantPanelProps) {
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isRecentOpen, setIsRecentOpen] = useState(false);
+
   return (
     <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
       <h3 className="text-xl font-semibold text-slate-900">AI Assistant</h3>
@@ -47,6 +56,64 @@ export function AssistantPanel({
           {assistantStatus === "loading" ? "Asking..." : "Ask"}
         </button>
       </form>
+
+      {suggestedQuestions.length > 0 ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setIsSuggestionsOpen((value) => !value)}
+            aria-expanded={isSuggestionsOpen}
+            className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            <span>Try asking</span>
+            <span aria-hidden="true">{isSuggestionsOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {isSuggestionsOpen ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {suggestedQuestions.map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => onSelectRecentQuestion(question)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {recentQuestions.length > 0 ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setIsRecentOpen((value) => !value)}
+            aria-expanded={isRecentOpen}
+            className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            <span>Recent questions</span>
+            <span aria-hidden="true">{isRecentOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {isRecentOpen ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {recentQuestions.map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => onSelectRecentQuestion(question)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {assistantStatus === "loading" ? (
         <p className="mt-3 text-sm text-slate-600">
