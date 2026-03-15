@@ -4,12 +4,14 @@ import { randomUUID } from 'crypto';
 import { User } from '../users/entities/user.entity';
 import { Event } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
+import { Tag } from '../tags/entities/tag.entity';
 
 describe('Database tables relations', () => {
   let dataSource: DataSource;
   let usersRepository: Repository<User>;
   let eventsRepository: Repository<Event>;
   let participantsRepository: Repository<Participant>;
+  let tagsRepository: Repository<Tag>;
 
   beforeAll(async () => {
     const db = newDb({ autoCreateForeignKeyIndices: true });
@@ -35,15 +37,20 @@ describe('Database tables relations', () => {
 
     dataSource = await db.adapters.createTypeormDataSource({
       type: 'postgres',
-      entities: [User, Event, Participant],
+      entities: [User, Event, Participant, Tag],
       synchronize: true,
     });
 
     await dataSource.initialize();
 
+    await dataSource.query(
+      'CREATE UNIQUE INDEX "IDX_tags_name_ci_unique" ON "tags" (LOWER("name"))',
+    );
+
     usersRepository = dataSource.getRepository(User);
     eventsRepository = dataSource.getRepository(Event);
     participantsRepository = dataSource.getRepository(Participant);
+    tagsRepository = dataSource.getRepository(Tag);
   });
 
   afterAll(async () => {
@@ -53,9 +60,53 @@ describe('Database tables relations', () => {
   });
 
   beforeEach(async () => {
+    await dataSource.createQueryBuilder().delete().from('event_tags').execute();
     await participantsRepository.createQueryBuilder().delete().execute();
+    await tagsRepository.createQueryBuilder().delete().execute();
     await eventsRepository.createQueryBuilder().delete().execute();
     await usersRepository.createQueryBuilder().delete().execute();
+  });
+
+  it('enforces case-insensitive unique tag names', async () => {
+    await dataSource.query('INSERT INTO "tags" ("name") VALUES ($1)', ['Tech']);
+
+    await expect(
+      dataSource.query('INSERT INTO "tags" ("name") VALUES ($1)', ['tech']),
+    ).rejects.toThrow();
+  });
+
+  it('supports event to tag many-to-many relation', async () => {
+    const organizer = await usersRepository.save(
+      usersRepository.create({
+        email: 'tags-organizer@example.com',
+        password: 'hashed-password',
+        name: 'Tags Organizer',
+      }),
+    );
+
+    const [techTag, artTag] = await tagsRepository.save([
+      tagsRepository.create({ name: 'Tech' }),
+      tagsRepository.create({ name: 'Art' }),
+    ]);
+
+    const event = eventsRepository.create({
+      title: 'Tagged event',
+      eventDate: new Date('2026-10-01T12:00:00.000Z'),
+      organizerId: organizer.id,
+      tags: [techTag, artTag],
+    });
+
+    await eventsRepository.save(event);
+
+    const savedEvent = await eventsRepository.findOne({
+      where: { id: event.id },
+      relations: { tags: true },
+    });
+
+    expect(savedEvent?.tags.map((tag) => tag.name).sort()).toEqual([
+      'art',
+      'tech',
+    ]);
   });
 
   it('enforces unique users email', async () => {

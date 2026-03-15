@@ -3,6 +3,7 @@ import { CalendarIcon } from "../ui/icons/CalendarIcon";
 import { ClockIcon } from "../ui/icons/ClockIcon";
 import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
 import { UsersGroupIcon } from "../ui/icons/UsersGroupIcon";
+import { getTagAccentClassNames } from "../../shared/tagAccent";
 
 type EventDetailsSummaryProps = {
   event: EventItem;
@@ -35,6 +36,22 @@ export function EventDetailsSummary({
       <p className="mt-[0.675rem] text-lg text-slate-500">
         {event.description || "No description"}
       </p>
+
+      {event.tags?.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {event.tags.map((tag) => (
+            <span
+              key={tag.id}
+              className={`rounded-full border px-3 py-1 text-sm font-semibold ${getTagAccentClassNames(
+                tag.name,
+                "soft",
+              )}`}
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       <div className="mt-5 space-y-2 text-lg text-slate-500">
         <p className="flex items-center gap-2">

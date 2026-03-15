@@ -168,6 +168,41 @@ npm run lint
 npm run test:run
 ```
 
+Focused Stage 2 checks:
+
+```bash
+# backend assistant behavior (fallback/read-only/tags/date-range)
+cd backend
+npx jest assistant.service.spec.ts --watchAll=false
+
+# frontend assistant/tags flow on Events page
+cd ../frontend
+npx vitest run src/pages/EventsPage.test.tsx
+```
+
+Assistant UX notes (Events page):
+
+- `Try asking` section provides built-in question examples for quick input.
+- `Recent questions` stores up to 5 latest unique questions.
+- Recent questions are persisted in browser `localStorage` and restored on reload.
+- Both helper sections are compact dropdown panels to reduce page clutter.
+
+### AI Assistant Environment
+
+The backend assistant can run in deterministic local mode or with LLM intent classification.
+
+- `AI_API_KEY`: enables LLM classification when set; local rules/fallback are used when missing.
+- `AI_PROVIDER`: LLM provider id (for example `groq`, `openai`, `openrouter`).
+- `AI_MODEL`: model name passed to provider API.
+
+Example:
+
+```bash
+AI_API_KEY=your_api_key_here
+AI_PROVIDER=groq
+AI_MODEL=llama-3.3-70b-versatile
+```
+
 ---
 
 ## Security Notes
@@ -237,6 +272,7 @@ The frontend follows a feature-based structure:
 - **Component Structure**
   - Pages: Events List, Event Details, Create Event, My Events
   - Reusable UI components (cards, forms, modals)
+  - Assistant panel with quick suggestions and persisted recent-question history
 
 The frontend communicates with the backend via a centralized Axios API layer.
 
@@ -266,6 +302,12 @@ DB_PASSWORD=your_strong_password_here
 BACKEND_PUBLIC_URL=http://localhost:3001
 JWT_SECRET=replace_with_a_long_random_secret
 JWT_EXPIRES_IN=1h
+
+# optional assistant LLM config
+AI_PROVIDER=groq
+AI_API_KEY=
+AI_MODEL=llama-3.3-70b-versatile
+# AI_BASE_URL=
 ```
 
 For access from another device in your local network, set `BACKEND_PUBLIC_URL` to your host IP,

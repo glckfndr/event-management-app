@@ -10,6 +10,9 @@ type EventsState = {
   selectedEvent: EventItem | null;
   status: "idle" | "loading" | "failed";
   error: string | null;
+  assistantAnswer: string | null;
+  assistantStatus: "idle" | "loading" | "failed";
+  assistantError: string | null;
 };
 
 const initialState: EventsState = {
@@ -18,7 +21,30 @@ const initialState: EventsState = {
   selectedEvent: null,
   status: "idle",
   error: null,
+  assistantAnswer: null,
+  assistantStatus: "idle",
+  assistantError: null,
 };
+
+export const askAssistantQuestion = createAsyncThunk(
+  "events/askAssistantQuestion",
+  async (question: string, { getState }) => {
+    const state = getState() as RootState;
+
+    const response = await api.post<{ answer: string }>(
+      "/assistant/questions",
+      { question },
+      {
+        headers: getAuthHeader(state.auth.token),
+      },
+    );
+
+    return {
+      question,
+      answer: response.data.answer,
+    };
+  },
+);
 
 export const fetchPublicEvents = createAsyncThunk(
   "events/fetchPublic",
@@ -142,6 +168,9 @@ const eventsSlice = createSlice({
         state.selectedEvent = null;
         state.error = null;
         state.status = "idle";
+        state.assistantAnswer = null;
+        state.assistantError = null;
+        state.assistantStatus = "idle";
       })
       .addCase(fetchPublicEvents.pending, (state) => {
         state.status = "loading";
@@ -236,6 +265,21 @@ const eventsSlice = createSlice({
       .addCase(deleteEvent.rejected, (state) => {
         state.status = "failed";
         state.error = "Failed to delete event";
+      })
+      .addCase(askAssistantQuestion.pending, (state) => {
+        state.assistantStatus = "loading";
+        state.assistantError = null;
+        state.assistantAnswer = null;
+      })
+      .addCase(askAssistantQuestion.fulfilled, (state, action) => {
+        state.assistantStatus = "idle";
+        state.assistantError = null;
+        state.assistantAnswer = action.payload.answer;
+      })
+      .addCase(askAssistantQuestion.rejected, (state) => {
+        state.assistantStatus = "failed";
+        state.assistantAnswer = null;
+        state.assistantError = "Failed to get assistant answer";
       });
   },
 });

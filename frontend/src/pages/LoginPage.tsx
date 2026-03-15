@@ -8,6 +8,7 @@ import { loginUser } from "../features/auth/authSlice";
 import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import { FormField } from "../components/ui/FormField";
+import { getSafeReturnPath } from "../shared/navigation";
 
 type LoginFormValues = {
   email: string;
@@ -27,28 +28,6 @@ const loginSchema: yup.ObjectSchema<LoginFormValues> = yup
       .required("Password is required"),
   })
   .required();
-
-const getSafeReturnPath = (from: unknown, fallbackPath = "/events"): string => {
-  if (typeof from !== "string") {
-    return fallbackPath;
-  }
-
-  const trimmedPath = from.trim();
-
-  if (!trimmedPath.startsWith("/")) {
-    return fallbackPath;
-  }
-
-  if (
-    trimmedPath.startsWith("//") ||
-    trimmedPath.includes("://") ||
-    trimmedPath.includes("\\")
-  ) {
-    return fallbackPath;
-  }
-
-  return trimmedPath;
-};
 
 export function LoginPage() {
   const dispatch = useAppDispatch();

@@ -1,14 +1,29 @@
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
+  askAssistantQuestion,
   fetchMyEvents,
   fetchPublicEvents,
-  joinEvent,
-  leaveEvent,
 } from "../features/events/eventsSlice";
+import { useEventFilters } from "../features/events/useEventFilters";
+import { useEventParticipationActions } from "../features/events/useEventParticipationActions";
+import { AssistantPanel } from "../components/assistant/AssistantPanel";
 import { EventCard } from "../components/event-details/EventCard";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
+import { getTagAccentClassNames } from "../shared/tagAccent";
+
+const MAX_RECENT_ASSISTANT_QUESTIONS = 5;
+const RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY =
+  "events.recentAssistantQuestions";
+const ASSISTANT_QUESTION_SUGGESTIONS = [
+  "What events am I attending this week?",
+  "When is my next event?",
+  "List all events I organize.",
+  "Show public tech events this weekend.",
+  "Who’s attending the Marketing Meetup?",
+  "Where is the Design Sprint?",
+];
 
 export function EventsPage() {
   const navigate = useNavigate();
@@ -16,39 +31,64 @@ export function EventsPage() {
   const { publicEvents, myEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
+  const assistantAnswer = useAppSelector(
+    (state) => state.events.assistantAnswer,
+  );
+  const assistantStatus = useAppSelector(
+    (state) => state.events.assistantStatus,
+  );
+  const assistantError = useAppSelector((state) => state.events.assistantError);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [busyEventId, setBusyEventId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [assistantQuestion, setAssistantQuestion] = useState("");
+  const [recentAssistantQuestions, setRecentAssistantQuestions] = useState<
+    string[]
+  >(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    const storedValue = window.localStorage.getItem(
+      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
+    );
+
+    if (!storedValue) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(storedValue);
+
+      if (!Array.isArray(parsed)) {
+        window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
+        return [];
+      }
+
+      return parsed
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, MAX_RECENT_ASSISTANT_QUESTIONS);
+    } catch {
+      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
+      return [];
+    }
+  });
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedTags,
+    availableTags,
+    filteredEvents,
+    toggleTag,
+  } = useEventFilters(publicEvents);
+  const { actionError, busyEventId, handleJoin, handleLeave } =
+    useEventParticipationActions({ token, navigate });
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((event) => event.id)),
     [myEvents],
   );
-
-  const filteredEvents = useMemo(() => {
-    const value = searchTerm.trim().toLowerCase();
-
-    if (!value) {
-      return publicEvents;
-    }
-
-    return publicEvents.filter((event) => {
-      const searchable = [
-        event.title,
-        event.description,
-        event.location,
-        event.organizer?.name,
-        event.organizer?.email,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(value);
-    });
-  }, [publicEvents, searchTerm]);
 
   useEffect(() => {
     void dispatch(fetchPublicEvents());
@@ -60,50 +100,48 @@ export function EventsPage() {
     }
   }, [dispatch, token]);
 
-  const refreshEvents = async () => {
-    await Promise.all([
-      dispatch(fetchPublicEvents()).unwrap(),
-      dispatch(fetchMyEvents()).unwrap(),
-    ]);
-  };
-
-  const runEventAction = async (
-    eventId: string,
-    action: () => Promise<unknown>,
-    errorMessage: string,
-  ) => {
-    setActionError(null);
-    setBusyEventId(eventId);
-
-    try {
-      await action();
-      await refreshEvents();
-    } catch {
-      setActionError(errorMessage);
-    } finally {
-      setBusyEventId(null);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
     }
-  };
 
-  const handleJoin = async (eventId: string) => {
-    await runEventAction(
-      eventId,
-      () => dispatch(joinEvent(eventId)).unwrap(),
-      "Failed to join event",
+    if (recentAssistantQuestions.length === 0) {
+      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY,
+      JSON.stringify(recentAssistantQuestions),
     );
-  };
+  }, [recentAssistantQuestions]);
 
-  const handleLeave = async (eventId: string) => {
+  const handleAssistantSubmit = async (submitEvent: FormEvent) => {
+    submitEvent.preventDefault();
+
     if (!token) {
       navigate("/login");
       return;
     }
 
-    await runEventAction(
-      eventId,
-      () => dispatch(leaveEvent(eventId)).unwrap(),
-      "Failed to leave event",
-    );
+    const question = assistantQuestion.trim();
+
+    if (!question) {
+      return;
+    }
+
+    setRecentAssistantQuestions((previous) => {
+      const withoutDuplicate = previous.filter(
+        (value) => value.toLowerCase() !== question.toLowerCase(),
+      );
+
+      return [question, ...withoutDuplicate].slice(
+        0,
+        MAX_RECENT_ASSISTANT_QUESTIONS,
+      );
+    });
+
+    await dispatch(askAssistantQuestion(question));
   };
 
   return (
@@ -125,12 +163,59 @@ export function EventsPage() {
         />
       </div>
 
+      {token ? (
+        <AssistantPanel
+          assistantQuestion={assistantQuestion}
+          setAssistantQuestion={setAssistantQuestion}
+          assistantStatus={assistantStatus}
+          assistantError={assistantError}
+          assistantAnswer={assistantAnswer}
+          suggestedQuestions={ASSISTANT_QUESTION_SUGGESTIONS}
+          recentQuestions={recentAssistantQuestions}
+          onSelectRecentQuestion={setAssistantQuestion}
+          onSubmit={handleAssistantSubmit}
+        />
+      ) : null}
+
+      {availableTags.length > 0 ? (
+        <div className="mt-5">
+          <p className="text-sm font-semibold text-slate-600">Filter by tags</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {availableTags.map((tag) => {
+              const isSelected = selectedTags.some(
+                (selected) => selected.toLowerCase() === tag.toLowerCase(),
+              );
+
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => toggleTag(tag)}
+                  className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
+                    isSelected
+                      ? getTagAccentClassNames(tag, "solid")
+                      : getTagAccentClassNames(tag, "soft")
+                  }`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {status === "loading" ? <p className="mt-6">Loading events...</p> : null}
       {error ? <p className="mt-6 text-red-600">{error}</p> : null}
       {actionError ? <p className="mt-6 text-red-600">{actionError}</p> : null}
 
       {filteredEvents.length === 0 && status !== "loading" ? (
-        <p className="mt-6 text-slate-600">No events found.</p>
+        <p className="mt-6 text-slate-600">
+          {selectedTags.length > 0
+            ? "No events match the selected tags."
+            : "No events found."}
+        </p>
       ) : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">

@@ -1,16 +1,15 @@
 import {
-  BadRequestException,
-  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Event, EventVisibility } from './entities/event.entity';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Participant } from '../participants/entities/participant.entity';
+import { Tag } from '../tags/entities/tag.entity';
 import {
   assertPrivateEventAccess,
   AuthenticatedUser,
@@ -18,6 +17,17 @@ import {
   mergeAndSortCalendarEvents,
   sanitizeParticipantEmails,
 } from './events.service.helpers';
+import {
+  assertCapacityAvailable,
+  assertEventFound,
+  assertNotJoinedYet,
+  assertUserCanJoinEvent,
+} from './events-participation.helpers';
+import { resolveEventTags } from './events-tags.helpers';
+import {
+  parseAndValidateEventDate,
+  parseTagsFilter,
+} from './events-validation.helpers';
 
 @Injectable()
 export class EventsService {
@@ -26,13 +36,30 @@ export class EventsService {
     private readonly eventsRepository: Repository<Event>,
     @InjectRepository(Participant)
     private readonly participantsRepository: Repository<Participant>,
+    @InjectRepository(Tag)
+    private readonly tagsRepository: Repository<Tag>,
   ) {}
 
-  async findAll(): Promise<Event[]> {
+  async findAll(tagsFilter?: string): Promise<Event[]> {
+    const normalizedTagFilters = parseTagsFilter(tagsFilter);
+
+    if (normalizedTagFilters.length > 0) {
+      return this.eventsRepository.find({
+        where: {
+          visibility: EventVisibility.PUBLIC,
+          tags: {
+            name: In(normalizedTagFilters),
+          },
+        },
+        order: { eventDate: 'ASC' },
+        relations: { organizer: true, participants: true, tags: true },
+      });
+    }
+
     return this.eventsRepository.find({
       where: { visibility: EventVisibility.PUBLIC },
       order: { eventDate: 'ASC' },
-      relations: { organizer: true, participants: true },
+      relations: { organizer: true, participants: true, tags: true },
     });
   }
 
@@ -40,11 +67,11 @@ export class EventsService {
     const [organizedEvents, participantRows] = await Promise.all([
       this.eventsRepository.find({
         where: { organizerId: userId },
-        relations: { organizer: true },
+        relations: { organizer: true, tags: true },
       }),
       this.participantsRepository.find({
         where: { userId },
-        relations: { event: { organizer: true } },
+        relations: { event: { organizer: true, tags: true } },
       }),
     ]);
 
@@ -72,7 +99,11 @@ export class EventsService {
     createEventDto: CreateEventDto,
     user: AuthenticatedUser,
   ): Promise<Event> {
-    const eventDate = this.parseAndValidateEventDate(createEventDto.eventDate);
+    const eventDate = parseAndValidateEventDate(createEventDto.eventDate);
+    const tags = await resolveEventTags(
+      this.tagsRepository,
+      createEventDto.tags,
+    );
 
     const event = this.eventsRepository.create({
       title: createEventDto.title,
@@ -82,6 +113,7 @@ export class EventsService {
       capacity: createEventDto.capacity ?? null,
       visibility: createEventDto.visibility ?? EventVisibility.PUBLIC,
       organizerId: user.sub,
+      tags,
     });
 
     return this.eventsRepository.save(event);
@@ -123,8 +155,13 @@ export class EventsService {
     }
 
     if (updateEventDto.eventDate !== undefined) {
-      event.eventDate = this.parseAndValidateEventDate(
-        updateEventDto.eventDate,
+      event.eventDate = parseAndValidateEventDate(updateEventDto.eventDate);
+    }
+
+    if (updateEventDto.tags !== undefined) {
+      event.tags = await resolveEventTags(
+        this.tagsRepository,
+        updateEventDto.tags,
       );
     }
 
@@ -157,15 +194,8 @@ export class EventsService {
         .where('event.id = :id', { id })
         .getOne();
 
-      if (!event) {
-        throw new NotFoundException('Event not found');
-      }
-
-      if (event.organizerId === user.sub) {
-        throw new ForbiddenException(
-          'Organizer cannot join their own event as participant',
-        );
-      }
+      const existingEvent = assertEventFound(event);
+      assertUserCanJoinEvent(existingEvent, user.sub);
 
       const existingParticipant =
         await transactionalParticipantsRepository.findOne({
@@ -175,20 +205,12 @@ export class EventsService {
           },
         });
 
-      if (existingParticipant) {
-        throw new ConflictException('User already joined this event');
-      }
+      assertNotJoinedYet(Boolean(existingParticipant));
 
-      if (event.capacity !== null && event.capacity !== undefined) {
-        const participantCount =
-          await transactionalParticipantsRepository.count({
-            where: { eventId: id },
-          });
-
-        if (participantCount >= event.capacity) {
-          throw new ConflictException('Event capacity reached');
-        }
-      }
+      const participantCount = await transactionalParticipantsRepository.count({
+        where: { eventId: id },
+      });
+      assertCapacityAvailable(existingEvent, participantCount);
 
       const participant = transactionalParticipantsRepository.create({
         eventId: id,
@@ -212,19 +234,5 @@ export class EventsService {
     }
 
     await this.participantsRepository.delete({ id: participant.id });
-  }
-
-  private parseAndValidateEventDate(value: string): Date {
-    const parsedDate = new Date(value);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      throw new BadRequestException('Event date is invalid');
-    }
-
-    if (parsedDate.getTime() <= Date.now()) {
-      throw new BadRequestException('Event date cannot be in the past');
-    }
-
-    return parsedDate;
   }
 }

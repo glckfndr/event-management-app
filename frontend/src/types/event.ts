@@ -14,6 +14,11 @@ export type EventParticipant = {
   user?: EventUser;
 };
 
+export type EventTag = {
+  id: string;
+  name: string;
+};
+
 export type EventItem = {
   id: string;
   title: string;
@@ -25,6 +30,7 @@ export type EventItem = {
   organizerId: string;
   organizer?: EventUser;
   participants?: EventParticipant[];
+  tags?: EventTag[];
 };
 
 export type CreateEventPayload = {
@@ -34,4 +40,5 @@ export type CreateEventPayload = {
   location?: string;
   capacity?: number | null;
   visibility?: EventVisibility;
+  tags?: string[];
 };

@@ -1,0 +1,411 @@
+{
+  "info": {
+    "name": "Event Management - AI Assistant API",
+    "_postman_id": "1c7bace4-bf44-48ce-9c4b-1e1f7f4e2847",
+    "description": "Postman collection for issue #11: read-only AI assistant endpoint tests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "aliceEmail", "value": "alice@example.com" },
+    { "key": "alicePassword", "value": "Password123!" },
+    { "key": "bobEmail", "value": "bob@example.com" },
+    { "key": "bobPassword", "value": "Password123!" },
+    { "key": "aliceToken", "value": "" },
+    { "key": "bobToken", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "eventTitle", "value": "AI Postman Tagged Event" },
+    {
+      "key": "fallbackMessage",
+      "value": "Sorry, I didn’t understand that. Please try rephrasing your question."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login Alice (set aliceToken)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"password\": \"{{alicePassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "const token = body.accessToken || body.token;",
+              "pm.expect(token).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('aliceToken', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Login Bob (set bobToken)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{bobEmail}}\",\n  \"password\": \"{{bobPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "const token = body.accessToken || body.token;",
+              "pm.expect(token).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('bobToken', token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Create tagged event for assistant scenarios",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["events"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"{{eventTitle}}\",\n  \"description\": \"Created by Postman AI collection\",\n  \"eventDate\": \"2027-03-20T12:00:00.000Z\",\n  \"location\": \"Kyiv\",\n  \"visibility\": \"public\",\n  \"tags\": [\"tech\", \"backend\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.id).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('eventId', body.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events - Bob joins created event",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{bobToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/events/{{eventId}}/join",
+          "host": ["{{baseUrl}}"],
+          "path": ["events", "{{eventId}}", "join"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Count all user events",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"How many events do I have?\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - List upcoming events",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"List my upcoming events\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Show events for day/date range",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Show events from 2027-03-01 to 2027-03-31\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - List past events / previous week",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"List my events from previous week\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Filter by tag",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Show events with tag tech\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Show participants for specific event",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Show participants for \\\"{{eventTitle}}\\\"\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;",
+              "pm.test('Participants answer references event title', function () {",
+              "  pm.expect(body.answer).to.include(pm.collectionVariables.get('eventTitle'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI - Unsupported question fallback",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{aliceToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/assistant/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["assistant", "questions"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Please delete all my events now\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.expect(body.answer).to.be.a('string').and.not.empty;",
+              "",
+              "// In strict fallback mode this should be exact; with external LLM configured",
+              "// this may still be a safe refusal text, so we keep this assertion tolerant.",
+              "const fallback = pm.collectionVariables.get('fallbackMessage');",
+              "pm.test('Fallback or safe refusal', function () {",
+              "  pm.expect(",
+              "    body.answer === fallback || /sorry|cannot|can.t|didn.t understand/i.test(body.answer)",
+              "  ).to.equal(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

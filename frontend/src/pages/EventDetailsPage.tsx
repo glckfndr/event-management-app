@@ -1,26 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import {
-  deleteEvent,
-  fetchEventById,
-  fetchMyEvents,
-  fetchPublicEvents,
-  joinEvent,
-  leaveEvent,
-  updateEvent,
-} from "../features/events/eventsSlice";
+import { fetchEventById, fetchMyEvents } from "../features/events/eventsSlice";
+import { useEventDetailsActions } from "../features/events/useEventDetailsActions";
 import { DeleteConfirmModal } from "../components/event-details/DeleteConfirmModal";
 import { EventDetailsActions } from "../components/event-details/EventDetailsActions";
 import { EventDetailsSummary } from "../components/event-details/EventDetailsSummary";
 import { EventEditForm } from "../components/event-details/EventEditForm";
 import type { EventEditFormValues } from "../components/event-details/EventEditForm";
+import { AsyncSection } from "../components/layout/AsyncSection";
 import { FormErrorText } from "../components/ui/FormErrorText";
-import {
-  normalizeEventCoreValues,
-  validateEventCoreFields,
-} from "../shared/eventValidation";
+import { getSafeReturnPath } from "../shared/navigation";
+import type { EventItem } from "../types/event";
 
 const toDateTimeLocalValue = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -52,26 +43,22 @@ const toDateAndTimeLocalValues = (isoDate: string) => {
   };
 };
 
-const getSafeReturnPath = (from: unknown, fallbackPath = "/events"): string => {
-  if (typeof from !== "string") {
-    return fallbackPath;
-  }
+const toEditFormValues = (event: EventItem): EventEditFormValues => {
+  const { date, time } = toDateAndTimeLocalValues(event.eventDate);
 
-  const trimmedPath = from.trim();
-
-  if (!trimmedPath.startsWith("/")) {
-    return fallbackPath;
-  }
-
-  if (
-    trimmedPath.startsWith("//") ||
-    trimmedPath.includes("://") ||
-    trimmedPath.includes("\\")
-  ) {
-    return fallbackPath;
-  }
-
-  return trimmedPath;
+  return {
+    title: event.title,
+    description: event.description ?? "",
+    date,
+    time,
+    location: event.location ?? "",
+    capacity:
+      event.capacity == null || Number.isNaN(event.capacity)
+        ? ""
+        : String(event.capacity),
+    visibility: event.visibility,
+    tags: (event.tags ?? []).map((tag) => tag.name),
+  };
 };
 
 export function EventDetailsPage() {
@@ -91,9 +78,6 @@ export function EventDetailsPage() {
   );
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<EventEditFormValues>({
     title: "",
     description: "",
@@ -102,12 +86,19 @@ export function EventDetailsPage() {
     location: "",
     capacity: "",
     visibility: "public",
+    tags: [],
   });
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((item) => item.id)),
     [myEvents],
   );
+  const currentEvent = event && event.id === id ? event : null;
+  const pageError =
+    eventsStatus === "failed" && !currentEvent
+      ? (eventsError ?? "Failed to load event details")
+      : null;
+  const isPageLoading = !currentEvent && !pageError;
 
   useEffect(() => {
     if (id) {
@@ -121,26 +112,6 @@ export function EventDetailsPage() {
     }
   }, [dispatch, token]);
 
-  useEffect(() => {
-    if (!event) {
-      return;
-    }
-
-    const { date, time } = toDateAndTimeLocalValues(event.eventDate);
-    setEditForm({
-      title: event.title,
-      description: event.description ?? "",
-      date,
-      time,
-      location: event.location ?? "",
-      capacity:
-        event.capacity == null || Number.isNaN(event.capacity)
-          ? ""
-          : String(event.capacity),
-      visibility: event.visibility,
-    });
-  }, [event]);
-
   const updateEditFormField = <K extends keyof EventEditFormValues>(
     field: K,
     value: EventEditFormValues[K],
@@ -151,199 +122,111 @@ export function EventDetailsPage() {
     }));
   };
 
+  const isOrganizer =
+    Boolean(currentUserEmail) &&
+    currentEvent != null &&
+    currentUserEmail === currentEvent.organizer?.email;
+  const isJoined = currentEvent != null && joinedEventIds.has(currentEvent.id);
+  const participantsCount = currentEvent?.participants?.length ?? 0;
+  const isFull =
+    currentEvent?.capacity != null &&
+    Number.isFinite(currentEvent.capacity) &&
+    participantsCount >= currentEvent.capacity;
+  const {
+    isDeleteModalOpen,
+    setIsDeleteModalOpen,
+    isBusy,
+    error,
+    setError,
+    handleJoin,
+    handleLeave,
+    handleDelete,
+    handleEditSubmit,
+  } = useEventDetailsActions({
+    currentEvent,
+    token,
+    returnTo,
+    navigate,
+    participantsCount,
+    editForm,
+    onEditFinished: () => setIsEditing(false),
+  });
+
+  const handleToggleEdit = () => {
+    setError(null);
+
+    setIsEditing((value) => {
+      const nextValue = !value;
+
+      if (nextValue && currentEvent) {
+        setEditForm(toEditFormValues(currentEvent));
+      }
+
+      return nextValue;
+    });
+  };
+
   if (!id) {
     return <p>Event id is missing.</p>;
   }
 
-  if (eventsStatus === "failed" && (!event || event.id !== id)) {
-    return <p>{eventsError ?? "Failed to load event details"}</p>;
-  }
-
-  if (!event || event.id !== id) {
-    return <p>Loading event details...</p>;
-  }
-
-  const isOrganizer =
-    Boolean(currentUserEmail) && currentUserEmail === event.organizer?.email;
-  const isJoined = joinedEventIds.has(event.id);
-  const participantsCount = event.participants?.length ?? 0;
-  const isFull =
-    event.capacity != null &&
-    Number.isFinite(event.capacity) &&
-    participantsCount >= event.capacity;
-
-  const refreshEventData = async () => {
-    await dispatch(fetchEventById(event.id)).unwrap();
-
-    if (token) {
-      await dispatch(fetchMyEvents()).unwrap();
-    }
-  };
-
-  const runBusyAction = async (
-    action: () => Promise<unknown>,
-    errorMessage: string,
-    onSuccess?: () => Promise<void> | void,
-  ) => {
-    setError(null);
-    setIsBusy(true);
-
-    try {
-      await action();
-
-      if (onSuccess) {
-        await onSuccess();
-      }
-    } catch {
-      setError(errorMessage);
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const handleJoin = async () => {
-    await runBusyAction(
-      () => dispatch(joinEvent(event.id)).unwrap(),
-      "Failed to join event",
-      refreshEventData,
-    );
-  };
-
-  const handleLeave = async () => {
-    await runBusyAction(
-      () => dispatch(leaveEvent(event.id)).unwrap(),
-      "Failed to leave event",
-      refreshEventData,
-    );
-  };
-
-  const handleDelete = async () => {
-    setIsDeleteModalOpen(false);
-    setError(null);
-    setIsBusy(true);
-
-    try {
-      await dispatch(deleteEvent(event.id)).unwrap();
-      await dispatch(fetchPublicEvents()).unwrap();
-      navigate(returnTo);
-    } catch {
-      setError("Failed to delete event");
-      setIsBusy(false);
-    }
-  };
-
-  const handleEditSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
-    submitEvent.preventDefault();
-
-    const validationError = validateEventCoreFields(editForm);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    const {
-      title: normalizedTitle,
-      description: normalizedDescription,
-      date: normalizedDate,
-      time: normalizedTime,
-      location: normalizedLocation,
-      capacity: normalizedCapacity,
-      visibility: normalizedVisibility,
-    } = normalizeEventCoreValues(editForm);
-
-    const parsedDateTime = new Date(`${normalizedDate}T${normalizedTime}`);
-
-    if (Number.isNaN(parsedDateTime.getTime())) {
-      setError("Date or time is invalid");
-      return;
-    }
-
-    if (parsedDateTime.getTime() <= Date.now()) {
-      setError("Event date and time cannot be in the past");
-      return;
-    }
-
-    const capacityValue =
-      normalizedCapacity === "" ? null : Number(normalizedCapacity);
-
-    if (
-      capacityValue != null &&
-      Number.isFinite(participantsCount) &&
-      participantsCount > capacityValue
-    ) {
-      setError("Capacity cannot be less than current participants count");
-      return;
-    }
-
-    await runBusyAction(
-      () =>
-        dispatch(
-          updateEvent({
-            eventId: event.id,
-            data: {
-              title: normalizedTitle,
-              description: normalizedDescription || undefined,
-              eventDate: parsedDateTime.toISOString(),
-              location: normalizedLocation,
-              capacity: capacityValue,
-              visibility: normalizedVisibility,
-            },
-          }),
-        ).unwrap(),
-      "Failed to update event",
-      async () => {
-        await refreshEventData();
-        setIsEditing(false);
-      },
-    );
-  };
-
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6">
-      <EventDetailsSummary
-        event={event}
-        participantsCount={participantsCount}
-      />
+    <AsyncSection
+      isLoading={isPageLoading}
+      loadingFallback={<p>Loading event details...</p>}
+      errorMessage={pageError}
+      errorFallback={<p>{pageError}</p>}
+    >
+      {currentEvent ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <EventDetailsSummary
+            event={currentEvent}
+            participantsCount={participantsCount}
+          />
 
-      <EventDetailsActions
-        state={{
-          token,
-          isOrganizer,
-          isJoined,
-          isFull,
-          isBusy,
-        }}
-        handlers={{
-          onJoin: () => void handleJoin(),
-          onLeave: () => void handleLeave(),
-          onOpenDelete: () => setIsDeleteModalOpen(true),
-          onToggleEdit: () => setIsEditing((value) => !value),
-          onBack: () => navigate(returnTo),
-        }}
-      />
+          <EventDetailsActions
+            state={{
+              token,
+              isOrganizer,
+              isJoined,
+              isFull,
+              isBusy,
+            }}
+            handlers={{
+              onJoin: () => void handleJoin(),
+              onLeave: () => void handleLeave(),
+              onOpenDelete: () => setIsDeleteModalOpen(true),
+              onToggleEdit: handleToggleEdit,
+              onBack: () => navigate(returnTo),
+            }}
+          />
 
-      {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}
+          {error ? (
+            <FormErrorText className="mt-4">{error}</FormErrorText>
+          ) : null}
 
-      {isOrganizer && isEditing ? (
-        <EventEditForm
-          isBusy={isBusy}
-          values={editForm}
-          onFieldChange={updateEditFormField}
-          onCancel={() => {
-            setError(null);
-            setIsEditing(false);
-          }}
-          onSubmit={handleEditSubmit}
-        />
+          {isOrganizer && isEditing ? (
+            <EventEditForm
+              isBusy={isBusy}
+              values={editForm}
+              onFieldChange={updateEditFormField}
+              onCancel={() => {
+                setError(null);
+                setIsEditing(false);
+              }}
+              onSubmit={handleEditSubmit}
+            />
+          ) : null}
+
+          {isDeleteModalOpen ? (
+            <DeleteConfirmModal
+              isBusy={isBusy}
+              onCancel={() => setIsDeleteModalOpen(false)}
+              onConfirm={() => void handleDelete()}
+            />
+          ) : null}
+        </div>
       ) : null}
-
-      {isDeleteModalOpen ? (
-        <DeleteConfirmModal
-          isBusy={isBusy}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          onConfirm={() => void handleDelete()}
-        />
-      ) : null}
-    </div>
+    </AsyncSection>
   );
 }
