@@ -75,7 +75,7 @@ export class AssistantLlmService {
       return null;
     }
 
-    const provider = (process.env.AI_PROVIDER ?? 'openai').trim().toLowerCase();
+    const provider = (process.env.AI_PROVIDER ?? 'groq').trim().toLowerCase();
     const baseUrl = this.resolveBaseUrl(provider);
     const model =
       process.env.AI_MODEL?.trim() ??
