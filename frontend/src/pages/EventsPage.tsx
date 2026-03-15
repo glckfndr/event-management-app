@@ -60,6 +60,7 @@ export function EventsPage() {
       const parsed = JSON.parse(storedValue);
 
       if (!Array.isArray(parsed)) {
+        window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
         return [];
       }
 
@@ -69,6 +70,7 @@ export function EventsPage() {
         .filter(Boolean)
         .slice(0, MAX_RECENT_ASSISTANT_QUESTIONS);
     } catch {
+      window.localStorage.removeItem(RECENT_ASSISTANT_QUESTIONS_STORAGE_KEY);
       return [];
     }
   });

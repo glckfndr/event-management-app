@@ -254,12 +254,6 @@ export class AssistantService {
               return name;
             }
 
-            const email = participant.user?.email?.trim();
-
-            if (email) {
-              return email;
-            }
-
             return participant.userId;
           },
         ),

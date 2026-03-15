@@ -281,7 +281,7 @@ describe('AssistantService', () => {
     );
 
     expect(result.answer).toBe(
-      'Participants for "Tech Meetup": Alice Nguyen, bob@example.com.',
+      'Participants for "Tech Meetup": Alice Nguyen, user-8.',
     );
   });
 

@@ -161,6 +161,7 @@ export function EventTagsField({
               <button
                 key={tag}
                 type="button"
+                aria-label={`Remove tag ${tag}`}
                 onClick={() =>
                   setNextTags(
                     selectedTags.filter(

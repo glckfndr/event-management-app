@@ -269,6 +269,7 @@ const eventsSlice = createSlice({
       .addCase(askAssistantQuestion.pending, (state) => {
         state.assistantStatus = "loading";
         state.assistantError = null;
+        state.assistantAnswer = null;
       })
       .addCase(askAssistantQuestion.fulfilled, (state, action) => {
         state.assistantStatus = "idle";

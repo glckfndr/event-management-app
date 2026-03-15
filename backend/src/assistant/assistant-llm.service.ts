@@ -125,7 +125,12 @@ export class AssistantLlmService {
 
       return this.parseIntent(content);
     } catch (error) {
-      this.logger.warn('LLM request failed, using fallback intent', error);
+      const errorStack =
+        error instanceof Error ? (error.stack ?? error.message) : String(error);
+      this.logger.error(
+        'LLM request failed, using fallback intent',
+        errorStack,
+      );
       return null;
     } finally {
       clearTimeout(timeout);

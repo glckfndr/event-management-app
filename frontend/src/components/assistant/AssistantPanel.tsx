@@ -37,7 +37,12 @@ export function AssistantPanel({
         className="mt-4 flex flex-col gap-3 sm:flex-row"
         onSubmit={onSubmit}
       >
+        <label htmlFor="assistant-question-input" className="sr-only">
+          Assistant question
+        </label>
         <input
+          id="assistant-question-input"
+          aria-label="Assistant question"
           value={assistantQuestion}
           onChange={(inputEvent) =>
             setAssistantQuestion(inputEvent.target.value)
