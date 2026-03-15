@@ -23,6 +23,7 @@ import {
   EVENT_VALIDATION_MESSAGES,
   isValidPositiveCapacityInput,
 } from "../shared/eventValidation";
+import { getSafeReturnPath } from "../shared/navigation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 const createEventSchema = yup
@@ -79,28 +80,6 @@ const createEventSchema = yup
   .required();
 
 type CreateEventFormValues = yup.InferType<typeof createEventSchema>;
-
-const getSafeReturnPath = (from: unknown, fallbackPath = "/events"): string => {
-  if (typeof from !== "string") {
-    return fallbackPath;
-  }
-
-  const trimmedPath = from.trim();
-
-  if (!trimmedPath.startsWith("/")) {
-    return fallbackPath;
-  }
-
-  if (
-    trimmedPath.startsWith("//") ||
-    trimmedPath.includes("://") ||
-    trimmedPath.includes("\\")
-  ) {
-    return fallbackPath;
-  }
-
-  return trimmedPath;
-};
 
 export function CreateEventPage() {
   const dispatch = useAppDispatch();
