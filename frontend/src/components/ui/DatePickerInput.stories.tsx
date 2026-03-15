@@ -18,7 +18,7 @@ const meta = {
     placeholder: "Select date and time",
     value: "2099-11-12 18:30",
     readOnly: true,
-    ariaLabel: "Event date and time",
+    "aria-label": "Event date and time",
   },
 } satisfies Meta<typeof DatePickerInput>;
 

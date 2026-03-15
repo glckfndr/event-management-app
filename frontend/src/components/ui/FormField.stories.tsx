@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
 import { FormField } from "./FormField";
 
-const meta = {
-  title: "UI/FormField",
-  component: FormField,
-  tags: ["autodocs"],
-  render: (args) => (
+type FormFieldStoryArgs = Omit<ComponentProps<typeof FormField>, "children">;
+
+function FormFieldStoryRenderer(args: FormFieldStoryArgs) {
+  return (
     <div className="max-w-md rounded-xl border border-slate-200 bg-white p-4">
       <FormField {...args}>
         <input
@@ -15,8 +15,14 @@ const meta = {
         />
       </FormField>
     </div>
-  ),
-} satisfies Meta<typeof FormField>;
+  );
+}
+
+const meta = {
+  title: "UI/FormField",
+  component: FormFieldStoryRenderer,
+  tags: ["autodocs"],
+} satisfies Meta<FormFieldStoryArgs>;
 
 export default meta;
 

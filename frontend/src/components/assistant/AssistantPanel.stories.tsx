@@ -1,24 +1,30 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { AssistantPanel } from "./AssistantPanel";
+
+type AssistantPanelStoryArgs = Omit<
+  ComponentProps<typeof AssistantPanel>,
+  "setAssistantQuestion"
+>;
+
+function AssistantPanelStoryRenderer(args: AssistantPanelStoryArgs) {
+  const [assistantQuestion, setAssistantQuestion] = useState(
+    args.assistantQuestion,
+  );
+
+  return (
+    <AssistantPanel
+      {...args}
+      assistantQuestion={assistantQuestion}
+      setAssistantQuestion={setAssistantQuestion}
+    />
+  );
+}
 
 const meta = {
   title: "Assistant/AssistantPanel",
-  component: AssistantPanel,
+  component: AssistantPanelStoryRenderer,
   tags: ["autodocs"],
-  render: (args) => {
-    const [assistantQuestion, setAssistantQuestion] = useState(
-      args.assistantQuestion,
-    );
-
-    return (
-      <AssistantPanel
-        {...args}
-        assistantQuestion={assistantQuestion}
-        setAssistantQuestion={setAssistantQuestion}
-      />
-    );
-  },
   args: {
     assistantQuestion: "",
     assistantStatus: "idle",
@@ -34,7 +40,7 @@ const meta = {
       event.preventDefault();
     },
   },
-} satisfies Meta<typeof AssistantPanel>;
+} satisfies Meta<AssistantPanelStoryArgs>;
 
 export default meta;
 
