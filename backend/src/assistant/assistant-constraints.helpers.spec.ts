@@ -82,6 +82,7 @@ describe('assistant-constraints.helpers', () => {
   });
 
   it('applies weekend filter', () => {
+    // Weekend window is computed from current mocked week context.
     const filtered = applyQuestionConstraints(
       events,
       {

@@ -12,6 +12,7 @@ export const getSafeReturnPath = (
     return fallbackPath;
   }
 
+  // Reject absolute/protocol-like paths to avoid open redirect vectors.
   if (
     trimmedPath.startsWith("//") ||
     trimmedPath.includes("://") ||

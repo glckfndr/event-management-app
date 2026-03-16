@@ -16,6 +16,7 @@ describe('AppController', () => {
 
   describe('root', () => {
     it('should return "Hello Event Management!"', () => {
+      // Basic smoke check for app bootstrap route.
       expect(appController.getHello()).toBe('Hello Event Management!');
     });
   });

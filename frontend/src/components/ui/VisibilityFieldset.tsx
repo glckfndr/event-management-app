@@ -22,6 +22,7 @@ export function VisibilityFieldset({
         {legend}
       </legend>
 
+      {/* Controls are injected to keep this component UI-only and reusable. */}
       <label className="flex items-center gap-2 text-[1.05rem] text-slate-700">
         {publicControl}
         Public - Anyone can see and join this event

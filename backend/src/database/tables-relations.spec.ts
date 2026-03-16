@@ -44,6 +44,7 @@ describe('Database tables relations', () => {
     await dataSource.initialize();
 
     await dataSource.query(
+      // Match production behavior for case-insensitive tag uniqueness.
       'CREATE UNIQUE INDEX "IDX_tags_name_ci_unique" ON "tags" (LOWER("name"))',
     );
 
@@ -60,6 +61,7 @@ describe('Database tables relations', () => {
   });
 
   beforeEach(async () => {
+    // Clear join table first to satisfy FK constraints.
     await dataSource.createQueryBuilder().delete().from('event_tags').execute();
     await participantsRepository.createQueryBuilder().delete().execute();
     await tagsRepository.createQueryBuilder().delete().execute();

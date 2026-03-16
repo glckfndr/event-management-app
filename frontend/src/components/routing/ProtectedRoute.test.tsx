@@ -32,6 +32,7 @@ describe("ProtectedRoute", () => {
     });
 
     const expectedFrom = "/events/create?date=2026-03-06#section";
+    // Ensure deep-link context survives auth redirect.
 
     renderWithProviders(
       <MemoryRouter initialEntries={[expectedFrom]}>

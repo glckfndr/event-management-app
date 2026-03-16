@@ -22,6 +22,7 @@ const getWeekendWindow = (
   weekendStart: Date;
   weekendEnd: Date;
 } => {
+  // Compute Saturday/Sunday bounds in UTC to match stored event timestamps.
   const dayOfWeek = now.getUTCDay();
   const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
   const weekendStart = new Date(now);
@@ -41,6 +42,7 @@ export const resolveQuestionConstraints = (
   normalizedQuestion: string,
   events: AssistantFilterableEvent[],
 ): AssistantQuestionConstraints => {
+  // Only infer tags that exist in current events to avoid impossible filters.
   const availableTags = [
     ...new Set(
       events.flatMap((event) => event.tags.map((tag) => tag.toLowerCase())),

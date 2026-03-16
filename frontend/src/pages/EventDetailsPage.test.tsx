@@ -129,6 +129,7 @@ describe("EventDetailsPage", () => {
 
     const titleInput = screen.getByPlaceholderText("Title");
     await userEvent.clear(titleInput);
+    // Empty title should fail client-side validation and skip PATCH call.
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(await screen.findByText("Title is required")).toBeInTheDocument();
@@ -187,6 +188,7 @@ describe("EventDetailsPage", () => {
     await userEvent.type(titleInput, "Updated Event Title");
 
     await userEvent.click(screen.getByRole("button", { name: "Tech" }));
+    // Update request must preserve existing fields and include updated tags.
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
     await waitFor(() => {

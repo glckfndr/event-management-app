@@ -67,6 +67,7 @@ export class CreateEventsTable1760000002000 implements MigrationInterface {
         columnNames: ['organizerId'],
         referencedTableName: 'users',
         referencedColumnNames: ['id'],
+        // Removing organizer removes owned events as well.
         onDelete: 'CASCADE',
       }),
     );

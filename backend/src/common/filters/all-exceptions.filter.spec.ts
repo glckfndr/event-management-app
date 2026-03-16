@@ -17,6 +17,7 @@ describe('AllExceptionsFilter', () => {
   });
 
   const createHost = (url = '/test'): ArgumentsHost => {
+    // Minimal HTTP host mock for filter response assertions.
     const host = {
       switchToHttp: () => ({
         getResponse: () => ({ status }),

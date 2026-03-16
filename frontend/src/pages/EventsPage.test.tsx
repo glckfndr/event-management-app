@@ -163,6 +163,7 @@ describe("EventsPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Tech" }));
 
+    // Tag filter should narrow the list before search is applied.
     await waitFor(() => {
       expect(screen.getByText("React Meetup")).toBeInTheDocument();
       expect(screen.queryByText("Jazz Night")).not.toBeInTheDocument();
@@ -276,6 +277,7 @@ describe("EventsPage", () => {
     ).not.toBeInTheDocument();
 
     await act(async () => {
+      // Simulate server refresh that no longer returns the selected tag.
       await store.dispatch(fetchPublicEvents());
     });
 

@@ -6,6 +6,7 @@ import type { CreateEventPayload, EventItem } from "../../types/event";
 
 type EventsState = {
   publicEvents: EventItem[];
+  // Includes both organized and joined events for the current user.
   myEvents: EventItem[];
   selectedEvent: EventItem | null;
   status: "idle" | "loading" | "failed";
@@ -164,6 +165,7 @@ const eventsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(logout, (state) => {
+        // Clear user-specific data after logout.
         state.myEvents = [];
         state.selectedEvent = null;
         state.error = null;
@@ -229,6 +231,7 @@ const eventsSlice = createSlice({
       .addCase(updateEvent.fulfilled, (state, action) => {
         state.status = "idle";
 
+        // Keep list and details views in sync after edit.
         state.publicEvents = state.publicEvents.map((event) =>
           event.id === action.payload.id ? action.payload : event,
         );

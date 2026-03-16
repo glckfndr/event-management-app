@@ -36,6 +36,7 @@ export function MyEventsPage() {
 
     gridStart.setDate(monthStart.getDate() - monthStart.getDay());
 
+    // Render a fixed 6x7 grid to keep month layout stable.
     return Array.from({ length: 42 }, (_, index) => {
       const date = new Date(gridStart);
       date.setDate(gridStart.getDate() + index);
@@ -49,6 +50,7 @@ export function MyEventsPage() {
     const sameMonth =
       today.getMonth() === currentMonth.getMonth() &&
       today.getFullYear() === currentMonth.getFullYear();
+    // Week view anchors on current week for current month, otherwise month start.
     const referenceDate = sameMonth
       ? today
       : new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);

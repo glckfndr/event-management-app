@@ -65,6 +65,7 @@ export class CreateParticipantsTable1760000003000 implements MigrationInterface 
       'participants',
       new TableUnique({
         name: 'UQ_participants_user_event',
+        // Prevent the same user from joining the same event twice.
         columnNames: ['userId', 'eventId'],
       }),
     );
@@ -85,6 +86,7 @@ export class CreateParticipantsTable1760000003000 implements MigrationInterface 
       );
 
       if (uniqueConstraint) {
+        // Drop unique constraint before table removal for predictable rollback.
         await queryRunner.dropUniqueConstraint(
           'participants',
           uniqueConstraint,

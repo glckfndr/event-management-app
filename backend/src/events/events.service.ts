@@ -43,6 +43,7 @@ export class EventsService {
   async findAll(tagsFilter?: string): Promise<Event[]> {
     const normalizedTagFilters = parseTagsFilter(tagsFilter);
 
+    // Tag filtering works only on public events and keeps chronological order.
     if (normalizedTagFilters.length > 0) {
       return this.eventsRepository.find({
         where: {
@@ -183,6 +184,7 @@ export class EventsService {
   }
 
   async joinEvent(id: string, user: AuthenticatedUser): Promise<void> {
+    // Pessimistic lock prevents overbooking under concurrent join requests.
     await this.eventsRepository.manager.transaction(async (manager) => {
       const transactionalEventsRepository = manager.getRepository(Event);
       const transactionalParticipantsRepository =

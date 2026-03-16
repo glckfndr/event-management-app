@@ -30,6 +30,7 @@ export function EventDetailsActions({
     <div className="mt-6 flex flex-wrap gap-2">
       {token ? (
         <>
+          {/* Participants can join/leave unless they are the organizer. */}
           {!isOrganizer ? (
             isJoined ? (
               <Button
@@ -90,6 +91,7 @@ export function EventDetailsActions({
       ) : null}
 
       {!isOrganizer ? (
+        // Back action is always available for non-organizers.
         <Button
           type="button"
           disabled={isBusy}

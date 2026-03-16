@@ -95,6 +95,7 @@ export function CreateEventPage() {
 
   const selectedDate = searchParams.get("date");
 
+  // Calendar shortcuts can prefill date/time defaults.
   const defaultEventDate = useMemo(() => selectedDate || "", [selectedDate]);
   const defaultEventTime = useMemo(
     () => (selectedDate ? "10:00" : ""),
@@ -124,10 +125,12 @@ export function CreateEventPage() {
     setSubmitError(null);
 
     try {
+      // Remove non-string values defensively before sending payload.
       const normalizedTags = (values.tags ?? []).filter(
         (tag): tag is string => typeof tag === "string",
       );
 
+      // Backend expects a single ISO datetime value.
       const dateTimeIso = new Date(
         `${values.eventDate}T${values.eventTime || "00:00"}`,
       ).toISOString();

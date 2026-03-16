@@ -91,6 +91,7 @@ export function EventDateTimePickerField({
   onBlur,
   id,
 }: EventDateTimePickerFieldProps) {
+  // One shared picker component drives both date and time fields.
   const isDateMode = mode === "date";
 
   return (
@@ -104,6 +105,7 @@ export function EventDateTimePickerField({
             return;
           }
 
+          // Store form values as normalized strings used by DTO validation.
           onChange(
             isDateMode
               ? toDateInputValue(selectedValue)

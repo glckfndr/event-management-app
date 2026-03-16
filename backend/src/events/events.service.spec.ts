@@ -82,6 +82,7 @@ describe('EventsService', () => {
       getRepository: jest.fn(),
     };
 
+    // Route repository calls inside transaction to dedicated test doubles.
     transactionManager.getRepository.mockImplementation((entity) => {
       if (entity === Event) {
         return transactionalEventsRepository;
@@ -311,6 +312,7 @@ describe('EventsService', () => {
         { id: 'tag-1', name: 'tech' },
         { id: 'tag-2', name: 'art' },
       ]);
+    // Simulate race when another transaction inserts the same tag first.
     tagsRepository.create.mockImplementation(
       (payload: Record<string, unknown>) => payload,
     );

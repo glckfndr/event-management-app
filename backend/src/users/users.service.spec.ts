@@ -61,6 +61,7 @@ describe('UsersService', () => {
 
     const result = await service.getMyEvents(userId);
 
+    // UsersService should remain a thin orchestrator for calendar retrieval.
     expect(eventsServiceMock.getCalendarForUser).toHaveBeenCalledWith(userId);
     expect(result).toEqual(expectedEvents);
   });

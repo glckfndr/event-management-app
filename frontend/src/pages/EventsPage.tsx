@@ -64,12 +64,14 @@ export function EventsPage() {
   const { actionError, busyEventId, handleJoin, handleLeave } =
     useEventParticipationActions({ token, navigate });
 
+  // Fast lookup for join-state rendering on each card.
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((event) => event.id)),
     [myEvents],
   );
 
   useEffect(() => {
+    // Public feed is visible to all users.
     void dispatch(fetchPublicEvents());
   }, [dispatch]);
 
@@ -91,6 +93,7 @@ export function EventsPage() {
       return;
     }
 
+    // Trimmed value is persisted to recent questions and sent to API.
     const question = assistantQuestion.trim();
 
     if (!question) {

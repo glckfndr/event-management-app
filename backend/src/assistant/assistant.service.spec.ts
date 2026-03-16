@@ -32,6 +32,7 @@ describe('AssistantService', () => {
 
   beforeEach(async () => {
     jest.useFakeTimers();
+    // Freeze time so date-relative assistant rules stay deterministic.
     jest.setSystemTime(new Date('2026-03-12T10:00:00.000Z'));
     delete process.env.AI_API_KEY;
 
@@ -140,6 +141,7 @@ describe('AssistantService', () => {
       }
 
       if (where?.visibility === EventVisibility.PUBLIC) {
+        // Discovery scope includes the user's public events + all other public ones.
         return [
           ...organizedEvents.filter(
             (event) => event.visibility === EventVisibility.PUBLIC,

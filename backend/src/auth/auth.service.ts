@@ -27,6 +27,7 @@ export class AuthService {
       throw new ConflictException('User with this email already exists.');
     }
 
+    // Persist only hashed passwords.
     const hashedPassword = await hash(registerDto.password, 10);
 
     const createdUser = await this.usersService.createUser({
@@ -51,6 +52,7 @@ export class AuthService {
       loginDto.email,
     );
 
+    // Use the same error message to avoid leaking which field is invalid.
     if (!user) {
       throw new UnauthorizedException('Invalid credentials.');
     }
@@ -61,6 +63,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
+    // Keep JWT payload minimal for downstream authorization checks.
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,

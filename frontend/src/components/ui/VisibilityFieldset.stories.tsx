@@ -8,12 +8,14 @@ type VisibilityFieldsetStoryArgs = Omit<
 >;
 
 function VisibilityFieldsetStoryRenderer(args: VisibilityFieldsetStoryArgs) {
+  // Story-level state emulates how radio controls are wired in forms.
   const [value, setValue] = useState<"public" | "private">("public");
 
   return (
     <div className="max-w-xl rounded-xl border border-slate-200 bg-white p-4">
       <VisibilityFieldset
         {...args}
+        // Keep controls explicit so the Storybook docs show integration points.
         publicControl={
           <input
             type="radio"

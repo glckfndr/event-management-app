@@ -58,6 +58,7 @@ export class AssistantService {
       `Assistant request: llmEnabled=${shouldQueryLlm}, questionLength=${normalizedQuestion.length}`,
     );
 
+    // Deterministic rules are the fallback path when AI is not configured.
     if (!shouldQueryLlm) {
       const localAnswer = answerFromRules(question, scopedEvents, now);
 
@@ -81,6 +82,7 @@ export class AssistantService {
 
     const intent = await this.classifyQuestion(question, snapshot);
 
+    // If the model cannot classify confidently, fall back to rule-based resolvers.
     if (!intent || intent.intent === 'fallback') {
       const lookupEvents = await this.resolveLookupEventsForQuestion(
         question,
@@ -170,6 +172,7 @@ export class AssistantService {
     question: string,
     userEvents: AssistantEvent[],
   ): Promise<AssistantEvent[]> {
+    // Date-oriented global queries may need public events outside the user's own list.
     if (!shouldUseGlobalDateScopeQuestion(question)) {
       return userEvents;
     }
@@ -193,6 +196,7 @@ export class AssistantService {
   }
 
   private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {
+    // Read organizer and participant views in parallel, then merge unique events.
     const [organizedEvents, participantRows] = await Promise.all([
       this.eventsRepository.find({
         where: { organizerId: userId },

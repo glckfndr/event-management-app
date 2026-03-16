@@ -11,6 +11,7 @@ describe('EventsController', () => {
       providers: [
         {
           provide: EventsService,
+          // Controller smoke test does not require real service behavior.
           useValue: {},
         },
       ],

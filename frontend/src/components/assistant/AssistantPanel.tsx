@@ -23,6 +23,7 @@ export function AssistantPanel({
   onSelectRecentQuestion,
   onSubmit,
 }: AssistantPanelProps) {
+  // Keep optional sections collapsed by default to reduce visual noise.
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isRecentOpen, setIsRecentOpen] = useState(false);
 
@@ -53,6 +54,7 @@ export function AssistantPanel({
         <button
           type="submit"
           disabled={
+            // Prevent empty queries and duplicate submit while request is pending.
             assistantStatus === "loading" ||
             assistantQuestion.trim().length === 0
           }

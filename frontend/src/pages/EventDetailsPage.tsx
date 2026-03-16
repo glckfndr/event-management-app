@@ -14,6 +14,7 @@ import { getSafeReturnPath } from "../shared/navigation";
 import type { EventItem } from "../types/event";
 
 const toDateTimeLocalValue = (isoDate: string) => {
+  // Convert API ISO timestamps into browser-local input values.
   const date = new Date(isoDate);
 
   if (Number.isNaN(date.getTime())) {
@@ -93,6 +94,7 @@ export function EventDetailsPage() {
     () => new Set(myEvents.map((item) => item.id)),
     [myEvents],
   );
+  // Ignore stale store data when route id changes.
   const currentEvent = event && event.id === id ? event : null;
   const pageError =
     eventsStatus === "failed" && !currentEvent
@@ -158,6 +160,7 @@ export function EventDetailsPage() {
     setIsEditing((value) => {
       const nextValue = !value;
 
+      // Entering edit mode always starts from current server values.
       if (nextValue && currentEvent) {
         setEditForm(toEditFormValues(currentEvent));
       }

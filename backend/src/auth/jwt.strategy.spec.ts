@@ -29,6 +29,7 @@ describe('JwtStrategy', () => {
       email: 123,
     } as unknown as { sub: string; email: string };
 
+    // Runtime validation must reject structurally invalid decoded tokens.
     expect(() => strategy.validate(invalidPayload)).toThrow(
       UnauthorizedException,
     );

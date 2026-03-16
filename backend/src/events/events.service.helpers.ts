@@ -25,6 +25,7 @@ export function mergeAndSortCalendarEvents(
   organizedEvents: Event[],
   participantRows: Participant[],
 ): Event[] {
+  // Include events where the user participates and remove duplicates by id.
   const joinedEvents = participantRows
     .map((participant) => participant.event)
     .filter((event): event is Event => Boolean(event));
@@ -46,6 +47,7 @@ export function assertPrivateEventAccess(
   event: Event,
   user?: AuthenticatedUser,
 ): void {
+  // Public events are always readable.
   if (event.visibility !== EventVisibility.PRIVATE) {
     return;
   }
@@ -69,6 +71,7 @@ export function assertPrivateEventAccess(
 }
 
 export function sanitizeParticipantEmails(event: Event): Event {
+  // Remove participant email from API responses while preserving other user fields.
   const sanitizedParticipants = (event.participants ?? []).map(
     (participant) => {
       if (!participant.user) {
