@@ -22,6 +22,25 @@ Use these instructions for all changes in this repository.
 - Do not amend commits unless explicitly requested.
 - Do not use force push unless explicitly requested.
 
+## Branch Policy (Task Flow)
+
+- Treat task branches with this policy when provided by the user.
+- Base branch for task: `<BASE_BRANCH>`.
+- Working branch: `<ISSUE_BRANCH>` created from `<BASE_BRANCH>`.
+- Commit and push only to `<ISSUE_BRANCH>`.
+- Do not push to `<BASE_BRANCH>` until PR is ready.
+- Before PR, sync `<ISSUE_BRANCH>` with `origin/<BASE_BRANCH>` (merge or rebase), then resolve conflicts.
+- After sync, run relevant tests.
+- Open PR only after sync and tests: `<ISSUE_BRANCH>` -> `<BASE_BRANCH>`.
+
+### Concrete Example
+
+- Base branch: `feature/stage-2-tags-ai`.
+- Working branch: `feature/issue-13-tests-docs-update`.
+- Push/commit only to `feature/issue-13-tests-docs-update`.
+- Before PR, sync with `origin/feature/stage-2-tags-ai`, run tests, then open:
+  `feature/issue-13-tests-docs-update` -> `feature/stage-2-tags-ai`.
+
 ## Refactor Preferences
 
 - When a value/function in a page component is only passed through and not used there, prefer moving that logic/selectors into the child component that actually uses it.
