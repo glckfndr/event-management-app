@@ -1,11 +1,11 @@
 import type { FormEvent } from "react";
 import type { EventVisibility } from "../../types/event";
 import {
-  EventDateTimePickerField,
   EventTagsField,
   EventTextareaField,
   EventTextInputField,
 } from "../event-form/EventFormFields";
+import { renderDateTimeField } from "../event-form/renderDateTimeField";
 import { Button } from "../ui/Button";
 import { VisibilityFieldset } from "../ui/VisibilityFieldset";
 
@@ -62,22 +62,20 @@ export function EventEditForm({
         placeholder="Description"
       />
       <div className="grid gap-3 md:grid-cols-2">
-        <EventDateTimePickerField
-          label="Date"
-          required
-          id="edit-date"
-          mode="date"
-          value={values.date}
-          onChange={(value) => onFieldChange("date", value)}
-        />
-        <EventDateTimePickerField
-          label="Time"
-          required
-          id="edit-time"
-          mode="time"
-          value={values.time}
-          onChange={(value) => onFieldChange("time", value)}
-        />
+        {renderDateTimeField({
+          label: "Date",
+          id: "edit-date",
+          mode: "date",
+          value: values.date,
+          onChange: (value) => onFieldChange("date", value),
+        })}
+        {renderDateTimeField({
+          label: "Time",
+          id: "edit-time",
+          mode: "time",
+          value: values.time,
+          onChange: (value) => onFieldChange("time", value),
+        })}
       </div>
       <EventTextInputField
         label="Location"

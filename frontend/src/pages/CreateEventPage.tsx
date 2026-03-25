@@ -13,11 +13,11 @@ import type { CreateEventPayload } from "../types/event";
 import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import {
-  EventDateTimePickerField,
   EventTagsField,
   EventTextareaField,
   EventTextInputField,
 } from "../components/event-form/EventFormFields";
+import { renderDateTimeField } from "../components/event-form/renderDateTimeField";
 import { getSafeReturnPath } from "../shared/navigation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
@@ -60,30 +60,6 @@ export function CreateEventPage() {
       tags: [],
     },
   });
-
-  const renderDateTimeField = (
-    field: {
-      value: string;
-      onChange: (...event: unknown[]) => void;
-      onBlur: () => void;
-    },
-    options: {
-      label: string;
-      mode: "date" | "time";
-      errorMessage?: string;
-    },
-  ) => (
-    <EventDateTimePickerField
-      label={options.label}
-      required
-      dense
-      errorMessage={options.errorMessage}
-      mode={options.mode}
-      value={field.value}
-      onChange={field.onChange}
-      onBlur={field.onBlur}
-    />
-  );
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
@@ -155,9 +131,13 @@ export function CreateEventPage() {
             name="eventDate"
             control={control}
             render={({ field }) =>
-              renderDateTimeField(field, {
+              renderDateTimeField({
                 label: "Date",
                 mode: "date",
+                value: field.value,
+                onChange: (nextValue) => field.onChange(nextValue),
+                onBlur: field.onBlur,
+                dense: true,
                 errorMessage: errors.eventDate?.message,
               })
             }
@@ -167,9 +147,13 @@ export function CreateEventPage() {
             name="eventTime"
             control={control}
             render={({ field }) =>
-              renderDateTimeField(field, {
+              renderDateTimeField({
                 label: "Time",
                 mode: "time",
+                value: field.value,
+                onChange: (nextValue) => field.onChange(nextValue),
+                onBlur: field.onBlur,
+                dense: true,
                 errorMessage: errors.eventTime?.message,
               })
             }
