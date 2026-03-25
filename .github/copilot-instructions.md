@@ -11,6 +11,17 @@ Use these instructions for all changes in this repository.
   - `test(frontend): ...`
   - `docs(frontend): ...`
 
+## Git Workflow
+
+- Expected working branch by default: `feature/optional-frontend-enhancements`.
+- Never commit or push to `main` unless the user explicitly asks.
+- Before each commit or push, check and report the current branch in chat.
+- If the branch does not match the expected branch, stop and ask for confirmation.
+- Before any frontend code commit, run `npm run test:run` (from `frontend/`) and report the result in chat.
+- Before pushing, show the planned commit message and target branch; then wait for explicit user confirmation.
+- Do not amend commits unless explicitly requested.
+- Do not use force push unless explicitly requested.
+
 ## Refactor Preferences
 
 - When a value/function in a page component is only passed through and not used there, prefer moving that logic/selectors into the child component that actually uses it.
@@ -22,7 +33,6 @@ Use these instructions for all changes in this repository.
 - After meaningful frontend changes, run the frontend test suite:
   - `npm run test:run` (from `frontend/`)
 - Do not claim success without verifying tests or diagnostics.
-- Before any frontend code commit, run `npm run test:run` and report the result in chat.
 
 ## Safety
 
