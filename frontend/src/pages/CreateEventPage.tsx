@@ -61,6 +61,30 @@ export function CreateEventPage() {
     },
   });
 
+  const renderDateTimeField = (
+    field: {
+      value: string;
+      onChange: (...event: unknown[]) => void;
+      onBlur: () => void;
+    },
+    options: {
+      label: string;
+      mode: "date" | "time";
+      errorMessage?: string;
+    },
+  ) => (
+    <EventDateTimePickerField
+      label={options.label}
+      required
+      dense
+      errorMessage={options.errorMessage}
+      mode={options.mode}
+      value={field.value}
+      onChange={field.onChange}
+      onBlur={field.onBlur}
+    />
+  );
+
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
 
@@ -130,35 +154,25 @@ export function CreateEventPage() {
           <Controller
             name="eventDate"
             control={control}
-            render={({ field }) => (
-              <EventDateTimePickerField
-                label="Date"
-                required
-                dense
-                errorMessage={errors.eventDate?.message}
-                mode="date"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-              />
-            )}
+            render={({ field }) =>
+              renderDateTimeField(field, {
+                label: "Date",
+                mode: "date",
+                errorMessage: errors.eventDate?.message,
+              })
+            }
           />
 
           <Controller
             name="eventTime"
             control={control}
-            render={({ field }) => (
-              <EventDateTimePickerField
-                label="Time"
-                required
-                dense
-                errorMessage={errors.eventTime?.message}
-                mode="time"
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-              />
-            )}
+            render={({ field }) =>
+              renderDateTimeField(field, {
+                label: "Time",
+                mode: "time",
+                errorMessage: errors.eventTime?.message,
+              })
+            }
           />
         </div>
 
