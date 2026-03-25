@@ -7,8 +7,8 @@ import {
 import { useEventFilters } from "../features/events/useEventFilters";
 import { AssistantPanel } from "../components/assistant/AssistantPanel";
 import { EventCardGrid } from "../components/event-details/EventCardGrid";
+import { EventSearchBar } from "../components/event-details/EventSearchBar";
 import { EventTagFilterBar } from "../components/event-details/EventTagFilterBar";
-import { SearchIcon } from "../components/ui/icons/SearchIcon";
 
 const ASSISTANT_QUESTION_SUGGESTIONS = [
   "What events am I attending this week?",
@@ -54,17 +54,10 @@ export function EventsPage() {
         Find and join exciting events happening around you
       </p>
 
-      <div className="relative mt-8 max-w-xl">
-        <span className="pointer-events-none absolute inset-y-0 left-4 inline-flex items-center text-slate-400">
-          <SearchIcon />
-        </span>
-        <input
-          value={searchTerm}
-          onChange={(inputEvent) => setSearchTerm(inputEvent.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-base text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
-          placeholder="Search events..."
-        />
-      </div>
+      <EventSearchBar
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+      />
 
       {token ? (
         <AssistantPanel
