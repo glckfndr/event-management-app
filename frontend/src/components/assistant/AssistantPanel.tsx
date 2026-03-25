@@ -1,31 +1,32 @@
 import { type FormEvent, useState } from "react";
+import { useAppSelector } from "../../app/hooks";
 
 type AssistantPanelProps = {
   assistantQuestion: string;
-  setAssistantQuestion: (value: string) => void;
-  assistantStatus: "idle" | "loading" | "failed";
-  assistantError: string | null;
-  assistantAnswer: string | null;
   suggestedQuestions: string[];
   recentQuestions: string[];
-  onSelectRecentQuestion: (question: string) => void;
+  onSetQuestion: (question: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
 };
 
 export function AssistantPanel({
   assistantQuestion,
-  setAssistantQuestion,
-  assistantStatus,
-  assistantError,
-  assistantAnswer,
   suggestedQuestions,
   recentQuestions,
-  onSelectRecentQuestion,
+  onSetQuestion,
   onSubmit,
 }: AssistantPanelProps) {
   // Keep optional sections collapsed by default to reduce visual noise.
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isRecentOpen, setIsRecentOpen] = useState(false);
+
+  const assistantAnswer = useAppSelector(
+    (state) => state.events.assistantAnswer,
+  );
+  const assistantStatus = useAppSelector(
+    (state) => state.events.assistantStatus,
+  );
+  const assistantError = useAppSelector((state) => state.events.assistantError);
 
   return (
     <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
@@ -45,9 +46,7 @@ export function AssistantPanel({
           id="assistant-question-input"
           aria-label="Assistant question"
           value={assistantQuestion}
-          onChange={(inputEvent) =>
-            setAssistantQuestion(inputEvent.target.value)
-          }
+          onChange={(inputEvent) => onSetQuestion(inputEvent.target.value)}
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-[1.05rem] text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
           placeholder="Ask about your events..."
         />
@@ -82,7 +81,7 @@ export function AssistantPanel({
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSelectRecentQuestion(question)}
+                  onClick={() => onSetQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}
@@ -111,7 +110,7 @@ export function AssistantPanel({
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSelectRecentQuestion(question)}
+                  onClick={() => onSetQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}

@@ -29,13 +29,6 @@ export function EventsPage() {
   const { publicEvents, myEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
-  const assistantAnswer = useAppSelector(
-    (state) => state.events.assistantAnswer,
-  );
-  const assistantStatus = useAppSelector(
-    (state) => state.events.assistantStatus,
-  );
-  const assistantError = useAppSelector((state) => state.events.assistantError);
   const token = useAppSelector((state) => state.auth.token);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const assistantQuestion = useAssistantUiStore(
@@ -127,13 +120,9 @@ export function EventsPage() {
       {token ? (
         <AssistantPanel
           assistantQuestion={assistantQuestion}
-          setAssistantQuestion={setAssistantQuestion}
-          assistantStatus={assistantStatus}
-          assistantError={assistantError}
-          assistantAnswer={assistantAnswer}
           suggestedQuestions={ASSISTANT_QUESTION_SUGGESTIONS}
           recentQuestions={recentAssistantQuestions}
-          onSelectRecentQuestion={setAssistantQuestion}
+          onSetQuestion={setAssistantQuestion}
           onSubmit={handleAssistantSubmit}
         />
       ) : null}
