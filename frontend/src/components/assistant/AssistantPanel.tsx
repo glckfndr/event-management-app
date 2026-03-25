@@ -1,19 +1,14 @@
-import { type FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
+import { useAssistantUiStore } from "../../features/events/assistantUiStore";
 
 type AssistantPanelProps = {
-  assistantQuestion: string;
   suggestedQuestions: string[];
-  recentQuestions: string[];
-  onSetQuestion: (question: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
+  onSubmit: (question: string) => void | Promise<void>;
 };
 
 export function AssistantPanel({
-  assistantQuestion,
   suggestedQuestions,
-  recentQuestions,
-  onSetQuestion,
   onSubmit,
 }: AssistantPanelProps) {
   // Keep optional sections collapsed by default to reduce visual noise.
@@ -27,6 +22,38 @@ export function AssistantPanel({
     (state) => state.events.assistantStatus,
   );
   const assistantError = useAppSelector((state) => state.events.assistantError);
+  const assistantQuestion = useAssistantUiStore(
+    (state) => state.assistantQuestion,
+  );
+  const setAssistantQuestion = useAssistantUiStore(
+    (state) => state.setAssistantQuestion,
+  );
+  const recentAssistantQuestions = useAssistantUiStore(
+    (state) => state.recentAssistantQuestions,
+  );
+  const initializeRecentAssistantQuestions = useAssistantUiStore(
+    (state) => state.initializeRecentAssistantQuestions,
+  );
+  const recordAssistantQuestion = useAssistantUiStore(
+    (state) => state.recordAssistantQuestion,
+  );
+
+  useEffect(() => {
+    initializeRecentAssistantQuestions();
+  }, [initializeRecentAssistantQuestions]);
+
+  const handleSubmit = (submitEvent: React.FormEvent<HTMLFormElement>) => {
+    submitEvent.preventDefault();
+
+    const question = assistantQuestion.trim();
+
+    if (!question) {
+      return;
+    }
+
+    recordAssistantQuestion(question);
+    void onSubmit(question);
+  };
 
   return (
     <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
@@ -37,7 +64,7 @@ export function AssistantPanel({
 
       <form
         className="mt-4 flex flex-col gap-3 sm:flex-row"
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
       >
         <label htmlFor="assistant-question-input" className="sr-only">
           Assistant question
@@ -46,7 +73,9 @@ export function AssistantPanel({
           id="assistant-question-input"
           aria-label="Assistant question"
           value={assistantQuestion}
-          onChange={(inputEvent) => onSetQuestion(inputEvent.target.value)}
+          onChange={(inputEvent) =>
+            setAssistantQuestion(inputEvent.target.value)
+          }
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-[1.05rem] text-slate-700 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none"
           placeholder="Ask about your events..."
         />
@@ -81,7 +110,7 @@ export function AssistantPanel({
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSetQuestion(question)}
+                  onClick={() => setAssistantQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}
@@ -92,7 +121,7 @@ export function AssistantPanel({
         </div>
       ) : null}
 
-      {recentQuestions.length > 0 ? (
+      {recentAssistantQuestions.length > 0 ? (
         <div className="mt-3">
           <button
             type="button"
@@ -106,11 +135,11 @@ export function AssistantPanel({
 
           {isRecentOpen ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              {recentQuestions.map((question) => (
+              {recentAssistantQuestions.map((question) => (
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSetQuestion(question)}
+                  onClick={() => setAssistantQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}

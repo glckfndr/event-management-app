@@ -1,44 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps } from "react";
 import { AssistantPanel } from "./AssistantPanel";
 
-type AssistantPanelStoryArgs = Omit<
-  ComponentProps<typeof AssistantPanel>,
-  "setAssistantQuestion"
->;
-
-function AssistantPanelStoryRenderer(args: AssistantPanelStoryArgs) {
-  const [assistantQuestion, setAssistantQuestion] = useState(
-    args.assistantQuestion,
-  );
-
-  return (
-    <AssistantPanel
-      {...args}
-      assistantQuestion={assistantQuestion}
-      setAssistantQuestion={setAssistantQuestion}
-    />
-  );
-}
+type AssistantPanelStoryArgs = ComponentProps<typeof AssistantPanel>;
 
 const meta = {
   title: "Assistant/AssistantPanel",
-  component: AssistantPanelStoryRenderer,
+  component: AssistantPanel,
   tags: ["autodocs"],
   args: {
-    assistantQuestion: "",
-    assistantStatus: "idle",
-    assistantError: null,
-    assistantAnswer: null,
     suggestedQuestions: [
       "When is my next event?",
       "How many events do I have this month?",
     ],
-    recentQuestions: ["Show my tech events", "What is this weekend schedule?"],
-    onSelectRecentQuestion: () => undefined,
-    onSubmit: (event) => {
-      event.preventDefault();
-    },
+    onSubmit: () => undefined,
   },
 } satisfies Meta<AssistantPanelStoryArgs>;
 
@@ -49,23 +24,34 @@ type Story = StoryObj<typeof meta>;
 export const Idle: Story = {};
 
 export const Loading: Story = {
-  args: {
-    assistantStatus: "loading",
-    assistantQuestion: "How many events do I have?",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Loading state depends on the Redux store in Storybook decorators.",
+      },
+    },
   },
 };
 
 export const WithAnswer: Story = {
-  args: {
-    assistantAnswer:
-      "You have 3 events this week. The next one starts tomorrow at 18:00.",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Answer rendering depends on the Redux store in Storybook decorators.",
+      },
+    },
   },
 };
 
 export const Failed: Story = {
-  args: {
-    assistantStatus: "failed",
-    assistantError: "Failed to get assistant answer",
-    assistantQuestion: "How many events do I have?",
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Error rendering depends on the Redux store in Storybook decorators.",
+      },
+    },
   },
 };
