@@ -1,8 +1,21 @@
-# React + TypeScript + Vite
+# Frontend Application
 
-## Quick Start After Clone (Frontend only)
+## Overview
 
-From repository root:
+React frontend for the Event Management Application.
+
+Main features:
+
+- authentication flows
+- public event discovery
+- event details and participation actions
+- event creation and editing
+- calendar-based "My Events" page
+- AI assistant UI with suggestions and recent questions
+
+## Quick Start
+
+From the repository root:
 
 ```bash
 # Linux/macOS
@@ -18,7 +31,9 @@ npm run dev
 
 Frontend URL: `http://localhost:8090`
 
-## Run with full stack (Docker Compose from project root)
+## Run with full stack
+
+From the project root:
 
 ```bash
 # Linux/macOS
@@ -31,122 +46,61 @@ docker compose up --build
 docker compose exec backend npm run migration:run
 ```
 
-## Environment variables
+## Environment Variables
 
-Create a `.env` file in this folder (you can copy from `.env.example`):
+Create `frontend/.env` from `frontend/.env.example`.
 
 ```bash
 VITE_PORT=8090
 VITE_API_URL=http://localhost:3001
 ```
 
-## Stage 2 Frontend Coverage
+## Available Scripts
 
-Events page tests include:
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run test:run
+npm run storybook
+npm run build-storybook
+```
 
-- tags in list cards and tag-filter interactions
-- combined search + tag filtering behavior
-- assistant UI flow (submit, loading, success, fallback, error)
-- assistant visibility rules for unauthenticated users
-- predefined assistant suggestion prompts (`Try asking`)
-- persisted recent assistant questions (`Recent questions`) via `localStorage`
-- restore of recent assistant questions after page reload
-- compact dropdown behavior for assistant helper sections
+## Tests
 
-Run focused suite:
+Run the full frontend suite:
+
+```bash
+npm run test:run
+```
+
+Focused Events page suite:
 
 ```bash
 npx vitest run src/pages/EventsPage.test.tsx
 ```
 
+Covered flows include:
+
+- tag rendering and filtering
+- combined search and tag filtering
+- assistant success, loading, fallback, and error states
+- assistant visibility for unauthenticated users
+- predefined assistant suggestions
+- persisted recent assistant questions via `localStorage`
+
 ## Storybook
 
-Run Storybook locally:
+Run locally:
 
 ```bash
 npm run storybook
 ```
 
-Build static Storybook output:
+Build static output:
 
 ```bash
 npm run build-storybook
 ```
 
-Initial stories are available for:
-
-- `Button`
-- `FormField`
-- `DeleteConfirmModal`
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
-```
+Current stories include shared UI and modal components used in the app.

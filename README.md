@@ -2,91 +2,49 @@
 
 ## Overview
 
-This is a full-stack Event Management web application built with React (TypeScript) and NestJS.
+Full-stack event management application built with React, TypeScript, NestJS, TypeORM, and PostgreSQL.
 
-The system allows users to:
+Main capabilities:
 
-- Register and authenticate securely
-- Discover and join public events
-- Access private events only when allowed (organizer or participant)
-- Create, edit, and delete their own events
-- Manage personal schedules using a calendar view
-
----
-
-## User Stories
-
-### Guest
-
-- As a guest, I want to browse public events so I can discover interesting activities.
-- As a guest, I want to view event details so I can decide whether to participate.
-- As a guest, I want to register so I can join events.
-
-### Authenticated User
-
-- As a user, I want to log in securely so I can access protected features.
-- As a user, I want to join and leave events.
-- As a user, I want to view my events in a calendar.
-
-### Organizer
-
-- As an organizer, I want to create events.
-- As an organizer, I want to edit and delete my own events.
-- As an organizer, I want to view participants.
-
----
-
-## Acceptance Criteria
-
-- Only authenticated users can create events.
-- Users cannot join the same event twice (unique participant constraint is enforced).
-- Event capacity is enforced when provided; omitted capacity means unlimited participants.
-- Only organizers can edit or delete their events.
-- Private events are accessible only to authenticated organizers or participants.
-- Participant email addresses are not exposed in event detail responses.
-
----
+- user registration and login
+- browsing public events
+- controlled access to private events
+- creating, editing, and deleting organizer-owned events
+- joining and leaving events
+- calendar-based `My Events` view
+- AI assistant support for event-related questions
 
 ## Tech Stack
 
 ### Frontend
 
-- React + TypeScript
+- React
+- TypeScript
 - Redux Toolkit
 - Tailwind CSS
+- Vite
 
 ### Backend
 
 - NestJS
 - TypeORM
 - PostgreSQL
-- JWT Authentication
+- JWT authentication
 
-### DevOps
+### Tooling
 
 - Docker
 - Docker Compose
+- Vitest
+- Jest
 
----
+## Quick Start
 
-## Local Development
+### Docker Compose
 
-### Prerequisites
-
-- Node.js 20+
-- npm 10+
-- PostgreSQL 16+ (if running without Docker)
-
-### Quick Start After Clone (Docker Compose)
-
-1. Clone and open the repository root.
-2. Create root `.env` from `.env.example`.
-3. Build and start all services.
-4. Run backend migrations once containers are up.
-5. Run seed script to populate demo users and events.
+From the repository root:
 
 ```bash
-# from repository root
 # Linux/macOS
 cp .env.example .env
 
@@ -98,29 +56,17 @@ docker compose exec backend npm run migration:run
 docker compose exec backend npm run seed
 ```
 
-App URLs:
+Default URLs:
 
 - Frontend: `http://localhost:8090`
 - Backend: `http://localhost:3001`
 - Swagger: `http://localhost:3001/api`
 
-If you run Docker in background, use:
+### Run Services Manually
+
+Backend:
 
 ```bash
-docker compose up -d --build
-docker compose exec backend npm run migration:run
-docker compose exec backend npm run seed
-```
-
-Seed notes:
-
-- `npm run seed` creates demo users and events when database is empty.
-- Optional env vars for custom demo passwords: `SEED_ALICE_PASSWORD`, `SEED_BOB_PASSWORD`.
-
-### Backend (NestJS)
-
-```bash
-# from repository root
 # Linux/macOS
 cp backend/.env.example backend/.env
 
@@ -134,12 +80,9 @@ npm run seed
 npm run start:dev
 ```
 
-Backend runs on `http://localhost:3001` by default.
-
-### Frontend (React)
+Frontend:
 
 ```bash
-# from repository root
 # Linux/macOS
 cp frontend/.env.example frontend/.env
 
@@ -151,10 +94,161 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:8090` by default.
-If needed, set `VITE_API_URL` to point to backend API.
+## Architecture Review
 
-### Tests and Lint
+### System Overview
+
+The project is split into a React frontend and a NestJS backend.
+
+- frontend is responsible for routing, forms, UI state, and user interactions
+- backend is responsible for validation, authorization, persistence, and business rules
+- PostgreSQL stores users, events, participants, and tags
+
+### Frontend Architecture
+
+The frontend follows a page + feature + shared-components structure.
+
+- `pages/` contains route-level containers such as `EventsPage`, `EventDetailsPage`, `CreateEventPage`, and `MyEventsPage`
+- `features/` contains domain logic such as Redux slices and custom hooks
+- `components/` contains reusable UI and page-specific presentational components
+- `shared/` contains common utilities such as API helpers, navigation helpers, validation helpers, and styling helpers
+
+State management is intentionally split:
+
+- Redux Toolkit stores domain state such as auth, events, selected event, and assistant request state
+- Zustand stores lightweight UI-only assistant state such as the current question and recent prompt history
+
+### Backend Architecture
+
+The backend follows a modular NestJS structure.
+
+- controllers handle HTTP routing and request mapping
+- services handle orchestration and repository interaction
+- helper files contain focused business logic and validation rules
+- DTOs define request contracts
+- entities define persistence structure
+
+Main backend modules:
+
+- `auth/` handles registration, login, JWT validation, and guards
+- `events/` handles event CRUD, visibility rules, and participation flows
+- `assistant/` handles assistant question processing and fallback logic
+- `users/` and `participants/` support identity and event membership flows
+
+For more detailed backend boundaries, see `backend/ARCHITECTURE.md`.
+
+### Data Model
+
+Core entities:
+
+- `User` organizes events and can join events
+- `Event` stores title, date, location, visibility, capacity, organizer, and tags
+- `Participant` is the explicit join table for user-event participation
+- `Tag` supports event categorization and frontend filtering
+
+Important constraints:
+
+- user emails are unique
+- user-event participation pairs are unique
+- private events are visible only to organizer or participant
+- participant email addresses are hidden in event detail responses
+
+### Authorization Model
+
+The app uses JWT-based authentication.
+
+- protected actions such as create, update, delete, join, and leave require authenticated users
+- organizer-only actions are checked on the backend
+- private event access is validated on the backend even if the frontend hides restricted UI
+- one read route uses optional auth middleware so event details can serve both guests and signed-in users with different access levels
+
+### Assistant Architecture
+
+The assistant is built as a hybrid flow.
+
+- frontend provides the assistant panel, suggestions, and recent-question persistence
+- backend first uses deterministic rules and safe read-only constraints
+- if configured, LLM-backed classification can be used for broader intent handling
+- fallback behavior exists for unclear or unsupported questions
+
+This keeps the assistant predictable for common cases while still allowing more flexible natural-language support.
+
+### Page Composition Strategy
+
+Larger pages are intentionally decomposed by responsibility.
+
+- page components act as orchestration layers
+- presentational UI blocks are split into smaller components
+- async mutations and side effects are extracted into feature hooks when appropriate
+
+Examples:
+
+- `EventDetailsPage` coordinates state, while detail summary, actions, edit form, and delete modal are separate components
+- `MyEventsPage` coordinates calendar state, while week header, grid rendering, view toggle, and month navigation are separate components
+
+### Key Tradeoffs
+
+Current implementation tradeoffs:
+
+- tokens are stored in `localStorage` for simplicity
+- public event listing currently loads full datasets without server-side pagination
+- event deletion is implemented as hard delete rather than soft delete
+
+These choices were acceptable for an MVP, with clear next steps for production hardening.
+
+## Interview Cheat Sheet
+
+### Project Goal
+
+- full-stack event management platform with auth, event CRUD, participation flows, calendar view, and assistant support
+
+### Frontend Talking Points
+
+- React app uses page-level containers plus smaller presentational components
+- Redux Toolkit stores domain state such as auth, events, assistant request state
+- Zustand stores lightweight UI-only assistant state such as recent questions
+- larger pages were decomposed to keep orchestration, presentation, and side effects separate
+
+### Backend Talking Points
+
+- NestJS backend is organized by modules: auth, events, assistant, users, participants
+- controllers stay thin, services orchestrate, helpers keep focused business logic
+- validation is enforced at DTO and business-rule levels
+- optional auth middleware is used for mixed-access event details, while guards protect strict routes
+
+### Database Talking Points
+
+- PostgreSQL with TypeORM entities for users, events, participants, and tags
+- participant is an explicit join table, which keeps join/leave logic clear
+- important constraints include unique email and unique user-event participation pairs
+
+### Security Talking Points
+
+- JWT authentication is implemented and expiration is configurable
+- private event access is checked on the backend, not only hidden on the frontend
+- participant emails are intentionally removed from event detail responses
+- current auth tradeoff is `localStorage`; future improvement is httpOnly cookie-based session handling
+
+### Assistant Talking Points
+
+- assistant uses deterministic rules first and can optionally use LLM-backed classification
+- recent assistant questions are persisted locally for better UX
+- assistant flow is intentionally read-oriented and constrained
+
+### Refactor Talking Points
+
+- Event details and calendar pages were split by responsibility rather than by file size alone
+- page components coordinate data and state
+- smaller components render isolated UI blocks
+- custom hooks or shared helpers handle async flows and reusable logic
+
+### Production Improvements
+
+- add server-side pagination and filtering for event lists
+- add refresh-token lifecycle and stronger session handling
+- replace hard delete with soft delete and basic audit trail
+
+## Tests
 
 ```bash
 # backend
@@ -168,32 +262,25 @@ npm run lint
 npm run test:run
 ```
 
-Focused Stage 2 checks:
+Focused checks:
 
 ```bash
-# backend assistant behavior (fallback/read-only/tags/date-range)
+# backend assistant behavior
 cd backend
 npx jest assistant.service.spec.ts --watchAll=false
 
-# frontend assistant/tags flow on Events page
+# frontend assistant flow
 cd ../frontend
 npx vitest run src/pages/EventsPage.test.tsx
 ```
 
-Assistant UX notes (Events page):
+## AI Assistant Configuration
 
-- `Try asking` section provides built-in question examples for quick input.
-- `Recent questions` stores up to 5 latest unique questions.
-- Recent questions are persisted in browser `localStorage` and restored on reload.
-- Both helper sections are compact dropdown panels to reduce page clutter.
+The backend assistant can run in local rule-based mode or with LLM-backed intent classification.
 
-### AI Assistant Environment
-
-The backend assistant can run in deterministic local mode or with LLM intent classification.
-
-- `AI_API_KEY`: enables LLM classification when set; local rules/fallback are used when missing.
-- `AI_PROVIDER`: LLM provider id (for example `groq`, `openai`, `openrouter`).
-- `AI_MODEL`: model name passed to provider API.
+- `AI_API_KEY`: enables LLM classification when set
+- `AI_PROVIDER`: provider id, for example `groq` or `openai`
+- `AI_MODEL`: model name to send to the provider API
 
 Example:
 
@@ -203,135 +290,17 @@ AI_PROVIDER=groq
 AI_MODEL=llama-3.3-70b-versatile
 ```
 
----
-
 ## Security Notes
 
-- The frontend currently persists access tokens in `localStorage` for session persistence.
-- Tradeoff: this increases token exposure risk in case of XSS.
-- Current mitigations:
-  - Validate and sanitize inputs via DTO/form validation.
-  - Keep JWT expiration short (`JWT_EXPIRES_IN`).
-  - Avoid exposing participant emails in event details responses.
-- Planned improvement: migrate to httpOnly cookie-based auth/session flow with CSRF protections.
+- access tokens are currently persisted in `localStorage`
+- JWT expiration is configurable via `JWT_EXPIRES_IN`
+- participant email addresses are intentionally hidden in event detail responses
+- a future improvement is moving to httpOnly cookie-based session handling
 
-## Architecture Overview
+## Project Structure
 
-The application follows a modular full-stack architecture with clear separation of concerns between frontend and backend.
+- `backend/` - NestJS API, database access, auth, assistant logic
+- `frontend/` - React UI, routing, calendar, assistant interface
+- `docs/` - supporting documentation and notes
 
-### Backend Architecture (NestJS)
-
-The backend is built using a modular structure:
-
-- **Auth Module** – Handles user registration, login, JWT authentication, and route protection.
-- **Users Module** – Manages user-related operations.
-- **Events Module** – Contains business logic for event creation, update, deletion, and retrieval.
-- **Participants Logic** – Handles join/leave functionality and enforces unique participation per user/event.
-
-The application follows REST principles and uses DTOs for request validation.
-Business logic is placed in services, while controllers handle routing only.
-
-Authentication is implemented using JWT strategy with protected routes via guards.
-
----
-
-### Database Design
-
-The system uses PostgreSQL with TypeORM.
-
-Main entities:
-
-- **User**
-  - One-to-many relation with organized events
-- **Event**
-  - Many-to-many relation with users (participants)
-- **Participant**
-  - Explicit join table to manage event participation
-
-The database schema enforces:
-
-- Unique user emails
-- Unique user/event participant pairs
-- Proper relationship handling
-
----
-
-### Frontend Architecture (React)
-
-The frontend follows a feature-based structure:
-
-- **Authentication Layer**
-  - Login & Register pages
-  - JWT stored in client state
-  - Protected routes
-
-- **State Management**
-  - Redux Toolkit for global state
-  - Async actions for API communication
-
-- **Component Structure**
-  - Pages: Events List, Event Details, Create Event, My Events
-  - Reusable UI components (cards, forms, modals)
-  - Assistant panel with quick suggestions and persisted recent-question history
-
-The frontend communicates with the backend via a centralized Axios API layer.
-
----
-
-### DevOps & Deployment
-
-The application is fully containerized using Docker and Docker Compose:
-
-- PostgreSQL container
-- NestJS backend container
-- React frontend container
-
-Recommended start command:
-
-```bash
-docker compose up --build
-docker compose exec backend npm run migration:run
-```
-
-### Docker Compose commands
-
-Before running Docker Compose, create a root `.env` file (copy from `.env.example`) and set:
-
-```bash
-DB_PASSWORD=your_strong_password_here
-BACKEND_PUBLIC_URL=http://localhost:3001
-JWT_SECRET=replace_with_a_long_random_secret
-JWT_EXPIRES_IN=1h
-
-# optional assistant LLM config
-AI_PROVIDER=groq
-AI_API_KEY=
-AI_MODEL=llama-3.3-70b-versatile
-# AI_BASE_URL=
-```
-
-For access from another device in your local network, set `BACKEND_PUBLIC_URL` to your host IP,
-for example `http://192.168.0.10:3001`.
-
-```bash
-# build images and start all services
-docker compose up --build
-
-# apply database migrations
-docker compose exec backend npm run migration:run
-
-# start in background
-docker compose up -d
-
-# view logs for all services
-docker compose logs -f
-
-# view logs for one service
-docker compose logs -f backend
-
-# stop and remove containers
-docker compose down
-
-# stop and remove containers + database volume
-docker compose down -v
-```
+For service-level setup details, see `backend/README.md` and `frontend/README.md`.
