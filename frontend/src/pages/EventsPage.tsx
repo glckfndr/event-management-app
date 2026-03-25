@@ -1,13 +1,11 @@
-import { type FormEvent, useEffect, useMemo } from "react";
+import { type FormEvent, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   askAssistantQuestion,
-  fetchMyEvents,
   fetchPublicEvents,
 } from "../features/events/eventsSlice";
 import { useEventFilters } from "../features/events/useEventFilters";
-import { useEventParticipationActions } from "../features/events/useEventParticipationActions";
 import { useAssistantUiStore } from "../features/events/assistantUiStore";
 import { AssistantPanel } from "../components/assistant/AssistantPanel";
 import { EventCardGrid } from "../components/event-details/EventCardGrid";
@@ -26,11 +24,10 @@ const ASSISTANT_QUESTION_SUGGESTIONS = [
 export function EventsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { publicEvents, myEvents, status, error } = useAppSelector(
+  const { publicEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
   const token = useAppSelector((state) => state.auth.token);
-  const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const assistantQuestion = useAssistantUiStore(
     (state) => state.assistantQuestion,
   );
@@ -54,25 +51,11 @@ export function EventsPage() {
     filteredEvents,
     toggleTag,
   } = useEventFilters(publicEvents);
-  const { actionError, busyEventId, handleJoin, handleLeave } =
-    useEventParticipationActions({ token, navigate });
-
-  // Fast lookup for join-state rendering on each card.
-  const joinedEventIds = useMemo(
-    () => new Set(myEvents.map((event) => event.id)),
-    [myEvents],
-  );
 
   useEffect(() => {
     // Public feed is visible to all users.
     void dispatch(fetchPublicEvents());
   }, [dispatch]);
-
-  useEffect(() => {
-    if (token) {
-      void dispatch(fetchMyEvents());
-    }
-  }, [dispatch, token]);
 
   useEffect(() => {
     initializeRecentAssistantQuestions();
@@ -144,16 +127,7 @@ export function EventsPage() {
         </p>
       ) : null}
 
-      <EventCardGrid
-        events={filteredEvents}
-        token={token}
-        currentUserEmail={currentUserEmail}
-        joinedEventIds={joinedEventIds}
-        busyEventId={busyEventId}
-        actionError={actionError}
-        onJoin={handleJoin}
-        onLeave={handleLeave}
-      />
+      <EventCardGrid events={filteredEvents} />
     </div>
   );
 }

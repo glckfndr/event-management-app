@@ -1,29 +1,35 @@
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { fetchMyEvents } from "../../features/events/eventsSlice";
+import { useEventParticipationActions } from "../../features/events/useEventParticipationActions";
 import { EventCard } from "./EventCard";
-import type { Event } from "../../types";
+import type { EventItem } from "../../types/event";
 
 export interface EventCardGridProps {
-  events: Event[];
-  token: string | null;
-  currentUserEmail: string | undefined;
-  joinedEventIds: Set<string>;
-  busyEventId: string | null;
-  actionError: string | null;
-  onJoin: (eventId: string) => Promise<void>;
-  onLeave: (eventId: string) => Promise<void>;
+  events: EventItem[];
 }
 
-export function EventCardGrid({
-  events,
-  token,
-  currentUserEmail,
-  joinedEventIds,
-  busyEventId,
-  actionError,
-  onJoin,
-  onLeave,
-}: EventCardGridProps) {
+export function EventCardGrid({ events }: EventCardGridProps) {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const token = useAppSelector((state) => state.auth.token);
+  const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
+  const myEvents = useAppSelector((state) => state.events.myEvents);
+  const { actionError, busyEventId, handleJoin, handleLeave } =
+    useEventParticipationActions({ token, navigate });
+
+  useEffect(() => {
+    if (token) {
+      void dispatch(fetchMyEvents());
+    }
+  }, [dispatch, token]);
+
+  // Fast lookup for join-state rendering on each card.
+  const joinedEventIds = useMemo(
+    () => new Set(myEvents.map((event) => event.id)),
+    [myEvents],
+  );
 
   return (
     <>
@@ -48,8 +54,8 @@ export function EventCardGrid({
             }}
             handlers={{
               onOpen: () => navigate(`/events/${event.id}`),
-              onJoin: () => void onJoin(event.id),
-              onLeave: () => void onLeave(event.id),
+              onJoin: () => void handleJoin(event.id),
+              onLeave: () => void handleLeave(event.id),
               onRequireLogin: () => navigate("/login"),
             }}
           />
