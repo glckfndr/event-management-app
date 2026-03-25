@@ -143,3 +143,28 @@ Anti-pattern to avoid:
 
 - Two nearly identical render functions that differ only by literal values.
 - Complex generic helper signatures that reduce readability without additional safety.
+
+## Frontend Refactor Recommendation (Shared Render Helper Extraction)
+
+Use this recommendation when you find the same render logic duplicated across multiple form components or pages.
+
+Apply this pattern:
+
+1. Identify duplicated JSX blocks that render the same component with only config differences (for example, date-time picker fields used in both create and edit forms).
+2. Extract the repeated logic into a single helper function that accepts a `options` object covering all flexible parameters.
+3. Place the helper in a shared location if it is used across multiple unrelated components, or component-local if only used by one component.
+4. Use the helper consistently across all places where duplication existed.
+5. Verify behavior is unchanged by running tests after refactoring.
+
+Example:
+
+- **Problem:** `EventEditForm` and `CreateEventPage` both have near-identical date and time picker field render code.
+- **Solution:** Extract `renderDateTimeField` helper to shared `event-form/` module; import and use in both places.
+- **Benefit:** single source of truth for date-time field rendering; future changes applied in one place.
+
+Quick checklist:
+
+- Is the same JSX block rendered with only literal/config differences in multiple locations?
+- Can those differences be expressed cleanly in an options object?
+- Will a shared helper reduce repetition without adding harmful abstraction?
+- Are tests still passing after extraction?
