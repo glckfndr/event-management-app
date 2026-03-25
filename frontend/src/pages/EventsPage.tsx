@@ -10,9 +10,9 @@ import { useEventFilters } from "../features/events/useEventFilters";
 import { useEventParticipationActions } from "../features/events/useEventParticipationActions";
 import { useAssistantUiStore } from "../features/events/assistantUiStore";
 import { AssistantPanel } from "../components/assistant/AssistantPanel";
-import { EventCard } from "../components/event-details/EventCard";
+import { EventCardGrid } from "../components/event-details/EventCardGrid";
+import { EventTagFilterBar } from "../components/event-details/EventTagFilterBar";
 import { SearchIcon } from "../components/ui/icons/SearchIcon";
-import { getTagAccentClassNames } from "../shared/tagAccent";
 
 const ASSISTANT_QUESTION_SUGGESTIONS = [
   "What events am I attending this week?",
@@ -138,38 +138,14 @@ export function EventsPage() {
         />
       ) : null}
 
-      {availableTags.length > 0 ? (
-        <div className="mt-5">
-          <p className="text-sm font-semibold text-slate-600">Filter by tags</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {availableTags.map((tag) => {
-              const isSelected = selectedTags.some(
-                (selected) => selected.toLowerCase() === tag.toLowerCase(),
-              );
-
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => toggleTag(tag)}
-                  className={`rounded-full border px-3 py-1 text-sm font-semibold transition ${
-                    isSelected
-                      ? getTagAccentClassNames(tag, "solid")
-                      : getTagAccentClassNames(tag, "soft")
-                  }`}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+      <EventTagFilterBar
+        availableTags={availableTags}
+        selectedTags={selectedTags}
+        onToggleTag={toggleTag}
+      />
 
       {status === "loading" ? <p className="mt-6">Loading events...</p> : null}
       {error ? <p className="mt-6 text-red-600">{error}</p> : null}
-      {actionError ? <p className="mt-6 text-red-600">{actionError}</p> : null}
 
       {filteredEvents.length === 0 && status !== "loading" ? (
         <p className="mt-6 text-slate-600">
@@ -179,28 +155,16 @@ export function EventsPage() {
         </p>
       ) : null}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
-        {filteredEvents.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            state={{
-              token,
-              isOrganizer:
-                Boolean(currentUserEmail) &&
-                currentUserEmail === event.organizer?.email,
-              isJoined: joinedEventIds.has(event.id),
-              isBusy: busyEventId === event.id,
-            }}
-            handlers={{
-              onOpen: () => navigate(`/events/${event.id}`),
-              onJoin: () => void handleJoin(event.id),
-              onLeave: () => void handleLeave(event.id),
-              onRequireLogin: () => navigate("/login"),
-            }}
-          />
-        ))}
-      </div>
+      <EventCardGrid
+        events={filteredEvents}
+        token={token}
+        currentUserEmail={currentUserEmail}
+        joinedEventIds={joinedEventIds}
+        busyEventId={busyEventId}
+        actionError={actionError}
+        onJoin={handleJoin}
+        onLeave={handleLeave}
+      />
     </div>
   );
 }
