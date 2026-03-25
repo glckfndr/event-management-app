@@ -2,14 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
 import { fetchMyEvents } from "../features/events/eventsSlice";
-import { MonthCalendarCell } from "../components/my-events/MonthCalendarCell";
-import { WeekCalendarCard } from "../components/my-events/WeekCalendarCard";
-import { Button } from "../components/ui/Button";
-import {
-  groupEventsByDate,
-  toLocalDateKey,
-  weekDays,
-} from "../components/my-events/calendarUtils";
+import { CalendarMonthNavigator } from "../components/my-events/CalendarMonthNavigator";
+import { CalendarViewToggle } from "../components/my-events/CalendarViewToggle";
+import { CalendarWeekHeader } from "../components/my-events/CalendarWeekHeader";
+import { MonthCalendarGrid } from "../components/my-events/MonthCalendarGrid";
+import { WeekCalendarGrid } from "../components/my-events/WeekCalendarGrid";
+import { groupEventsByDate } from "../components/my-events/calendarUtils";
 
 export function MyEventsPage() {
   const navigate = useNavigate();
@@ -123,98 +121,38 @@ export function MyEventsPage() {
       </div>
 
       <div className="mt-8 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            onClick={() => changeMonth(-1)}
-            className="h-9 w-9 rounded-md border border-slate-300 text-lg text-slate-700 hover:bg-slate-50"
-          >
-            ‹
-          </Button>
-          <h3 className="text-4xl font-semibold">{title}</h3>
-          <Button
-            type="button"
-            onClick={() => changeMonth(1)}
-            className="h-9 w-9 rounded-md border border-slate-300 text-lg text-slate-700 hover:bg-slate-50"
-          >
-            ›
-          </Button>
-        </div>
+        <CalendarMonthNavigator
+          title={title}
+          onPreviousMonth={() => changeMonth(-1)}
+          onNextMonth={() => changeMonth(1)}
+        />
 
-        <div className="flex items-center gap-2 rounded-lg bg-white p-1">
-          <Button
-            type="button"
-            onClick={() => setViewMode("month")}
-            className={`rounded-md px-4 py-2 text-lg font-medium ${
-              viewMode === "month"
-                ? "bg-indigo-600 text-white"
-                : "text-slate-700 hover:bg-slate-100"
-            }`}
-          >
-            Month
-          </Button>
-          <Button
-            type="button"
-            onClick={() => setViewMode("week")}
-            className={`rounded-md px-4 py-2 text-lg font-medium ${
-              viewMode === "week"
-                ? "bg-indigo-600 text-white"
-                : "text-slate-700 hover:bg-slate-100"
-            }`}
-          >
-            Week
-          </Button>
-        </div>
+        <CalendarViewToggle
+          viewMode={viewMode}
+          onChangeViewMode={setViewMode}
+        />
       </div>
 
       {viewMode === "month" ? (
         <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-            {weekDays.map((day) => (
-              <p
-                key={day}
-                className="px-3 py-2 text-center text-lg font-bold text-slate-700"
-              >
-                {day}
-              </p>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7">
-            {monthCells.map((date) => {
-              const dateKey = toLocalDateKey(date);
-
-              return (
-                <MonthCalendarCell
-                  key={`${dateKey}-month`}
-                  date={date}
-                  events={eventsByDate[dateKey] ?? []}
-                  isCurrentMonth={date.getMonth() === currentMonth.getMonth()}
-                  isSelected={selectedDateKey === dateKey}
-                  onSelect={setSelectedDateKey}
-                  onOpenEvent={openEventFromCalendar}
-                />
-              );
-            })}
-          </div>
+          <CalendarWeekHeader />
+          <MonthCalendarGrid
+            monthCells={monthCells}
+            currentMonth={currentMonth}
+            selectedDateKey={selectedDateKey}
+            eventsByDate={eventsByDate}
+            onSelectDate={setSelectedDateKey}
+            onOpenEvent={openEventFromCalendar}
+          />
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 md:grid-cols-7">
-          {weekCells.map((date) => {
-            const dateKey = toLocalDateKey(date);
-
-            return (
-              <WeekCalendarCard
-                key={`${dateKey}-week`}
-                date={date}
-                events={eventsByDate[dateKey] ?? []}
-                isSelected={selectedDateKey === dateKey}
-                onSelect={setSelectedDateKey}
-                onOpenEvent={openEventFromCalendar}
-              />
-            );
-          })}
-        </div>
+        <WeekCalendarGrid
+          weekCells={weekCells}
+          selectedDateKey={selectedDateKey}
+          eventsByDate={eventsByDate}
+          onSelectDate={setSelectedDateKey}
+          onOpenEvent={openEventFromCalendar}
+        />
       )}
     </div>
   );

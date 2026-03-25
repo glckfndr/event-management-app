@@ -30,6 +30,9 @@ describe("CreateEventPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -82,6 +85,9 @@ describe("CreateEventPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
