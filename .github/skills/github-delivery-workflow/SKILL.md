@@ -126,3 +126,20 @@ Quick check before commit:
 - Is the page still doing mostly orchestration?
 - Did prop-drilling and pass-through props decrease?
 - Is behavior unchanged and covered by tests?
+
+## Frontend Refactor Recommendation (CreateEventPage Field Renderer)
+
+Use this recommendation when several `Controller` blocks render the same field component with only small config differences.
+
+Apply this pattern:
+
+1. Extract one shared render helper that receives `field` and a small `options` object.
+2. Pass only varying values as arguments (for example: `label`, `mode`, `errorMessage`).
+3. Keep field typing simple and pragmatic; do not over-complicate generic types if inference already works.
+4. Prefer readability over type-level cleverness for UI render helpers.
+5. Keep behavior unchanged and verify with tests.
+
+Anti-pattern to avoid:
+
+- Two nearly identical render functions that differ only by literal values.
+- Complex generic helper signatures that reduce readability without additional safety.
