@@ -105,3 +105,24 @@ Moved the state/selectors into the component where they are used, removed pass-t
 ## Response Language
 
 Default response language is Ukrainian unless user requests another language.
+
+## Frontend Refactor Recommendation (EventsPage Pattern)
+
+Use this recommendation when refactoring page components in frontend.
+
+Goal: keep page components as orchestration layers, and move feature-specific state/logic to the child component that actually uses it.
+
+Apply this pattern:
+
+1. If a page reads store state only to pass it down, move that selector/state access into the child component.
+2. If a page defines handlers used only by one child, move those handlers into that child when safe.
+3. Keep page responsibilities minimal: route guards, high-level data fetch, and composition of sections.
+4. Prefer thin, explicit child contracts (for example, `onSubmit(question)` instead of passing raw event and multiple setter props).
+5. For repeated JSX blocks with a clear responsibility (search bar, filter bar, action panel), extract them into dedicated components.
+6. After each meaningful refactor, run frontend tests and report results before commit.
+
+Quick check before commit:
+
+- Is the page still doing mostly orchestration?
+- Did prop-drilling and pass-through props decrease?
+- Is behavior unchanged and covered by tests?
