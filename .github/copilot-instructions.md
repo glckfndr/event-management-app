@@ -47,6 +47,24 @@ Use these instructions for all changes in this repository.
 - Keep parent pages focused on orchestration and high-level flow.
 - Avoid unnecessary prop duplication.
 
+## Design-by-Default: Separation of Responsibilities
+
+- Apply separation of responsibilities at code creation time, not only during later refactors.
+- Keep each module/component focused on one primary responsibility.
+- Avoid large "god files": when file size/complexity grows, split early into focused units.
+- For frontend:
+  - Pages should orchestrate data flow and layout.
+  - Feature/business logic should live in hooks/services/store selectors.
+  - Reusable UI rendering should live in dedicated presentational components.
+- For backend:
+  - Controllers should handle transport concerns.
+  - Services should contain business logic.
+  - Validation/parsing/formatting helpers should be extracted from service core flow.
+- Before finalizing implementation, run a quick self-check:
+  - Does this file have more than one reason to change?
+  - Is any logic only passed through instead of owned where it is used?
+  - Can a helper/hook/component be extracted now to keep boundaries clear?
+
 ## Code Comment Preference
 
 - Prefer short comments that explain why code exists or why a specific decision was made.

@@ -134,6 +134,24 @@ Quick check before commit:
 - Did prop-drilling and pass-through props decrease?
 - Is behavior unchanged and covered by tests?
 
+## Shift-Left Responsibility Split (During Initial Implementation)
+
+Use this rule while creating new code, not only while refactoring existing code.
+
+Apply by default:
+
+1. Start with responsibility boundaries first (page/screen orchestration, domain logic, reusable UI) before writing full implementation.
+2. If a file begins to mix concerns, split immediately instead of postponing to a later refactor.
+3. Prefer extracting hooks/helpers/components early when logic is reused or not owned by the current layer.
+4. Keep files small and intention-revealing; avoid introducing multi-purpose modules.
+5. Add short comments for non-obvious decisions with focus on why a boundary or extraction exists.
+
+Quick pre-commit checklist:
+
+- Does each file have one primary reason to change?
+- Are orchestration and business logic separated?
+- Did we avoid pass-through logic in parent components/controllers?
+
 ## Frontend Refactor Recommendation (CreateEventPage Field Renderer)
 
 Use this recommendation when several `Controller` blocks render the same field component with only small config differences.
