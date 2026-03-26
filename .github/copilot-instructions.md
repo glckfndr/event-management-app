@@ -47,6 +47,13 @@ Use these instructions for all changes in this repository.
 - Keep parent pages focused on orchestration and high-level flow.
 - Avoid unnecessary prop duplication.
 
+## Code Comment Preference
+
+- Prefer short comments that explain why code exists or why a specific decision was made.
+- Add comments mainly around non-obvious logic, trade-offs, constraints, or safety checks.
+- Avoid comments that only restate what the code does line by line.
+- Keep comments concise and practical.
+
 ## Validation
 
 - After meaningful frontend changes, run the frontend test suite:

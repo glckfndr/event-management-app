@@ -28,6 +28,9 @@ describe("ProtectedRoute", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null,
       },
     });
 

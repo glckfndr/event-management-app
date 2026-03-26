@@ -42,6 +42,13 @@ When user provides <BASE_BRANCH> and <ISSUE_BRANCH>, enforce that policy exactly
 2. Report test result in chat before commit/push.
 3. If tests fail, do not claim completion.
 
+## Code Commenting Preference
+
+1. Prefer short comments that explain why the code exists or why a decision was made.
+2. Add comments mainly for non-obvious logic, constraints, edge cases, and safety decisions.
+3. Avoid comment noise that only repeats what the code already says.
+4. Keep comments concise and practical.
+
 ## Commit Message Rules
 
 1. Use Conventional Commit style: type(scope): short description.
