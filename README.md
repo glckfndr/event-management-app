@@ -14,6 +14,12 @@ Main capabilities:
 - calendar-based `My Events` view
 - AI assistant support for event-related questions
 
+## Product User Stories
+
+User stories are maintained in a dedicated document:
+
+- `docs/user-stories.md`
+
 ## Tech Stack
 
 ### Frontend
