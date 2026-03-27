@@ -108,17 +108,15 @@ export const useEventDetailsActions = ({
     }
 
     setIsDeleteModalOpen(false);
-    setError(null);
-    setIsBusy(true);
 
-    try {
-      await dispatch(deleteEvent(currentEvent.id)).unwrap();
-      await dispatch(fetchPublicEvents()).unwrap();
-      navigate(returnTo);
-    } catch {
-      setError("Failed to delete event");
-      setIsBusy(false);
-    }
+    await runBusyAction(
+      () => dispatch(deleteEvent(currentEvent.id)).unwrap(),
+      "Failed to delete event",
+      async () => {
+        await dispatch(fetchPublicEvents()).unwrap();
+        navigate(returnTo);
+      },
+    );
   };
 
   const handleEditSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {

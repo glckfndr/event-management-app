@@ -147,20 +147,16 @@ export function EventDetailsInteractionSection({
   return (
     <>
       <EventDetailsActions
-        state={{
-          token,
-          isOrganizer,
-          isJoined,
-          isFull,
-          isBusy,
-        }}
-        handlers={{
-          onJoin: () => void handleJoin(),
-          onLeave: () => void handleLeave(),
-          onOpenDelete: () => setIsDeleteModalOpen(true),
-          onToggleEdit: handleToggleEdit,
-          onBack: () => navigate(returnTo),
-        }}
+        token={token}
+        isOrganizer={isOrganizer}
+        isJoined={isJoined}
+        isFull={isFull}
+        isBusy={isBusy}
+        onJoin={() => void handleJoin()}
+        onLeave={() => void handleLeave()}
+        onOpenDelete={() => setIsDeleteModalOpen(true)}
+        onToggleEdit={handleToggleEdit}
+        onBack={() => navigate(returnTo)}
       />
 
       {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}

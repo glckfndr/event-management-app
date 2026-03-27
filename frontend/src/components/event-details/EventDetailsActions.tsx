@@ -3,29 +3,30 @@ import { EditIcon } from "../ui/icons/EditIcon";
 import { TrashIcon } from "../ui/icons/TrashIcon";
 
 type EventDetailsActionsProps = {
-  state: {
-    token: string | null;
-    isOrganizer: boolean;
-    isJoined: boolean;
-    isFull: boolean;
-    isBusy: boolean;
-  };
-  handlers: {
-    onJoin: () => void;
-    onLeave: () => void;
-    onOpenDelete: () => void;
-    onToggleEdit: () => void;
-    onBack: () => void;
-  };
+  token: string | null;
+  isOrganizer: boolean;
+  isJoined: boolean;
+  isFull: boolean;
+  isBusy: boolean;
+  onJoin: () => void;
+  onLeave: () => void;
+  onOpenDelete: () => void;
+  onToggleEdit: () => void;
+  onBack: () => void;
 };
 
 export function EventDetailsActions({
-  state,
-  handlers,
+  token,
+  isOrganizer,
+  isJoined,
+  isFull,
+  isBusy,
+  onJoin,
+  onLeave,
+  onOpenDelete,
+  onToggleEdit,
+  onBack,
 }: EventDetailsActionsProps) {
-  const { token, isOrganizer, isJoined, isFull, isBusy } = state;
-  const { onJoin, onLeave, onOpenDelete, onToggleEdit, onBack } = handlers;
-
   return (
     <div className="mt-6 flex flex-wrap gap-2">
       {token ? (
