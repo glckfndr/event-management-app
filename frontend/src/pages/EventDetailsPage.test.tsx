@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { api } from "../shared/api";
 import { EventDetailsPage } from "./EventDetailsPage";
 import {
@@ -207,5 +207,85 @@ describe("EventDetailsPage", () => {
       }),
       expect.any(Object),
     );
+  });
+
+  it("prevents duplicate delete requests while deletion is in progress", async () => {
+    const event = createInitialEvent();
+    let resolveDelete: (() => void) | null = null;
+
+    vi.spyOn(api, "get").mockImplementation(async (url: string) => {
+      if (url === "/events/evt-1") {
+        return { data: event };
+      }
+
+      if (url === "/users/me/events") {
+        return { data: [] };
+      }
+
+      if (url === "/events") {
+        return { data: [] };
+      }
+
+      throw new Error(`Unexpected GET url: ${url}`);
+    });
+
+    const deleteSpy = vi.spyOn(api, "delete").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDelete = () => resolve({ data: undefined });
+        }),
+    );
+
+    const store = createTestStore({
+      auth: {
+        token: "test-token",
+        user: { email: "organizer@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        publicEvents: [],
+        myEvents: [],
+        selectedEvent: null,
+        status: "idle",
+        error: null,
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events/evt-1"]}>
+        <Routes>
+          <Route path="/events/:id" element={<EventDetailsPage />} />
+          <Route path="/events" element={<p>Events List</p>} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    await screen.findByText("Initial Event");
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const deleteModalHeading = await screen.findByText("Confirm deletion");
+    const deleteModal = deleteModalHeading.parentElement;
+
+    if (!deleteModal) {
+      throw new Error("Expected delete confirmation modal");
+    }
+
+    const confirmDeleteButton = within(deleteModal).getByRole("button", {
+      name: /^Delete$/,
+    });
+
+    await userEvent.click(confirmDeleteButton);
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
+    });
+
+    await userEvent.click(confirmDeleteButton);
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveDelete?.();
+    });
   });
 });

@@ -92,15 +92,17 @@ export function EventDetailsActions({
       ) : null}
 
       {!isOrganizer ? (
-        // Back action is always available for non-organizers.
-        <Button
-          type="button"
-          disabled={isBusy}
-          onClick={onBack}
-          className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
-        >
-          ← Back
-        </Button>
+        <>
+          {/* Back action is always available for non-organizers. */}
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={onBack}
+            className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+          >
+            ← Back
+          </Button>
+        </>
       ) : null}
     </div>
   );

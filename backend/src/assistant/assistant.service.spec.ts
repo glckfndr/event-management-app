@@ -622,4 +622,18 @@ describe('AssistantService', () => {
     expect(participantsRepository.update).not.toHaveBeenCalled();
     expect(participantsRepository.delete).not.toHaveBeenCalled();
   });
+
+  it('returns fallback when classifyQuestion returns null (e.g. network failure)', async () => {
+    // API key is set so LLM path is taken, but classifyQuestion returns null
+    // (simulating a network error or abort). Confirms the full fallback chain.
+    process.env.AI_API_KEY = 'test-key';
+
+    const result = await service.answerQuestion(
+      'Can you explain quantum computing?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe(ASSISTANT_FALLBACK_MESSAGE);
+    expect(llmService.classifyQuestion).toHaveBeenCalledTimes(1);
+  });
 });

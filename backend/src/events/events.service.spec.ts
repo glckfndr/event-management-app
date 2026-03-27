@@ -719,6 +719,29 @@ describe('EventsService', () => {
     expect(transactionalParticipantsRepository.save).not.toHaveBeenCalled();
   });
 
+  it('joinEvent throws when user already joined event', async () => {
+    eventQueryBuilder.getOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'another-user',
+      capacity: 10,
+    });
+    transactionalParticipantsRepository.findOne.mockResolvedValue({
+      id: 'participant-id',
+      eventId: 'event-id',
+      userId: 'user-id',
+    });
+
+    await expect(
+      service.joinEvent('event-id', {
+        sub: 'user-id',
+        email: 'user@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(transactionalParticipantsRepository.count).not.toHaveBeenCalled();
+    expect(transactionalParticipantsRepository.save).not.toHaveBeenCalled();
+  });
+
   it('joinEvent uses transaction and pessimistic write lock', async () => {
     eventQueryBuilder.getOne.mockResolvedValue({
       id: 'event-id',

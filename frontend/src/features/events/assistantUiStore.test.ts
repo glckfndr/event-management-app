@@ -37,6 +37,20 @@ describe("assistantUiStore", () => {
     ).toBeNull();
   });
 
+  it("removes non-array recent questions payload from localStorage", () => {
+    window.localStorage.setItem(
+      "events.recentAssistantQuestions",
+      JSON.stringify({ recent: ["How many events?"] }),
+    );
+
+    useAssistantUiStore.getState().initializeRecentAssistantQuestions();
+
+    expect(useAssistantUiStore.getState().recentAssistantQuestions).toEqual([]);
+    expect(
+      window.localStorage.getItem("events.recentAssistantQuestions"),
+    ).toBeNull();
+  });
+
   it("records deduplicated questions and keeps newest five", () => {
     const { recordAssistantQuestion } = useAssistantUiStore.getState();
 

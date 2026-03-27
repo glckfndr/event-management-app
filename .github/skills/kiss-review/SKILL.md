@@ -13,8 +13,11 @@ Use this skill when the user asks to:
 - Identify unnecessary complexity or over-engineering.
 - Suggest simplifications for existing code.
 - Check a PR or file for KISS violations before committing.
+- Verify generated or refactored code against real business-case edge cases.
 
 KISS = the simplest solution that correctly solves the problem. Not fewer lines — less unnecessary complexity.
+
+Simplicity is not enough on its own: even clean AI-generated code must be verified against the business case.
 
 ## When KISS Is Violated
 
@@ -179,13 +182,26 @@ Run this when reviewing a PR or before committing a refactor:
 - [ ] Are there more computed variants than real inputs would realistically trigger?
 - [ ] Are props grouped into nested objects when flat props are equally readable at this scale?
 
+## Business-Case Verification Checklist
+
+Use this after the KISS review, especially for AI-generated code.
+
+- [ ] Empty values: `''`, whitespace-only input, omitted optional fields.
+- [ ] Nullish inputs: `null`, `undefined`, missing object properties.
+- [ ] Extremely large inputs: long text, many tags/items, unusually large numeric values.
+- [ ] Unexpected formats: malformed dates, mixed-case tags, broken JSON/localStorage payloads, invalid query params.
+- [ ] Concurrent calls: double-click submits, duplicate join/delete requests, overlapping async actions.
+- [ ] Authorization boundaries: private resources requested anonymously or by unrelated authenticated users.
+
+If the code looks simple but fails these cases, it is not simple enough for the real business case.
+
 ## Severity Guide
 
-| Severity | Criteria | Action |
-|---|---|---|
-| **Strong** | Rule change requires updates in 2+ places; or a structurally identical definition exists twice | Fix before commit |
-| **Medium** | Complexity adds cognitive load without proportional benefit; workaround affects readability | Fix or document trade-off |
-| **Minor** | Small ceremony or indirection; isolated, low risk of bugs | Fix opportunistically |
+| Severity   | Criteria                                                                                       | Action                    |
+| ---------- | ---------------------------------------------------------------------------------------------- | ------------------------- |
+| **Strong** | Rule change requires updates in 2+ places; or a structurally identical definition exists twice | Fix before commit         |
+| **Medium** | Complexity adds cognitive load without proportional benefit; workaround affects readability    | Fix or document trade-off |
+| **Minor**  | Small ceremony or indirection; isolated, low risk of bugs                                      | Fix opportunistically     |
 
 ## Response Language
 

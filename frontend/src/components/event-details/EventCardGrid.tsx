@@ -35,10 +35,6 @@ export function EventCardGrid({ events }: EventCardGridProps) {
     <>
       {actionError ? <p className="mt-6 text-red-600">{actionError}</p> : null}
 
-      {events.length === 0 ? (
-        <p className="mt-6 text-slate-600">No events found.</p>
-      ) : null}
-
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         {events.map((event) => (
           <EventCard
