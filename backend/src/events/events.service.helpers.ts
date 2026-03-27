@@ -7,20 +7,6 @@ export type AuthenticatedUser = {
   email: string;
 };
 
-type EventFindOneRelations = {
-  organizer: true;
-  participants: true | { user: true };
-  tags: true;
-};
-
-export function buildFindOneRelations(
-  user?: AuthenticatedUser,
-): EventFindOneRelations {
-  return user
-    ? { organizer: true, participants: { user: true }, tags: true }
-    : { organizer: true, participants: true, tags: true };
-}
-
 export function mergeAndSortCalendarEvents(
   organizedEvents: Event[],
   participantRows: Participant[],
@@ -78,8 +64,7 @@ export function sanitizeParticipantEmails(event: Event): Event {
         return { ...participant };
       }
 
-      const { email, ...userWithoutEmail } = participant.user;
-      void email;
+      const { email: _email, ...userWithoutEmail } = participant.user;
 
       return {
         ...participant,

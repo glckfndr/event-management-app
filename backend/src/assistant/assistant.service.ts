@@ -224,44 +224,36 @@ export class AssistantService {
   }
 
   private toAssistantEvents(events: EventEntity[]): AssistantEvent[] {
-    return events
-      .map((event) => ({
-        // TypeORM relation typing can be narrower than runtime-loaded relations.
-        relationData: event as EventEntity & {
-          tags?: Array<{ name: string }>;
-          participants?: Array<{
-            userId: string;
-            user?: { name?: string | null; email?: string | null };
-          }>;
-        },
+    return events.map((event) => {
+      // TypeORM relation typing can be narrower than runtime-loaded relations.
+      const e = event as EventEntity & {
+        tags?: Array<{ name: string }>;
+        participants?: Array<{
+          userId: string;
+          user?: { name?: string | null; email?: string | null };
+        }>;
+      };
+
+      return {
         id: event.id,
         title: event.title,
         eventDate: new Date(event.eventDate),
         visibility: event.visibility,
         location: event.location,
         organizerId: event.organizerId,
-        tags: [],
-        participantIds: [],
-        participantLabels: [],
-      }))
-      .map(({ relationData, ...event }) => ({
-        ...event,
-        tags: (relationData.tags ?? []).map((tag) => tag.name),
-        participantIds: (relationData.participants ?? []).map(
-          (participant) => participant.userId,
-        ),
-        participantLabels: (relationData.participants ?? []).map(
-          (participant) => {
-            const name = participant.user?.name?.trim();
+        tags: (e.tags ?? []).map((tag) => tag.name),
+        participantIds: (e.participants ?? []).map((p) => p.userId),
+        participantLabels: (e.participants ?? []).map((p) => {
+          const name = p.user?.name?.trim();
 
-            if (name) {
-              return name;
-            }
+          if (name) {
+            return name;
+          }
 
-            return participant.userId;
-          },
-        ),
-      }));
+          return p.userId;
+        }),
+      };
+    });
   }
 
   private async loadWhereIsLookupEvents(
