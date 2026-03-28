@@ -22,6 +22,7 @@ export const useEventParticipationActions = ({
   const [busyEventId, setBusyEventId] = useState<string | null>(null);
 
   const refreshEvents = async () => {
+    // Refresh both lists to keep join/leave UI state consistent.
     await Promise.all([
       dispatch(fetchPublicEvents()).unwrap(),
       dispatch(fetchMyEvents()).unwrap(),
@@ -33,6 +34,7 @@ export const useEventParticipationActions = ({
     action: () => Promise<unknown>,
     errorMessage: string,
   ) => {
+    // Shared flow for busy/error handling around join/leave operations.
     setActionError(null);
     setBusyEventId(eventId);
 

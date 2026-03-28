@@ -12,6 +12,7 @@ describe('UsersController', () => {
         {
           provide: UsersService,
           useValue: {
+            // Controller smoke tests only need method stubs.
             getMyEvents: jest.fn(),
           },
         },

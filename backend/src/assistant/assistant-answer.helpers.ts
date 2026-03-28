@@ -36,6 +36,7 @@ const answerParticipantsQuestion = (
   normalizedQuestion: string,
   events: AssistantEvent[],
 ): string => {
+  // Prefer explicitly quoted titles to avoid accidental partial matches.
   const quotedTitleMatch = normalizedQuestion.match(/"([^"]+)"/);
   const requestedTitle = quotedTitleMatch?.[1]?.trim();
 
@@ -104,6 +105,7 @@ const resolveDateRuleAnswer = ({
   isCountQuestion,
   events,
 }: RuleResolverInput): string | null => {
+  // Reuse ISO date extraction for both single-day and date-range intents.
   const dates = extractIsoDates(normalizedQuestion);
   const hasDateRangeIntent =
     /(from|between).*(to|and)|date range/.test(normalizedQuestion) &&
@@ -196,6 +198,7 @@ const resolveTagRuleAnswer = ({
   isCountQuestion,
   events,
 }: RuleResolverInput): string | null => {
+  // Match only against tags that actually exist in the current dataset.
   const tags = [
     ...new Set(
       events.flatMap((event) => event.tags.map((tag) => tag.toLowerCase())),
@@ -248,6 +251,7 @@ const intentHandlers: Record<AssistantQuestionIntent['intent'], IntentHandler> =
       `You have ${events.length} event${events.length === 1 ? '' : 's'} in total.`,
     list_upcoming: ({ events, now, constraints }) => {
       const upcoming = events.filter((event) => event.eventDate >= now);
+      // Apply optional LLM-derived filters (tag/visibility/time-window).
       const matching = applyQuestionConstraints(upcoming, constraints, now);
       const title = buildFilteredTitle('Upcoming events', constraints);
 

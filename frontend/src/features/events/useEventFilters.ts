@@ -15,6 +15,7 @@ const time12Formatter = new Intl.DateTimeFormat("en-US", {
 });
 
 const getEventDateSearchText = (eventDate: string) => {
+  // Build multiple date/time tokens so free-text search matches flexible input.
   const date = new Date(eventDate);
 
   if (Number.isNaN(date.getTime())) {
@@ -90,6 +91,7 @@ export const useEventFilters = (publicEvents: EventItem[]) => {
       availableTags.map((tag) => tag.toLowerCase()),
     );
 
+    // Drop tags that no longer exist after a fresh events response.
     return selectedTags.filter((tag) => availableTagSet.has(tag.toLowerCase()));
   }, [availableTags, selectedTags]);
 
@@ -136,6 +138,7 @@ export const useEventFilters = (publicEvents: EventItem[]) => {
     const canonical = tag.toLowerCase();
 
     setSelectedTags((previous) => {
+      // Tag selection is case-insensitive but keeps original label casing.
       const exists = previous.some(
         (selected) => selected.toLowerCase() === canonical,
       );

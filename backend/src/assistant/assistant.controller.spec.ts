@@ -31,6 +31,7 @@ describe('AssistantController', () => {
   it('forwards question to service with current user id', async () => {
     assistantService.answerQuestion.mockResolvedValue({ answer: 'ok' });
 
+    // Controller must pass authenticated user id, not any value from payload.
     await controller.answerQuestion(
       { question: 'How many events?' },
       { sub: 'user-id', email: 'user@example.com' },

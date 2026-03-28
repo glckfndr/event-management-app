@@ -9,6 +9,7 @@ type ProtectedRouteProps = {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const token = useAppSelector((state) => state.auth.token);
   const location = useLocation();
+  // Preserve full location so login can return user to the original target.
   const from = `${location.pathname}${location.search}${location.hash}`;
 
   if (!token) {

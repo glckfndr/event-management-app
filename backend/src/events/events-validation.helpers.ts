@@ -10,6 +10,7 @@ export const parseAndValidateEventDate = (value: string): Date => {
     throw new BadRequestException('Event date is invalid');
   }
 
+  // New events must be scheduled in the future.
   if (parsedDate.getTime() <= Date.now()) {
     throw new BadRequestException('Event date cannot be in the past');
   }
@@ -25,6 +26,7 @@ export const parseTagsFilter = (
     return [];
   }
 
+  // Normalize for case-insensitive filtering and remove duplicate query tags.
   const normalizedTags = [
     ...new Set(
       tagsFilter

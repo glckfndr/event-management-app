@@ -32,6 +32,7 @@ describe('AssistantService', () => {
 
   beforeEach(async () => {
     jest.useFakeTimers();
+    // Freeze time so date-relative assistant rules stay deterministic.
     jest.setSystemTime(new Date('2026-03-12T10:00:00.000Z'));
     delete process.env.AI_API_KEY;
 
@@ -140,6 +141,7 @@ describe('AssistantService', () => {
       }
 
       if (where?.visibility === EventVisibility.PUBLIC) {
+        // Discovery scope includes the user's public events + all other public ones.
         return [
           ...organizedEvents.filter(
             (event) => event.visibility === EventVisibility.PUBLIC,
@@ -619,5 +621,19 @@ describe('AssistantService', () => {
     expect(participantsRepository.save).not.toHaveBeenCalled();
     expect(participantsRepository.update).not.toHaveBeenCalled();
     expect(participantsRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('returns fallback when classifyQuestion returns null (e.g. network failure)', async () => {
+    // API key is set so LLM path is taken, but classifyQuestion returns null
+    // (simulating a network error or abort). Confirms the full fallback chain.
+    process.env.AI_API_KEY = 'test-key';
+
+    const result = await service.answerQuestion(
+      'Can you explain quantum computing?',
+      'user-1',
+    );
+
+    expect(result.answer).toBe(ASSISTANT_FALLBACK_MESSAGE);
+    expect(llmService.classifyQuestion).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,33 +1,21 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+NestJS backend for the Event Management Application.
 
-## Description
+Main responsibilities:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- authentication and JWT validation
+- public and private event access control
+- event CRUD operations
+- join and leave flows
+- calendar data for authenticated users
+- assistant endpoints for event-related questions
 
-## Quick Start After Clone (Backend only)
+## Quick Start
 
-From repository root:
+From the repository root:
 
 ```bash
 # Linux/macOS
@@ -39,34 +27,39 @@ Copy-Item backend/.env.example backend/.env
 cd backend
 npm install
 npm run migration:run
+npm run seed
 npm run start:dev
 ```
 
-Backend URL: `http://localhost:3001`
-Swagger URL: `http://localhost:3001/api`
+Default URLs:
 
-## Quick Start via Docker Compose (from project root)
+- API: `http://localhost:3001`
+- Swagger: `http://localhost:3001/api`
+
+## Docker Compose
+
+From the project root:
 
 ```bash
-# Linux/macOS
-cp .env.example .env
-
-# Windows PowerShell
-Copy-Item .env.example .env
-
 docker compose up --build
 docker compose exec backend npm run migration:run
+docker compose exec backend npm run seed
 ```
 
-## Project setup
+Useful commands:
 
 ```bash
-$ npm install
+docker compose up -d
+docker compose logs -f backend
+docker compose down
+docker compose down -v
 ```
 
-## Environment variables
+## Environment Variables
 
-Create a `.env` file in the backend root (you can copy from `.env.example`):
+Create `backend/.env` from `backend/.env.example`.
+
+Typical variables:
 
 ```bash
 PORT=3001
@@ -79,157 +72,66 @@ DB_PASSWORD=your_strong_password_here
 DB_DATABASE=event_management
 DB_SYNCHRONIZE=false
 
-# AI assistant (optional)
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRES_IN=1h
+
+# optional assistant configuration
 AI_API_KEY=your_api_key_here
 AI_PROVIDER=groq
 AI_MODEL=llama-3.3-70b-versatile
 ```
 
-AI assistant notes:
+Assistant behavior:
 
-- If `AI_API_KEY` is not set, assistant answers use local deterministic rules and fallback messages.
-- If `AI_API_KEY` is set, LLM intent classification is used with read-only execution on backend data.
+- without `AI_API_KEY`, the assistant uses local deterministic rules and fallback messages
+- with `AI_API_KEY`, the assistant can use LLM-backed intent classification
 
-## Quick start (Docker Compose)
-
-From the project root:
+## Available Scripts
 
 ```bash
-docker compose up --build
-docker compose exec backend npm run migration:run
+npm run start:dev
+npm run lint
+npm run test
+npm run test:e2e
+npm run test:cov
+npm run migration:run
+npm run migration:revert
+npm run migration:create
+npm run migration:generate
+npm run seed
 ```
 
-Useful commands:
+## Testing Notes
+
+Focused assistant suite:
 
 ```bash
-docker compose up -d
-docker compose logs -f backend
-docker compose down
-docker compose down -v
+npx jest assistant.service.spec.ts --watchAll=false
 ```
 
-## Compile and run the project
+This covers:
+
+- tag constraints and filtering behavior
+- fallback behavior for unsupported or unclear intents
+- read-only assistant restrictions
+- date and scope-related assistant queries
+
+## Seeding
+
+Run after migrations:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run seed
 ```
 
-## Run tests
+Notes:
 
-```bash
-# unit tests
-$ npm run test
+- seeding is blocked in `production` by default
+- `ALLOW_SEED_IN_PRODUCTION=true` explicitly enables it in production-like environments
+- optional password overrides: `SEED_ALICE_PASSWORD`, `SEED_BOB_PASSWORD`
 
-# e2e tests
-$ npm run test:e2e
+The seed is idempotent and creates demo users and sample events when missing.
 
-# test coverage
-$ npm run test:cov
-```
+## Architecture
 
-Stage 2 focused suite:
-
-```bash
-$ npx jest assistant.service.spec.ts --watchAll=false
-```
-
-This suite covers:
-
-- tags constraints and tag-based event filtering
-- assistant fallback behavior for unclear/unsupported intents
-- read-only assistant behavior (no write operations)
-- date/day query handling and scope differences (`events` vs `my events`)
-
-## Database migrations
-
-```bash
-# run pending migrations
-$ npm run migration:run
-
-# revert last migration
-$ npm run migration:revert
-
-# create empty migration file
-$ npm run migration:create
-
-# generate migration from entity changes
-$ npm run migration:generate
-```
-
-## Seeding sample data
-
-Run seeding after migrations to create demo data:
-
-```bash
-$ npm run seed
-```
-
-Security notes:
-
-- Seed script is blocked in `production` by default.
-- To intentionally allow seeding in production-like environments, set:
-
-```bash
-ALLOW_SEED_IN_PRODUCTION=true
-```
-
-- Seed user passwords can be configured via environment variables:
-
-```bash
-SEED_ALICE_PASSWORD=your_secure_seed_password
-SEED_BOB_PASSWORD=your_secure_seed_password
-```
-
-- If these are not set, fallback values are used only outside `production`.
-
-The seed is idempotent and creates sample records if they do not exist:
-
-- 2 users (`alice@example.com`, `bob@example.com`)
-- 3 public events (including one with unlimited capacity)
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for backend structure and module boundaries.

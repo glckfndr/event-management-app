@@ -13,7 +13,6 @@ import { Tag } from '../tags/entities/tag.entity';
 import {
   assertPrivateEventAccess,
   AuthenticatedUser,
-  buildFindOneRelations,
   mergeAndSortCalendarEvents,
   sanitizeParticipantEmails,
 } from './events.service.helpers';
@@ -43,21 +42,17 @@ export class EventsService {
   async findAll(tagsFilter?: string): Promise<Event[]> {
     const normalizedTagFilters = parseTagsFilter(tagsFilter);
 
-    if (normalizedTagFilters.length > 0) {
-      return this.eventsRepository.find({
-        where: {
-          visibility: EventVisibility.PUBLIC,
-          tags: {
-            name: In(normalizedTagFilters),
-          },
-        },
-        order: { eventDate: 'ASC' },
-        relations: { organizer: true, participants: true, tags: true },
-      });
-    }
+    // Tag filtering works only on public events and keeps chronological order.
+    const where =
+      normalizedTagFilters.length > 0
+        ? {
+            visibility: EventVisibility.PUBLIC,
+            tags: { name: In(normalizedTagFilters) },
+          }
+        : { visibility: EventVisibility.PUBLIC };
 
     return this.eventsRepository.find({
-      where: { visibility: EventVisibility.PUBLIC },
+      where,
       order: { eventDate: 'ASC' },
       relations: { organizer: true, participants: true, tags: true },
     });
@@ -79,7 +74,9 @@ export class EventsService {
   }
 
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
-    const relations = buildFindOneRelations(user);
+    const relations = user
+      ? { organizer: true, participants: { user: true }, tags: true }
+      : { organizer: true, participants: true, tags: true };
 
     const event = await this.eventsRepository.findOne({
       where: { id },
@@ -183,6 +180,7 @@ export class EventsService {
   }
 
   async joinEvent(id: string, user: AuthenticatedUser): Promise<void> {
+    // Pessimistic lock prevents overbooking under concurrent join requests.
     await this.eventsRepository.manager.transaction(async (manager) => {
       const transactionalEventsRepository = manager.getRepository(Event);
       const transactionalParticipantsRepository =

@@ -7,6 +7,7 @@ export class CreateUsersTable1760000000000 implements MigrationInterface {
     const hasUserTable = await queryRunner.hasTable('user');
     const hasUsersTable = await queryRunner.hasTable('users');
 
+    // Guard against reruns in partially initialized environments.
     if (hasUserTable || hasUsersTable) {
       return;
     }

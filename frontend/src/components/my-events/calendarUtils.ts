@@ -20,6 +20,7 @@ export const formatEventLabel = (eventDate: string, eventTitle: string) => {
 };
 
 export const groupEventsByDate = (events: EventItem[]) => {
+  // Bucket events by local calendar day for month/week views.
   const grouped = events.reduce<Record<string, EventItem[]>>(
     (accumulator, event) => {
       const dateKey = toLocalDateKey(new Date(event.eventDate));
@@ -36,6 +37,7 @@ export const groupEventsByDate = (events: EventItem[]) => {
   );
 
   Object.values(grouped).forEach((dateEvents) => {
+    // Ensure deterministic order inside each day.
     dateEvents.sort(
       (first, second) =>
         new Date(first.eventDate).getTime() -

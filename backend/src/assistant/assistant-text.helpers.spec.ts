@@ -26,6 +26,7 @@ describe('assistant-text.helpers', () => {
   });
 
   it('extracts unique ISO dates', () => {
+    // Duplicate date mentions should collapse to a unique ordered list.
     expect(
       extractIsoDates('from 2026-03-10 to 2026-03-20 and 2026-03-10 again'),
     ).toEqual(['2026-03-10', '2026-03-20']);

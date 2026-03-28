@@ -2,6 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class AddEventVisibility1760000005000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Dedicated enum keeps visibility values constrained at DB level.
     await queryRunner.query(
       "CREATE TYPE \"events_visibility_enum\" AS ENUM('public', 'private')",
     );

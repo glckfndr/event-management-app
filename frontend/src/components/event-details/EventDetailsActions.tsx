@@ -3,33 +3,35 @@ import { EditIcon } from "../ui/icons/EditIcon";
 import { TrashIcon } from "../ui/icons/TrashIcon";
 
 type EventDetailsActionsProps = {
-  state: {
-    token: string | null;
-    isOrganizer: boolean;
-    isJoined: boolean;
-    isFull: boolean;
-    isBusy: boolean;
-  };
-  handlers: {
-    onJoin: () => void;
-    onLeave: () => void;
-    onOpenDelete: () => void;
-    onToggleEdit: () => void;
-    onBack: () => void;
-  };
+  token: string | null;
+  isOrganizer: boolean;
+  isJoined: boolean;
+  isFull: boolean;
+  isBusy: boolean;
+  onJoin: () => void;
+  onLeave: () => void;
+  onOpenDelete: () => void;
+  onToggleEdit: () => void;
+  onBack: () => void;
 };
 
 export function EventDetailsActions({
-  state,
-  handlers,
+  token,
+  isOrganizer,
+  isJoined,
+  isFull,
+  isBusy,
+  onJoin,
+  onLeave,
+  onOpenDelete,
+  onToggleEdit,
+  onBack,
 }: EventDetailsActionsProps) {
-  const { token, isOrganizer, isJoined, isFull, isBusy } = state;
-  const { onJoin, onLeave, onOpenDelete, onToggleEdit, onBack } = handlers;
-
   return (
     <div className="mt-6 flex flex-wrap gap-2">
       {token ? (
         <>
+          {/* Participants can join/leave unless they are the organizer. */}
           {!isOrganizer ? (
             isJoined ? (
               <Button
@@ -90,14 +92,17 @@ export function EventDetailsActions({
       ) : null}
 
       {!isOrganizer ? (
-        <Button
-          type="button"
-          disabled={isBusy}
-          onClick={onBack}
-          className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
-        >
-          ← Back
-        </Button>
+        <>
+          {/* Back action is always available for non-organizers. */}
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={onBack}
+            className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+          >
+            ← Back
+          </Button>
+        </>
       ) : null}
     </div>
   );

@@ -17,6 +17,7 @@ describe('AssistantQuestionDto', () => {
 
     const errors = await validate(dto);
 
+    // Regex validation should reject blank prompts after trim-like whitespace.
     expect(errors).toHaveLength(1);
     expect(errors[0].constraints).toHaveProperty('matches');
   });

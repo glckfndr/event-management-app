@@ -5,6 +5,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import { api } from "../shared/api";
 import { EventsPage } from "./EventsPage";
 import { fetchPublicEvents } from "../features/events/eventsSlice";
+import { useAssistantUiStore } from "../features/events/assistantUiStore";
 import {
   createTestStore,
   renderWithProviders,
@@ -41,8 +42,24 @@ const createInitialEventsState = () => ({
   assistantError: null,
 });
 
-afterEach(() => {
+const renderEventsPage = async (store: ReturnType<typeof createTestStore>) => {
+  await act(async () => {
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events"]}>
+        <Routes>
+          <Route path="/events" element={<EventsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+  });
+};
+
+afterEach(async () => {
   vi.restoreAllMocks();
+  await act(async () => {
+    useAssistantUiStore.getState().resetAssistantUiState();
+  });
   window.localStorage.clear();
 });
 
@@ -59,14 +76,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -99,14 +109,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     const cardHeading = await screen.findByRole("heading", {
       name: "React Meetup",
@@ -147,20 +150,14 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
     await screen.findByText("Jazz Night");
 
     await userEvent.click(screen.getByRole("button", { name: "Tech" }));
 
+    // Tag filter should narrow the list before search is applied.
     await waitFor(() => {
       expect(screen.getByText("React Meetup")).toBeInTheDocument();
       expect(screen.queryByText("Jazz Night")).not.toBeInTheDocument();
@@ -199,14 +196,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("Morning Workshop");
     await screen.findByText("Evening Talk");
@@ -257,14 +247,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("Tech Meetup");
     await userEvent.click(screen.getByRole("button", { name: "Tech" }));
@@ -274,6 +257,7 @@ describe("EventsPage", () => {
     ).not.toBeInTheDocument();
 
     await act(async () => {
+      // Simulate server refresh that no longer returns the selected tag.
       await store.dispatch(fetchPublicEvents());
     });
 
@@ -309,14 +293,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -355,14 +332,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -393,14 +363,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -443,14 +406,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -496,14 +452,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -541,14 +490,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -615,14 +557,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 
@@ -665,14 +600,7 @@ describe("EventsPage", () => {
       },
     });
 
-    renderWithProviders(
-      <MemoryRouter initialEntries={["/events"]}>
-        <Routes>
-          <Route path="/events" element={<EventsPage />} />
-        </Routes>
-      </MemoryRouter>,
-      { store },
-    );
+    await renderEventsPage(store);
 
     await screen.findByText("React Meetup");
 

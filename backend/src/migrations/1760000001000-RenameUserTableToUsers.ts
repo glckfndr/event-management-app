@@ -5,6 +5,7 @@ export class RenameUserTableToUsers1760000001000 implements MigrationInterface {
     const hasUserTable = await queryRunner.hasTable('user');
     const hasUsersTable = await queryRunner.hasTable('users');
 
+    // Safe rename supports projects that already use the new table name.
     if (hasUserTable && !hasUsersTable) {
       await queryRunner.renameTable('user', 'users');
     }

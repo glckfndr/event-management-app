@@ -11,6 +11,7 @@ export class CreateTagsAndEventTags1760000006000 implements MigrationInterface {
     `);
 
     await queryRunner.query(
+      // Enforce case-insensitive uniqueness for tag labels.
       'CREATE UNIQUE INDEX "IDX_tags_name_ci_unique" ON "tags" (LOWER("name"))',
     );
 
@@ -25,6 +26,7 @@ export class CreateTagsAndEventTags1760000006000 implements MigrationInterface {
     `);
 
     await queryRunner.query(
+      // Join-table indexes speed up both event->tags and tag->events lookups.
       'CREATE INDEX "IDX_event_tags_event_id" ON "event_tags" ("eventId")',
     );
 

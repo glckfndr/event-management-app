@@ -11,14 +11,17 @@ import { RegisterPage } from "./pages/RegisterPage";
 function App() {
   return (
     <Routes>
+      {/* Public auth screens */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
       <Route element={<MainLayout />}>
+        {/* Main app pages */}
         <Route path="/" element={<Navigate to="/events" replace />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetailsPage />} />
 
+        {/* Auth-required pages */}
         <Route
           path="/events/create"
           element={

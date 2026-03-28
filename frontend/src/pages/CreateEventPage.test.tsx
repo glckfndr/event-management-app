@@ -30,6 +30,9 @@ describe("CreateEventPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -82,6 +85,9 @@ describe("CreateEventPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -113,6 +119,7 @@ describe("CreateEventPage", () => {
       screen.getByPlaceholderText("Add custom tag"),
       "  AI  ",
     );
+    // Tag input should be trimmed before request payload is sent.
     await userEvent.click(screen.getByRole("button", { name: "Add" }));
 
     await userEvent.click(screen.getByRole("button", { name: "Create Event" }));

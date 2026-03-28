@@ -58,6 +58,7 @@ export class AssistantService {
       `Assistant request: llmEnabled=${shouldQueryLlm}, questionLength=${normalizedQuestion.length}`,
     );
 
+    // Deterministic rules are the fallback path when AI is not configured.
     if (!shouldQueryLlm) {
       const localAnswer = answerFromRules(question, scopedEvents, now);
 
@@ -81,6 +82,7 @@ export class AssistantService {
 
     const intent = await this.classifyQuestion(question, snapshot);
 
+    // If the model cannot classify confidently, fall back to rule-based resolvers.
     if (!intent || intent.intent === 'fallback') {
       const lookupEvents = await this.resolveLookupEventsForQuestion(
         question,
@@ -170,6 +172,7 @@ export class AssistantService {
     question: string,
     userEvents: AssistantEvent[],
   ): Promise<AssistantEvent[]> {
+    // Date-oriented global queries may need public events outside the user's own list.
     if (!shouldUseGlobalDateScopeQuestion(question)) {
       return userEvents;
     }
@@ -193,6 +196,7 @@ export class AssistantService {
   }
 
   private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {
+    // Read organizer and participant views in parallel, then merge unique events.
     const [organizedEvents, participantRows] = await Promise.all([
       this.eventsRepository.find({
         where: { organizerId: userId },
@@ -220,44 +224,36 @@ export class AssistantService {
   }
 
   private toAssistantEvents(events: EventEntity[]): AssistantEvent[] {
-    return events
-      .map((event) => ({
-        // TypeORM relation typing can be narrower than runtime-loaded relations.
-        relationData: event as EventEntity & {
-          tags?: Array<{ name: string }>;
-          participants?: Array<{
-            userId: string;
-            user?: { name?: string | null; email?: string | null };
-          }>;
-        },
+    return events.map((event) => {
+      // TypeORM relation typing can be narrower than runtime-loaded relations.
+      const e = event as EventEntity & {
+        tags?: Array<{ name: string }>;
+        participants?: Array<{
+          userId: string;
+          user?: { name?: string | null; email?: string | null };
+        }>;
+      };
+
+      return {
         id: event.id,
         title: event.title,
         eventDate: new Date(event.eventDate),
         visibility: event.visibility,
         location: event.location,
         organizerId: event.organizerId,
-        tags: [],
-        participantIds: [],
-        participantLabels: [],
-      }))
-      .map(({ relationData, ...event }) => ({
-        ...event,
-        tags: (relationData.tags ?? []).map((tag) => tag.name),
-        participantIds: (relationData.participants ?? []).map(
-          (participant) => participant.userId,
-        ),
-        participantLabels: (relationData.participants ?? []).map(
-          (participant) => {
-            const name = participant.user?.name?.trim();
+        tags: (e.tags ?? []).map((tag) => tag.name),
+        participantIds: (e.participants ?? []).map((p) => p.userId),
+        participantLabels: (e.participants ?? []).map((p) => {
+          const name = p.user?.name?.trim();
 
-            if (name) {
-              return name;
-            }
+          if (name) {
+            return name;
+          }
 
-            return participant.userId;
-          },
-        ),
-      }));
+          return p.userId;
+        }),
+      };
+    });
   }
 
   private async loadWhereIsLookupEvents(

@@ -1,30 +1,59 @@
-import { type FormEvent, useState } from "react";
+import { useEffect, useState } from "react";
+import { useAppSelector } from "../../app/hooks";
+import { useAssistantUiStore } from "../../features/events/assistantUiStore";
 
 type AssistantPanelProps = {
-  assistantQuestion: string;
-  setAssistantQuestion: (value: string) => void;
-  assistantStatus: "idle" | "loading" | "failed";
-  assistantError: string | null;
-  assistantAnswer: string | null;
   suggestedQuestions: string[];
-  recentQuestions: string[];
-  onSelectRecentQuestion: (question: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
+  onSubmit: (question: string) => void | Promise<void>;
 };
 
 export function AssistantPanel({
-  assistantQuestion,
-  setAssistantQuestion,
-  assistantStatus,
-  assistantError,
-  assistantAnswer,
   suggestedQuestions,
-  recentQuestions,
-  onSelectRecentQuestion,
   onSubmit,
 }: AssistantPanelProps) {
+  // Keep optional sections collapsed by default to reduce visual noise.
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [isRecentOpen, setIsRecentOpen] = useState(false);
+
+  const assistantAnswer = useAppSelector(
+    (state) => state.events.assistantAnswer,
+  );
+  const assistantStatus = useAppSelector(
+    (state) => state.events.assistantStatus,
+  );
+  const assistantError = useAppSelector((state) => state.events.assistantError);
+  const assistantQuestion = useAssistantUiStore(
+    (state) => state.assistantQuestion,
+  );
+  const setAssistantQuestion = useAssistantUiStore(
+    (state) => state.setAssistantQuestion,
+  );
+  const recentAssistantQuestions = useAssistantUiStore(
+    (state) => state.recentAssistantQuestions,
+  );
+  const initializeRecentAssistantQuestions = useAssistantUiStore(
+    (state) => state.initializeRecentAssistantQuestions,
+  );
+  const recordAssistantQuestion = useAssistantUiStore(
+    (state) => state.recordAssistantQuestion,
+  );
+
+  useEffect(() => {
+    initializeRecentAssistantQuestions();
+  }, [initializeRecentAssistantQuestions]);
+
+  const handleSubmit = (submitEvent: React.FormEvent<HTMLFormElement>) => {
+    submitEvent.preventDefault();
+
+    const question = assistantQuestion.trim();
+
+    if (!question) {
+      return;
+    }
+
+    recordAssistantQuestion(question);
+    void onSubmit(question);
+  };
 
   return (
     <section className="mt-6 max-w-3xl rounded-xl border border-slate-200 bg-white p-5">
@@ -35,7 +64,7 @@ export function AssistantPanel({
 
       <form
         className="mt-4 flex flex-col gap-3 sm:flex-row"
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
       >
         <label htmlFor="assistant-question-input" className="sr-only">
           Assistant question
@@ -53,6 +82,7 @@ export function AssistantPanel({
         <button
           type="submit"
           disabled={
+            // Prevent empty queries and duplicate submit while request is pending.
             assistantStatus === "loading" ||
             assistantQuestion.trim().length === 0
           }
@@ -80,7 +110,7 @@ export function AssistantPanel({
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSelectRecentQuestion(question)}
+                  onClick={() => setAssistantQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}
@@ -91,7 +121,7 @@ export function AssistantPanel({
         </div>
       ) : null}
 
-      {recentQuestions.length > 0 ? (
+      {recentAssistantQuestions.length > 0 ? (
         <div className="mt-3">
           <button
             type="button"
@@ -105,11 +135,11 @@ export function AssistantPanel({
 
           {isRecentOpen ? (
             <div className="mt-2 flex flex-wrap gap-2">
-              {recentQuestions.map((question) => (
+              {recentAssistantQuestions.map((question) => (
                 <button
                   key={question}
                   type="button"
-                  onClick={() => onSelectRecentQuestion(question)}
+                  onClick={() => setAssistantQuestion(question)}
                   className="rounded-full border border-slate-200 bg-white px-3 py-1 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                 >
                   {question}

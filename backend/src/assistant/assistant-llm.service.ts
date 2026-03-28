@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { AssistantQuestionIntent } from './assistant.types';
 
 export const ASSISTANT_FALLBACK_MESSAGE =
   'Sorry, I didn’t understand that. Please try rephrasing your question.';
@@ -36,30 +37,8 @@ type LlmResponse = {
   choices?: LlmChoice[];
 };
 
-export type AssistantIntentName =
-  | 'count_total'
-  | 'list_upcoming'
-  | 'list_on_date'
-  | 'list_in_range'
-  | 'list_previous_week'
-  | 'list_by_tag'
-  | 'show_participants'
-  | 'next_event'
-  | 'where_is_event'
-  | 'list_organized'
-  | 'list_attending_this_week'
-  | 'fallback';
-
-export type AssistantQuestionIntent = {
-  intent: AssistantIntentName;
-  date?: string;
-  startDate?: string;
-  endDate?: string;
-  tag?: string;
-  eventTitle?: string;
-  visibility?: 'public' | 'private';
-  timeRange?: 'this_weekend' | 'this_week';
-};
+// Derived from the shared type to use as a type guard.
+type AssistantIntentName = AssistantQuestionIntent['intent'];
 
 @Injectable()
 export class AssistantLlmService {

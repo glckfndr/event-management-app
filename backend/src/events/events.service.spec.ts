@@ -82,6 +82,7 @@ describe('EventsService', () => {
       getRepository: jest.fn(),
     };
 
+    // Route repository calls inside transaction to dedicated test doubles.
     transactionManager.getRepository.mockImplementation((entity) => {
       if (entity === Event) {
         return transactionalEventsRepository;
@@ -311,6 +312,7 @@ describe('EventsService', () => {
         { id: 'tag-1', name: 'tech' },
         { id: 'tag-2', name: 'art' },
       ]);
+    // Simulate race when another transaction inserts the same tag first.
     tagsRepository.create.mockImplementation(
       (payload: Record<string, unknown>) => payload,
     );
@@ -714,6 +716,29 @@ describe('EventsService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
 
+    expect(transactionalParticipantsRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('joinEvent throws when user already joined event', async () => {
+    eventQueryBuilder.getOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'another-user',
+      capacity: 10,
+    });
+    transactionalParticipantsRepository.findOne.mockResolvedValue({
+      id: 'participant-id',
+      eventId: 'event-id',
+      userId: 'user-id',
+    });
+
+    await expect(
+      service.joinEvent('event-id', {
+        sub: 'user-id',
+        email: 'user@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(transactionalParticipantsRepository.count).not.toHaveBeenCalled();
     expect(transactionalParticipantsRepository.save).not.toHaveBeenCalled();
   });
 

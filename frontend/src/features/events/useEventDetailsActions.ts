@@ -61,6 +61,7 @@ export const useEventDetailsActions = ({
     errorMessage: string,
     onSuccess?: () => Promise<void> | void,
   ) => {
+    // Centralize async action lifecycle for all detail-page mutations.
     setError(null);
     setIsBusy(true);
 
@@ -107,17 +108,15 @@ export const useEventDetailsActions = ({
     }
 
     setIsDeleteModalOpen(false);
-    setError(null);
-    setIsBusy(true);
 
-    try {
-      await dispatch(deleteEvent(currentEvent.id)).unwrap();
-      await dispatch(fetchPublicEvents()).unwrap();
-      navigate(returnTo);
-    } catch {
-      setError("Failed to delete event");
-      setIsBusy(false);
-    }
+    await runBusyAction(
+      () => dispatch(deleteEvent(currentEvent.id)).unwrap(),
+      "Failed to delete event",
+      async () => {
+        await dispatch(fetchPublicEvents()).unwrap();
+        navigate(returnTo);
+      },
+    );
   };
 
   const handleEditSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
@@ -172,6 +171,7 @@ export const useEventDetailsActions = ({
       Number.isFinite(participantsCount) &&
       participantsCount > capacityValue
     ) {
+      // Prevent organizer from setting capacity below already joined users.
       setError("Capacity cannot be less than current participants count");
       return;
     }

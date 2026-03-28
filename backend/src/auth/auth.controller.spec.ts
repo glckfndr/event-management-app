@@ -64,6 +64,7 @@ describe('AuthController', () => {
       },
     };
 
+    // Endpoint should echo JWT context already attached by guard/strategy.
     expect(controller.me(request)).toEqual(request.user);
   });
 });
