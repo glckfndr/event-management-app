@@ -3,15 +3,17 @@ import type { Repository } from 'typeorm';
 import type { Tag } from '../tags/entities/tag.entity';
 import { MAX_EVENT_TAGS } from './events-validation.helpers';
 
-export const resolveEventTags = async (
-  tagsRepository: Pick<Repository<Tag>, 'find' | 'save' | 'create'>,
-  tags?: string[],
-  maxEventTags = MAX_EVENT_TAGS,
-): Promise<Tag[]> => {
+type TagsRepository = Pick<Repository<Tag>, 'find' | 'save' | 'create'>;
+
+const normalizeAndValidateTagNames = (
+  tags: string[] | undefined,
+  maxEventTags: number,
+): string[] => {
   if (!tags || tags.length === 0) {
     return [];
   }
 
+  // Normalize early so uniqueness and max-limit checks are deterministic.
   const normalizedTags = [
     ...new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
   ];
@@ -26,47 +28,87 @@ export const resolveEventTags = async (
     );
   }
 
+  return normalizedTags;
+};
+
+const mapTagsByName = (tags: Tag[]): Map<string, Tag> =>
+  new Map(tags.map((tag) => [tag.name, tag]));
+
+const mapNamesToExistingTags = (
+  normalizedTags: string[],
+  tagsByName: Map<string, Tag>,
+): Tag[] =>
+  // Return tags in the same order as user input after normalization.
+  normalizedTags
+    .map((name) => tagsByName.get(name))
+    .filter((tag): tag is Tag => Boolean(tag));
+
+const loadExistingTagsByName = async (
+  tagsRepository: TagsRepository,
+  normalizedTags: string[],
+): Promise<Map<string, Tag>> => {
   const existingTags = await tagsRepository.find({
     where: normalizedTags.map((name) => ({ name })),
   });
 
-  const existingByName = new Map(existingTags.map((tag) => [tag.name, tag]));
+  return mapTagsByName(existingTags);
+};
+
+const createMissingTags = async (
+  tagsRepository: TagsRepository,
+  missingNames: string[],
+): Promise<Tag[]> =>
+  tagsRepository.save(
+    missingNames.map((name) => tagsRepository.create({ name })),
+  );
+
+const loadRefreshedResolvedTags = async (
+  tagsRepository: TagsRepository,
+  normalizedTags: string[],
+): Promise<Tag[]> => {
+  const refreshedTagsByName = await loadExistingTagsByName(
+    tagsRepository,
+    normalizedTags,
+  );
+
+  return mapNamesToExistingTags(normalizedTags, refreshedTagsByName);
+};
+
+export const resolveEventTags = async (
+  tagsRepository: TagsRepository,
+  tags?: string[],
+  maxEventTags = MAX_EVENT_TAGS,
+): Promise<Tag[]> => {
+  const normalizedTags = normalizeAndValidateTagNames(tags, maxEventTags);
+
+  if (normalizedTags.length === 0) {
+    return [];
+  }
+
+  const existingByName = await loadExistingTagsByName(
+    tagsRepository,
+    normalizedTags,
+  );
   const missingNames = normalizedTags.filter(
     (name) => !existingByName.has(name),
   );
 
   if (missingNames.length === 0) {
-    return normalizedTags
-      .map((name) => existingByName.get(name))
-      .filter((tag): tag is Tag => Boolean(tag));
+    return mapNamesToExistingTags(normalizedTags, existingByName);
   }
 
-  let newTags: Tag[] = [];
+  let createdTags: Tag[] = [];
 
   try {
-    newTags = await tagsRepository.save(
-      missingNames.map((name) => tagsRepository.create({ name })),
-    );
+    createdTags = await createMissingTags(tagsRepository, missingNames);
   } catch {
-    // Another request may have inserted the same normalized tag names.
-    const refreshedTags = await tagsRepository.find({
-      where: normalizedTags.map((name) => ({ name })),
-    });
-
-    const refreshedByName = new Map(
-      refreshedTags.map((tag) => [tag.name, tag]),
-    );
-
-    return normalizedTags
-      .map((name) => refreshedByName.get(name))
-      .filter((tag): tag is Tag => Boolean(tag));
+    // Recover from concurrent insert races by re-reading normalized names.
+    return loadRefreshedResolvedTags(tagsRepository, normalizedTags);
   }
 
-  for (const tag of newTags) {
+  for (const tag of createdTags) {
     existingByName.set(tag.name, tag);
   }
 
-  return normalizedTags
-    .map((name) => existingByName.get(name))
-    .filter((tag): tag is Tag => Boolean(tag));
+  return mapNamesToExistingTags(normalizedTags, existingByName);
 };
