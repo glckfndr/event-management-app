@@ -4,6 +4,24 @@ import type { Tag } from '../tags/entities/tag.entity';
 import { MAX_EVENT_TAGS } from './events-validation.helpers';
 
 type TagsRepository = Pick<Repository<Tag>, 'find' | 'save' | 'create'>;
+type DriverErrorCode = {
+  code?: string;
+  errno?: number;
+};
+
+const POSTGRES_UNIQUE_VIOLATION_CODE = '23505';
+
+const isUniqueViolationError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code =
+    (error as { code?: string }).code ??
+    (error as { driverError?: DriverErrorCode }).driverError?.code;
+
+  return code === POSTGRES_UNIQUE_VIOLATION_CODE;
+};
 
 const normalizeAndValidateTagNames = (
   tags: string[] | undefined,
@@ -101,8 +119,12 @@ export const resolveEventTags = async (
 
   try {
     createdTags = await createMissingTags(tagsRepository, missingNames);
-  } catch {
-    // Recover from concurrent insert races by re-reading normalized names.
+  } catch (error) {
+    if (!isUniqueViolationError(error)) {
+      throw error;
+    }
+
+    // Recover from concurrent insert races only for expected unique conflicts.
     return loadRefreshedResolvedTags(tagsRepository, normalizedTags);
   }
 
