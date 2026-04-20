@@ -9,18 +9,14 @@ import { getTagAccentClassNames } from "../../../../shared/tagAccent";
 
 type EventCardProps = {
   event: EventItem;
-  state: {
-    token: string | null;
-    isOrganizer: boolean;
-    isJoined: boolean;
-    isBusy: boolean;
-  };
-  handlers: {
-    onOpen: () => void;
-    onJoin: () => void;
-    onLeave: () => void;
-    onRequireLogin: () => void;
-  };
+  token: string | null;
+  isOrganizer: boolean;
+  isJoined: boolean;
+  isBusy: boolean;
+  onOpen: () => void;
+  onJoin: () => void;
+  onLeave: () => void;
+  onRequireLogin: () => void;
 };
 
 const shortDescription = (description?: string) => {
@@ -35,10 +31,17 @@ const shortDescription = (description?: string) => {
   return `${description.slice(0, 117)}...`;
 };
 
-export function EventCard({ event, state, handlers }: EventCardProps) {
-  const { token, isOrganizer, isJoined, isBusy } = state;
-  const { onOpen, onJoin, onLeave, onRequireLogin } = handlers;
-
+export function EventCard({
+  event,
+  token,
+  isOrganizer,
+  isJoined,
+  isBusy,
+  onOpen,
+  onJoin,
+  onLeave,
+  onRequireLogin,
+}: EventCardProps) {
   const handleCardKeyDown = (eventKeyDown: KeyboardEvent<HTMLElement>) => {
     if (eventKeyDown.target !== eventKeyDown.currentTarget) {
       return;

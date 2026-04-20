@@ -4,9 +4,10 @@ import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import { fetchMyEvents } from "../../model/eventsSlice";
 import { useEventDetailsActions } from "../../model/useEventDetailsActions";
 import type { EventItem } from "../../../../types/event";
+import { Button } from "../../../../components/ui/Button";
 import { FormErrorText } from "../../../../components/ui/FormErrorText";
-import { DeleteConfirmModal } from "./DeleteConfirmModal";
-import { EventDetailsActions } from "./EventDetailsActions";
+import { EditIcon } from "../../../../components/ui/icons/EditIcon";
+import { TrashIcon } from "../../../../components/ui/icons/TrashIcon";
 import { EventEditForm } from "./EventEditForm";
 import type { EventEditFormValues } from "./EventEditForm";
 
@@ -144,20 +145,100 @@ export function EventDetailsInteractionSection({
     });
   };
 
+  useEffect(() => {
+    if (!isDeleteModalOpen) {
+      return;
+    }
+
+    const handleEscape = (keyboardEvent: KeyboardEvent) => {
+      if (keyboardEvent.key === "Escape" && !isBusy) {
+        setIsDeleteModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isDeleteModalOpen, isBusy, setIsDeleteModalOpen]);
+
   return (
     <>
-      <EventDetailsActions
-        token={token}
-        isOrganizer={isOrganizer}
-        isJoined={isJoined}
-        isFull={isFull}
-        isBusy={isBusy}
-        onJoin={() => void handleJoin()}
-        onLeave={() => void handleLeave()}
-        onOpenDelete={() => setIsDeleteModalOpen(true)}
-        onToggleEdit={handleToggleEdit}
-        onBack={() => navigate(returnTo)}
-      />
+      <div className="mt-6 flex flex-wrap gap-2">
+        {token ? (
+          <>
+            {/* Participants can join/leave unless they are the organizer. */}
+            {!isOrganizer ? (
+              isJoined ? (
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void handleLeave()}
+                  className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-200 disabled:opacity-60"
+                >
+                  Leave
+                </Button>
+              ) : isFull ? (
+                <span className="inline-block rounded-xl bg-slate-200 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700">
+                  Full
+                </span>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => void handleJoin()}
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-[1.05rem] font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                >
+                  Join
+                </Button>
+              )
+            ) : null}
+
+            {isOrganizer ? (
+              <>
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={handleToggleEdit}
+                  className="inline-flex items-center gap-2 rounded-xl border border-rose-300 bg-rose-100 px-4 py-2.5 text-[1.05rem] font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
+                >
+                  <EditIcon className="shrink-0" />
+                  Edit
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-red-100 px-4 py-2.5 text-[1.05rem] font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
+                >
+                  <TrashIcon className="shrink-0" />
+                  Delete
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => navigate(returnTo)}
+                  className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+                >
+                  ← Back
+                </Button>
+              </>
+            ) : null}
+          </>
+        ) : null}
+
+        {!isOrganizer ? (
+          <Button
+            type="button"
+            disabled={isBusy}
+            onClick={() => navigate(returnTo)}
+            className="rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2.5 text-[1.05rem] font-semibold text-emerald-700 hover:bg-emerald-200 disabled:opacity-60"
+          >
+            ← Back
+          </Button>
+        ) : null}
+      </div>
 
       {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}
 
@@ -175,11 +256,46 @@ export function EventDetailsInteractionSection({
       ) : null}
 
       {isDeleteModalOpen ? (
-        <DeleteConfirmModal
-          isBusy={isBusy}
-          onCancel={() => setIsDeleteModalOpen(false)}
-          onConfirm={() => void handleDelete()}
-        />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          onClick={() => {
+            if (!isBusy) {
+              setIsDeleteModalOpen(false);
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg"
+            onClick={(clickEvent) => clickEvent.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-slate-900">
+              Confirm deletion
+            </h3>
+            <p className="mt-2 text-sm text-slate-700">
+              Are you sure you want to delete this event?
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                type="button"
+                disabled={isBusy}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isBusy}
+                onClick={() => void handleDelete()}
+                className="inline-flex items-center gap-2 rounded-xl border border-red-300 bg-red-100 px-4 py-2.5 text-[1.05rem] font-semibold text-red-700 hover:bg-red-200 disabled:opacity-60"
+              >
+                <TrashIcon className="shrink-0" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </>
   );
