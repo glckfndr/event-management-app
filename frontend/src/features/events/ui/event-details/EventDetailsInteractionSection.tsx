@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
 import { fetchMyEvents } from "../../model/eventsSlice";
@@ -78,6 +78,10 @@ export function EventDetailsInteractionSection({
   const [editForm, setEditForm] = useState<EventEditFormValues>(
     toEditFormValues(currentEvent),
   );
+  const deleteDialogCancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
+  const deleteDialogTitleId = useId();
+  const deleteDialogDescriptionId = useId();
 
   useEffect(() => {
     if (token) {
@@ -162,6 +166,30 @@ export function EventDetailsInteractionSection({
       window.removeEventListener("keydown", handleEscape);
     };
   }, [isDeleteModalOpen, isBusy, setIsDeleteModalOpen]);
+
+  useEffect(() => {
+    if (!isDeleteModalOpen) {
+      return;
+    }
+
+    previouslyFocusedElementRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    deleteDialogCancelButtonRef.current?.focus();
+
+    return () => {
+      const previouslyFocusedElement = previouslyFocusedElementRef.current;
+
+      if (
+        previouslyFocusedElement &&
+        document.contains(previouslyFocusedElement)
+      ) {
+        previouslyFocusedElement.focus();
+      }
+    };
+  }, [isDeleteModalOpen]);
 
   return (
     <>
@@ -267,17 +295,28 @@ export function EventDetailsInteractionSection({
           <div
             className="w-full max-w-md rounded-xl bg-white p-5 shadow-lg"
             onClick={(clickEvent) => clickEvent.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={deleteDialogTitleId}
+            aria-describedby={deleteDialogDescriptionId}
           >
-            <h3 className="text-lg font-semibold text-slate-900">
+            <h3
+              id={deleteDialogTitleId}
+              className="text-lg font-semibold text-slate-900"
+            >
               Confirm deletion
             </h3>
-            <p className="mt-2 text-sm text-slate-700">
+            <p
+              id={deleteDialogDescriptionId}
+              className="mt-2 text-sm text-slate-700"
+            >
               Are you sure you want to delete this event?
             </p>
 
             <div className="mt-5 flex justify-end gap-2">
               <Button
                 type="button"
+                ref={deleteDialogCancelButtonRef}
                 disabled={isBusy}
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="rounded-xl border border-slate-300 px-4 py-2.5 text-[1.05rem] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
