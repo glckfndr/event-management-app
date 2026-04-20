@@ -5,7 +5,7 @@ import { fetchEventById } from "../features/events/model/eventsSlice";
 import { EventDetailsInteractionSection } from "../features/events/ui/event-details/EventDetailsInteractionSection";
 import { EventDetailsSummary } from "../features/events/ui/event-details/EventDetailsSummary";
 import { AsyncSection } from "../components/layout/AsyncSection";
-import { getSafeReturnPath } from "../shared/navigation";
+import { getSafeReturnPath } from "../shared/lib/navigation";
 
 export function EventDetailsPage() {
   const location = useLocation();
@@ -59,4 +59,3 @@ export function EventDetailsPage() {
     </AsyncSection>
   );
 }
-

@@ -18,7 +18,7 @@ import {
   EventTextInputField,
 } from "../features/events/ui/event-form/EventFormFields";
 import { renderDateTimeField } from "../features/events/ui/event-form/renderDateTimeField";
-import { getSafeReturnPath } from "../shared/navigation";
+import { getSafeReturnPath } from "../shared/lib/navigation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 export function CreateEventPage() {
@@ -236,4 +236,3 @@ export function CreateEventPage() {
     </div>
   );
 }
-

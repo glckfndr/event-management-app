@@ -1,4 +1,4 @@
-import type { EventItem } from "../types/event";
+import type { EventItem } from "../../../types/event";
 
 type TagAccentVariant = "soft" | "solid";
 
