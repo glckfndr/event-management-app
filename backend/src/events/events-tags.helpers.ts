@@ -49,49 +49,6 @@ const normalizeAndValidateTagNames = (
   return normalizedTags;
 };
 
-const mapTagsByName = (tags: Tag[]): Map<string, Tag> =>
-  new Map(tags.map((tag) => [tag.name, tag]));
-
-const mapNamesToExistingTags = (
-  normalizedTags: string[],
-  tagsByName: Map<string, Tag>,
-): Tag[] =>
-  // Return tags in the same order as user input after normalization.
-  normalizedTags
-    .map((name) => tagsByName.get(name))
-    .filter((tag): tag is Tag => Boolean(tag));
-
-const loadExistingTagsByName = async (
-  tagsRepository: TagsRepository,
-  normalizedTags: string[],
-): Promise<Map<string, Tag>> => {
-  const existingTags = await tagsRepository.find({
-    where: normalizedTags.map((name) => ({ name })),
-  });
-
-  return mapTagsByName(existingTags);
-};
-
-const createMissingTags = async (
-  tagsRepository: TagsRepository,
-  missingNames: string[],
-): Promise<Tag[]> =>
-  tagsRepository.save(
-    missingNames.map((name) => tagsRepository.create({ name })),
-  );
-
-const loadRefreshedResolvedTags = async (
-  tagsRepository: TagsRepository,
-  normalizedTags: string[],
-): Promise<Tag[]> => {
-  const refreshedTagsByName = await loadExistingTagsByName(
-    tagsRepository,
-    normalizedTags,
-  );
-
-  return mapNamesToExistingTags(normalizedTags, refreshedTagsByName);
-};
-
 export const resolveEventTags = async (
   tagsRepository: TagsRepository,
   tags?: string[],
@@ -103,34 +60,39 @@ export const resolveEventTags = async (
     return [];
   }
 
-  const existingByName = await loadExistingTagsByName(
-    tagsRepository,
-    normalizedTags,
-  );
-  const missingNames = normalizedTags.filter(
-    (name) => !existingByName.has(name),
-  );
+  const loadByName = async (): Promise<Map<string, Tag>> => {
+    const existingTags = await tagsRepository.find({
+      where: normalizedTags.map((name) => ({ name })),
+    });
 
-  if (missingNames.length === 0) {
-    return mapNamesToExistingTags(normalizedTags, existingByName);
-  }
+    return new Map(existingTags.map((tag) => [tag.name, tag]));
+  };
 
-  let createdTags: Tag[] = [];
+  const resolveFromMap = (tagsByName: Map<string, Tag>): Tag[] =>
+    // Preserve user order after normalization.
+    normalizedTags
+      .map((name) => tagsByName.get(name))
+      .filter((tag): tag is Tag => Boolean(tag));
 
-  try {
-    createdTags = await createMissingTags(tagsRepository, missingNames);
-  } catch (error) {
-    if (!isUniqueViolationError(error)) {
-      throw error;
+  let tagsByName = await loadByName();
+  const missingNames = normalizedTags.filter((name) => !tagsByName.has(name));
+
+  if (missingNames.length > 0) {
+    try {
+      const createdTags = await tagsRepository.save(
+        missingNames.map((name) => tagsRepository.create({ name })),
+      );
+
+      createdTags.forEach((tag) => tagsByName.set(tag.name, tag));
+    } catch (error) {
+      if (!isUniqueViolationError(error)) {
+        throw error;
+      }
+
+      // Another request may have created missing tags between find and save.
+      tagsByName = await loadByName();
     }
-
-    // Recover from concurrent insert races only for expected unique conflicts.
-    return loadRefreshedResolvedTags(tagsRepository, normalizedTags);
   }
 
-  for (const tag of createdTags) {
-    existingByName.set(tag.name, tag);
-  }
-
-  return mapNamesToExistingTags(normalizedTags, existingByName);
+  return resolveFromMap(tagsByName);
 };
