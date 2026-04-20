@@ -1,15 +1,15 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
-import { useAppDispatch } from "../../app/hooks";
-import type { EventEditFormValues } from "../../components/event-details/EventEditForm";
+import { useAppDispatch } from "../../../app/hooks";
+import type { EventEditFormValues } from "../ui/event-details/EventEditForm";
 import {
   EVENT_MAX_TAGS,
   EVENT_VALIDATION_MESSAGES,
   normalizeEventCoreValues,
   validateEventCoreFields,
-} from "../../shared/eventValidation";
-import type { EventItem } from "../../types/event";
+} from "../lib/eventValidation";
+import type { EventItem } from "../../../types/event";
 import {
   deleteEvent,
   fetchEventById,

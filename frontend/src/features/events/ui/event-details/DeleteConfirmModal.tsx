@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { Button } from "../ui/Button";
-import { TrashIcon } from "../ui/icons/TrashIcon";
+import { Button } from "../../../../components/ui/Button";
+import { TrashIcon } from "../../../../components/ui/icons/TrashIcon";
 
 type DeleteConfirmModalProps = {
   isBusy: boolean;
@@ -70,3 +70,4 @@ export function DeleteConfirmModal({
     </div>
   );
 }
+

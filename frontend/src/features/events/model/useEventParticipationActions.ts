@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { NavigateFunction } from "react-router-dom";
-import { useAppDispatch } from "../../app/hooks";
+import { useAppDispatch } from "../../../app/hooks";
 import {
   fetchMyEvents,
   fetchPublicEvents,

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { EventCard } from "./EventCard";
-import type { EventItem } from "../../types/event";
+import type { EventItem } from "../../../../types/event";
 
 const baseEvent: EventItem = {
   id: "event-1",

@@ -1,6 +1,6 @@
-import { Button } from "../ui/Button";
-import { EditIcon } from "../ui/icons/EditIcon";
-import { TrashIcon } from "../ui/icons/TrashIcon";
+import { Button } from "../../../../components/ui/Button";
+import { EditIcon } from "../../../../components/ui/icons/EditIcon";
+import { TrashIcon } from "../../../../components/ui/icons/TrashIcon";
 
 type EventDetailsActionsProps = {
   token: string | null;
@@ -107,3 +107,4 @@ export function EventDetailsActions({
     </div>
   );
 }
+

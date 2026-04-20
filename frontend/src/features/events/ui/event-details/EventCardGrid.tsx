@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchMyEvents } from "../../features/events/eventsSlice";
-import { useEventParticipationActions } from "../../features/events/useEventParticipationActions";
+import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { fetchMyEvents } from "../../model/eventsSlice";
+import { useEventParticipationActions } from "../../model/useEventParticipationActions";
 import { EventCard } from "./EventCard";
-import type { EventItem } from "../../types/event";
+import type { EventItem } from "../../../../types/event";
 
 export interface EventCardGridProps {
   events: EventItem[];

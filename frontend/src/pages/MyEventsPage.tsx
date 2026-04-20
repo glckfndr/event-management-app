@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { fetchMyEvents } from "../features/events/eventsSlice";
+import { fetchMyEvents } from "../features/events/model/eventsSlice";
 import { MyEventsCalendarSection } from "../components/my-events/MyEventsCalendarSection";
 
 export function MyEventsPage() {
@@ -13,3 +13,4 @@ export function MyEventsPage() {
 
   return <MyEventsCalendarSection events={myEvents} />;
 }
+

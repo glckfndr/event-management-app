@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { EventItem } from "../../types/event";
+import type { EventItem } from "../../../types/event";
 
 const monthLongFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",

@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import type { EventVisibility } from "../../types/event";
+import type { EventVisibility } from "../../../types/event";
 import {
   EVENT_DESCRIPTION_MIN_LENGTH,
   EVENT_MAX_TAGS,
@@ -7,7 +7,7 @@ import {
   EVENT_TITLE_MIN_LENGTH,
   EVENT_VALIDATION_MESSAGES,
   isValidPositiveCapacityInput,
-} from "../../shared/eventValidation";
+} from "./eventValidation";
 
 export const createEventSchema = yup
   .object({
