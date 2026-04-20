@@ -1,13 +1,13 @@
 import type { FormEvent } from "react";
-import type { EventVisibility } from "../../types/event";
+import type { EventVisibility } from "../../../../types/event";
 import {
   EventTagsField,
   EventTextareaField,
   EventTextInputField,
 } from "../event-form/EventFormFields";
 import { renderDateTimeField } from "../event-form/renderDateTimeField";
-import { Button } from "../ui/Button";
-import { VisibilityFieldset } from "../ui/VisibilityFieldset";
+import { Button } from "../../../../components/ui/Button";
+import { VisibilityFieldset } from "../../../../components/ui/VisibilityFieldset";
 
 export type EventEditFormValues = {
   title: string;

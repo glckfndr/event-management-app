@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { CreateEventPayload, EventItem } from "../../types/event";
+import type { CreateEventPayload, EventItem } from "../../../types/event";
 import {
   askAssistantQuestion,
   createEvent,

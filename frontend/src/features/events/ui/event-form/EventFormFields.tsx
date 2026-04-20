@@ -6,11 +6,11 @@ import {
   parseTimeValue,
   toDateInputValue,
   toTimeInputValue,
-} from "../../shared/dateTimeInput";
-import { FormField } from "../ui/FormField";
-import { DatePickerInput } from "../ui/DatePickerInput";
-import { CalendarIcon } from "../ui/icons/CalendarIcon";
-import { ClockIcon } from "../ui/icons/ClockIcon";
+} from "../../../../shared/dateTimeInput";
+import { FormField } from "../../../../components/ui/FormField";
+import { DatePickerInput } from "../../../../components/ui/DatePickerInput";
+import { CalendarIcon } from "../../../../components/ui/icons/CalendarIcon";
+import { ClockIcon } from "../../../../components/ui/icons/ClockIcon";
 export { EventTagsField } from "./EventTagsField";
 
 type EventTextInputFieldProps = {

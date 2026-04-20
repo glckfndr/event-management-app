@@ -1,9 +1,9 @@
-import type { EventItem } from "../../types/event";
-import { CalendarIcon } from "../ui/icons/CalendarIcon";
-import { ClockIcon } from "../ui/icons/ClockIcon";
-import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
-import { UsersGroupIcon } from "../ui/icons/UsersGroupIcon";
-import { getTagAccentClassNames } from "../../shared/tagAccent";
+import type { EventItem } from "../../../../types/event";
+import { CalendarIcon } from "../../../../components/ui/icons/CalendarIcon";
+import { ClockIcon } from "../../../../components/ui/icons/ClockIcon";
+import { LocationPinIcon } from "../../../../components/ui/icons/LocationPinIcon";
+import { UsersGroupIcon } from "../../../../components/ui/icons/UsersGroupIcon";
+import { getTagAccentClassNames } from "../../../../shared/tagAccent";
 
 type EventDetailsSummaryProps = {
   event: EventItem;

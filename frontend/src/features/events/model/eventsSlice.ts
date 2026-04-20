@@ -1,8 +1,18 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { RootState } from "../../app/store";
-import { logout } from "../auth/authSlice";
-import { api, getAuthHeader } from "../../shared/api";
-import type { CreateEventPayload, EventItem } from "../../types/event";
+import type { RootState } from "../../../app/store";
+import { logout } from "../../auth/authSlice";
+import type { CreateEventPayload, EventItem } from "../../../types/event";
+import {
+  askAssistantQuestionRequest,
+  createEventRequest,
+  deleteEventRequest,
+  fetchEventByIdRequest,
+  fetchMyEventsRequest,
+  fetchPublicEventsRequest,
+  joinEventRequest,
+  leaveEventRequest,
+  updateEventRequest,
+} from "../api/eventsApi";
 
 type EventsState = {
   publicEvents: EventItem[];
@@ -31,18 +41,14 @@ export const askAssistantQuestion = createAsyncThunk(
   "events/askAssistantQuestion",
   async (question: string, { getState }) => {
     const state = getState() as RootState;
-
-    const response = await api.post<{ answer: string }>(
-      "/assistant/questions",
-      { question },
-      {
-        headers: getAuthHeader(state.auth.token),
-      },
+    const response = await askAssistantQuestionRequest(
+      question,
+      state.auth.token,
     );
 
     return {
       question,
-      answer: response.data.answer,
+      answer: response.answer,
     };
   },
 );
@@ -50,8 +56,7 @@ export const askAssistantQuestion = createAsyncThunk(
 export const fetchPublicEvents = createAsyncThunk(
   "events/fetchPublic",
   async () => {
-    const response = await api.get<EventItem[]>("/events");
-    return response.data;
+    return fetchPublicEventsRequest();
   },
 );
 
@@ -59,10 +64,7 @@ export const fetchEventById = createAsyncThunk(
   "events/fetchById",
   async (eventId: string, { getState }) => {
     const state = getState() as RootState;
-    const response = await api.get<EventItem>(`/events/${eventId}`, {
-      headers: getAuthHeader(state.auth.token),
-    });
-    return response.data;
+    return fetchEventByIdRequest(eventId, state.auth.token);
   },
 );
 
@@ -70,10 +72,7 @@ export const fetchMyEvents = createAsyncThunk(
   "events/fetchMyEvents",
   async (_, { getState }) => {
     const state = getState() as RootState;
-    const response = await api.get<EventItem[]>("/users/me/events", {
-      headers: getAuthHeader(state.auth.token),
-    });
-    return response.data;
+    return fetchMyEventsRequest(state.auth.token);
   },
 );
 
@@ -81,10 +80,7 @@ export const createEvent = createAsyncThunk(
   "events/createEvent",
   async (payload: CreateEventPayload, { getState }) => {
     const state = getState() as RootState;
-    const response = await api.post<EventItem>("/events", payload, {
-      headers: getAuthHeader(state.auth.token),
-    });
-    return response.data;
+    return createEventRequest(payload, state.auth.token);
   },
 );
 
@@ -98,16 +94,7 @@ export const updateEvent = createAsyncThunk(
     { getState },
   ) => {
     const state = getState() as RootState;
-
-    const response = await api.patch<EventItem>(
-      `/events/${payload.eventId}`,
-      payload.data,
-      {
-        headers: getAuthHeader(state.auth.token),
-      },
-    );
-
-    return response.data;
+    return updateEventRequest(payload, state.auth.token);
   },
 );
 
@@ -115,10 +102,7 @@ export const deleteEvent = createAsyncThunk(
   "events/deleteEvent",
   async (eventId: string, { getState }) => {
     const state = getState() as RootState;
-
-    await api.delete(`/events/${eventId}`, {
-      headers: getAuthHeader(state.auth.token),
-    });
+    await deleteEventRequest(eventId, state.auth.token);
 
     return eventId;
   },
@@ -128,14 +112,7 @@ export const joinEvent = createAsyncThunk(
   "events/joinEvent",
   async (eventId: string, { getState }) => {
     const state = getState() as RootState;
-
-    await api.post(
-      `/events/${eventId}/join`,
-      {},
-      {
-        headers: getAuthHeader(state.auth.token),
-      },
-    );
+    await joinEventRequest(eventId, state.auth.token);
 
     return eventId;
   },
@@ -145,14 +122,7 @@ export const leaveEvent = createAsyncThunk(
   "events/leaveEvent",
   async (eventId: string, { getState }) => {
     const state = getState() as RootState;
-
-    await api.post(
-      `/events/${eventId}/leave`,
-      {},
-      {
-        headers: getAuthHeader(state.auth.token),
-      },
-    );
+    await leaveEventRequest(eventId, state.auth.token);
 
     return eventId;
   },

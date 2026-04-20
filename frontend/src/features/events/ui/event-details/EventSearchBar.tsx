@@ -1,4 +1,4 @@
-import { SearchIcon } from "../ui/icons/SearchIcon";
+import { SearchIcon } from "../../../../components/ui/icons/SearchIcon";
 
 type EventSearchBarProps = {
   searchTerm: string;
@@ -23,3 +23,4 @@ export function EventSearchBar({
     </div>
   );
 }
+

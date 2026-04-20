@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchMyEvents } from "../../features/events/eventsSlice";
-import { useEventDetailsActions } from "../../features/events/useEventDetailsActions";
-import type { EventItem } from "../../types/event";
-import { FormErrorText } from "../ui/FormErrorText";
+import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { fetchMyEvents } from "../../model/eventsSlice";
+import { useEventDetailsActions } from "../../model/useEventDetailsActions";
+import type { EventItem } from "../../../../types/event";
+import { FormErrorText } from "../../../../components/ui/FormErrorText";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { EventDetailsActions } from "./EventDetailsActions";
 import { EventEditForm } from "./EventEditForm";
