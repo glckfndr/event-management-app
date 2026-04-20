@@ -1,4 +1,4 @@
-import { api, getAuthHeader } from "../../../shared/api";
+import { api, getAuthHeader } from "../../../shared/api/client";
 import type { CreateEventPayload, EventItem } from "../../../types/event";
 
 export const askAssistantQuestionRequest = async (

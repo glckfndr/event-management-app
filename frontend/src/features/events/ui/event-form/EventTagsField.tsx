@@ -4,7 +4,7 @@ import {
   EVENT_MAX_TAGS,
   EVENT_VALIDATION_MESSAGES,
 } from "../../lib/eventValidation";
-import { getTagAccentClassNames } from "../../../../shared/tagAccent";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 const PRESET_TAGS = ["Tech", "Art", "Business", "Music", "Marketing"];
 

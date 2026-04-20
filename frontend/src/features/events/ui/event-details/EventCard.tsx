@@ -5,7 +5,7 @@ import { ClockIcon } from "../../../../components/ui/icons/ClockIcon";
 import { LocationPinIcon } from "../../../../components/ui/icons/LocationPinIcon";
 import { UsersGroupIcon } from "../../../../components/ui/icons/UsersGroupIcon";
 import type { EventItem } from "../../../../types/event";
-import { getTagAccentClassNames } from "../../../../shared/tagAccent";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 type EventCardProps = {
   event: EventItem;

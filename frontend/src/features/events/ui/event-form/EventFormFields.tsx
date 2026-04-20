@@ -6,7 +6,7 @@ import {
   parseTimeValue,
   toDateInputValue,
   toTimeInputValue,
-} from "../../../../shared/dateTimeInput";
+} from "../../lib/dateTimeInput";
 import { FormField } from "../../../../components/ui/FormField";
 import { DatePickerInput } from "../../../../components/ui/DatePickerInput";
 import { CalendarIcon } from "../../../../components/ui/icons/CalendarIcon";

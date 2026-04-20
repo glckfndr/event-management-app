@@ -2,7 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
-import { api } from "../shared/api";
+import { api } from "../shared/api/client";
 import { LoginPage } from "./LoginPage";
 import {
   createTestStore,

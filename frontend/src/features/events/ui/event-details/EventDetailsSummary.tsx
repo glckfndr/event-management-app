@@ -3,7 +3,7 @@ import { CalendarIcon } from "../../../../components/ui/icons/CalendarIcon";
 import { ClockIcon } from "../../../../components/ui/icons/ClockIcon";
 import { LocationPinIcon } from "../../../../components/ui/icons/LocationPinIcon";
 import { UsersGroupIcon } from "../../../../components/ui/icons/UsersGroupIcon";
-import { getTagAccentClassNames } from "../../../../shared/tagAccent";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 type EventDetailsSummaryProps = {
   event: EventItem;
