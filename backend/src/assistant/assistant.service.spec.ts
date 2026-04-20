@@ -5,6 +5,9 @@ import {
   AssistantLlmService,
   ASSISTANT_FALLBACK_MESSAGE,
 } from './assistant-llm.service';
+import { AssistantDataService } from './assistant-data.service';
+import { AssistantScopeResolver } from './assistant-scope.resolver';
+import { AssistantFallbackResolver } from './assistant-fallback.resolver';
 import { EventVisibility } from '../events/entities/event.entity';
 import { Event } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
@@ -57,6 +60,9 @@ describe('AssistantService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AssistantService,
+        AssistantDataService,
+        AssistantScopeResolver,
+        AssistantFallbackResolver,
         {
           provide: getRepositoryToken(Event),
           useValue: eventsRepository,
