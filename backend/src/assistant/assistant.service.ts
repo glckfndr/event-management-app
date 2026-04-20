@@ -1,14 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { answerFromIntent, answerFromRules } from './assistant-answer.helpers';
+import {
+  answerFromIntent,
+  answerFromRules,
+  answerParticipantsFromQuestion,
+  answerWhereIsFromQuestion,
+} from './assistant-answer.helpers';
 import {
   AssistantLlmService,
   ASSISTANT_FALLBACK_MESSAGE,
 } from './assistant-llm.service';
-import { isParticipantsQuestionText } from './assistant-text.helpers';
+import {
+  isParticipantsQuestionText,
+  isWhereIsQuestionText,
+  shouldUseDateFallbackQuestion,
+  shouldUseGlobalDateScopeQuestion,
+} from './assistant-text.helpers';
 import type { AssistantQuestionIntent } from './assistant.types';
 import { AssistantDataService } from './assistant-data.service';
-import { AssistantScopeResolver } from './assistant-scope.resolver';
-import { AssistantFallbackResolver } from './assistant-fallback.resolver';
 
 @Injectable()
 export class AssistantService {
@@ -17,8 +25,6 @@ export class AssistantService {
   constructor(
     private readonly assistantLlmService: AssistantLlmService,
     private readonly assistantDataService: AssistantDataService,
-    private readonly assistantScopeResolver: AssistantScopeResolver,
-    private readonly assistantFallbackResolver: AssistantFallbackResolver,
   ) {}
 
   async answerQuestion(
@@ -27,7 +33,7 @@ export class AssistantService {
   ): Promise<{ answer: string }> {
     const normalizedQuestion = question.trim();
     const userEvents = await this.assistantDataService.loadUserEvents(userId);
-    const scopedEvents = await this.assistantScopeResolver.resolveContextEvents(
+    const scopedEvents = await this.resolveContextEvents(
       normalizedQuestion,
       userEvents,
     );
@@ -68,11 +74,10 @@ export class AssistantService {
 
     // If the model cannot classify confidently, fall back to rule-based resolvers.
     if (!intent || intent.intent === 'fallback') {
-      const fallbackEvents =
-        await this.assistantScopeResolver.resolveLookupEventsForQuestion(
-          normalizedQuestion,
-          scopedEvents,
-        );
+      const fallbackEvents = await this.resolveLookupEvents(
+        normalizedQuestion,
+        scopedEvents,
+      );
 
       return this.resolveFallbackResponse(
         normalizedQuestion,
@@ -82,7 +87,7 @@ export class AssistantService {
       );
     }
 
-    const intentEvents = await this.assistantScopeResolver.resolveIntentEvents(
+    const intentEvents = await this.resolveIntentEvents(
       intent,
       normalizedQuestion,
       userEvents,
@@ -119,23 +124,83 @@ export class AssistantService {
 
   private resolveFallbackResponse(
     question: string,
-    events: Parameters<AssistantFallbackResolver['resolve']>[1],
+    events: Parameters<typeof answerFromRules>[1],
     now: Date,
     terminalFallbackLogMessage: string,
   ): { answer: string } {
-    const fallbackResolution = this.assistantFallbackResolver.resolve(
-      question,
-      events,
-      now,
-    );
+    const participantsAnswer = answerParticipantsFromQuestion(question, events);
 
-    if (fallbackResolution.answer) {
-      this.trace(`Assistant response source: ${fallbackResolution.source}`);
-      return { answer: fallbackResolution.answer };
+    if (participantsAnswer) {
+      this.trace('Assistant response source: heuristic-participants');
+      return { answer: participantsAnswer };
+    }
+
+    const locationAnswer = answerWhereIsFromQuestion(question, events);
+
+    if (locationAnswer) {
+      this.trace('Assistant response source: heuristic-where-is');
+      return { answer: locationAnswer };
+    }
+
+    if (shouldUseDateFallbackQuestion(question)) {
+      const localFallbackAnswer = answerFromRules(question, events, now);
+
+      if (localFallbackAnswer) {
+        this.trace('Assistant response source: local-rules-fallback');
+        return { answer: localFallbackAnswer };
+      }
     }
 
     this.trace(`Assistant response source: ${terminalFallbackLogMessage}`);
     return { answer: ASSISTANT_FALLBACK_MESSAGE };
+  }
+
+  private async resolveContextEvents(
+    question: string,
+    userEvents: Parameters<AssistantDataService['loadPublicLookupEvents']>[0],
+  ) {
+    if (!shouldUseGlobalDateScopeQuestion(question)) {
+      return userEvents;
+    }
+
+    return this.assistantDataService.loadPublicLookupEvents(userEvents);
+  }
+
+  private async resolveLookupEvents(
+    question: string,
+    contextEvents: Parameters<
+      AssistantDataService['loadPublicLookupEvents']
+    >[0],
+  ) {
+    if (!this.isLookupQuestion(question)) {
+      return contextEvents;
+    }
+
+    return this.assistantDataService.loadPublicLookupEvents(contextEvents);
+  }
+
+  private async resolveIntentEvents(
+    intent: AssistantQuestionIntent,
+    question: string,
+    userEvents: Parameters<AssistantDataService['loadPublicLookupEvents']>[0],
+    contextEvents: Parameters<
+      AssistantDataService['loadPublicLookupEvents']
+    >[0],
+  ) {
+    if (
+      intent.intent === 'where_is_event' ||
+      intent.intent === 'show_participants'
+    ) {
+      return this.assistantDataService.loadPublicLookupEvents(userEvents);
+    }
+
+    return this.resolveLookupEvents(question, contextEvents);
+  }
+
+  private isLookupQuestion(question: string): boolean {
+    return (
+      isWhereIsQuestionText(question) || isParticipantsQuestionText(question)
+    );
   }
 
   private trace(message: string): void {
