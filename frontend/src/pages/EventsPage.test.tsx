@@ -2,10 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { api } from "../shared/api";
+import { api } from "../shared/api/client";
 import { EventsPage } from "./EventsPage";
-import { fetchPublicEvents } from "../features/events/eventsSlice";
-import { useAssistantUiStore } from "../features/events/assistantUiStore";
+import { fetchPublicEvents } from "../features/events/model/eventsSlice";
+import { useAssistantUiStore } from "../features/events/model/assistantUiStore";
 import {
   createTestStore,
   renderWithProviders,

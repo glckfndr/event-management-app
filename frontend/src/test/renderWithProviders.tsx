@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import { authReducer } from "../features/auth/authSlice";
-import { eventsReducer } from "../features/events/eventsSlice";
+import { eventsReducer } from "../features/events/model/eventsSlice";
 
 type TestState = {
   auth: ReturnType<typeof authReducer>;
@@ -38,3 +38,4 @@ export const renderWithProviders = (
     ...render(ui, { wrapper: Wrapper }),
   };
 };
+

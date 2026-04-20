@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { fetchEventById } from "../features/events/eventsSlice";
-import { EventDetailsInteractionSection } from "../components/event-details/EventDetailsInteractionSection";
-import { EventDetailsSummary } from "../components/event-details/EventDetailsSummary";
+import { fetchEventById } from "../features/events/model/eventsSlice";
+import { EventDetailsInteractionSection } from "../features/events/ui/event-details/EventDetailsInteractionSection";
+import { EventDetailsSummary } from "../features/events/ui/event-details/EventDetailsSummary";
 import { AsyncSection } from "../components/layout/AsyncSection";
-import { getSafeReturnPath } from "../shared/navigation";
+import { getSafeReturnPath } from "../shared/lib/navigation";
 
 export function EventDetailsPage() {
   const location = useLocation();

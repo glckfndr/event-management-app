@@ -1,26 +1,22 @@
-import { Button } from "../ui/Button";
+import { Button } from "../../../../components/ui/Button";
 import type { KeyboardEvent } from "react";
-import { CalendarIcon } from "../ui/icons/CalendarIcon";
-import { ClockIcon } from "../ui/icons/ClockIcon";
-import { LocationPinIcon } from "../ui/icons/LocationPinIcon";
-import { UsersGroupIcon } from "../ui/icons/UsersGroupIcon";
-import type { EventItem } from "../../types/event";
-import { getTagAccentClassNames } from "../../shared/tagAccent";
+import { CalendarIcon } from "../../../../components/ui/icons/CalendarIcon";
+import { ClockIcon } from "../../../../components/ui/icons/ClockIcon";
+import { LocationPinIcon } from "../../../../components/ui/icons/LocationPinIcon";
+import { UsersGroupIcon } from "../../../../components/ui/icons/UsersGroupIcon";
+import type { EventItem } from "../../../../types/event";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 type EventCardProps = {
   event: EventItem;
-  state: {
-    token: string | null;
-    isOrganizer: boolean;
-    isJoined: boolean;
-    isBusy: boolean;
-  };
-  handlers: {
-    onOpen: () => void;
-    onJoin: () => void;
-    onLeave: () => void;
-    onRequireLogin: () => void;
-  };
+  token: string | null;
+  isOrganizer: boolean;
+  isJoined: boolean;
+  isBusy: boolean;
+  onOpen: () => void;
+  onJoin: () => void;
+  onLeave: () => void;
+  onRequireLogin: () => void;
 };
 
 const shortDescription = (description?: string) => {
@@ -35,10 +31,17 @@ const shortDescription = (description?: string) => {
   return `${description.slice(0, 117)}...`;
 };
 
-export function EventCard({ event, state, handlers }: EventCardProps) {
-  const { token, isOrganizer, isJoined, isBusy } = state;
-  const { onOpen, onJoin, onLeave, onRequireLogin } = handlers;
-
+export function EventCard({
+  event,
+  token,
+  isOrganizer,
+  isJoined,
+  isBusy,
+  onOpen,
+  onJoin,
+  onLeave,
+  onRequireLogin,
+}: EventCardProps) {
   const handleCardKeyDown = (eventKeyDown: KeyboardEvent<HTMLElement>) => {
     if (eventKeyDown.target !== eventKeyDown.currentTarget) {
       return;

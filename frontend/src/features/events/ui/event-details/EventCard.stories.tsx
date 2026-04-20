@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { EventCard } from "./EventCard";
-import type { EventItem } from "../../types/event";
+import type { EventItem } from "../../../../types/event";
 
 const baseEvent: EventItem = {
   id: "event-1",
@@ -48,18 +48,14 @@ const meta = {
   },
   args: {
     event: baseEvent,
-    state: {
-      token: "token",
-      isOrganizer: false,
-      isJoined: false,
-      isBusy: false,
-    },
-    handlers: {
-      onOpen: () => undefined,
-      onJoin: () => undefined,
-      onLeave: () => undefined,
-      onRequireLogin: () => undefined,
-    },
+    token: "token",
+    isOrganizer: false,
+    isJoined: false,
+    isBusy: false,
+    onOpen: () => undefined,
+    onJoin: () => undefined,
+    onLeave: () => undefined,
+    onRequireLogin: () => undefined,
   },
 } satisfies Meta<typeof EventCard>;
 
@@ -71,23 +67,19 @@ export const Default: Story = {};
 
 export const Joined: Story = {
   args: {
-    state: {
-      token: "token",
-      isOrganizer: false,
-      isJoined: true,
-      isBusy: false,
-    },
+    token: "token",
+    isOrganizer: false,
+    isJoined: true,
+    isBusy: false,
   },
 };
 
 export const OrganizerView: Story = {
   args: {
-    state: {
-      token: "token",
-      isOrganizer: true,
-      isJoined: false,
-      isBusy: false,
-    },
+    token: "token",
+    isOrganizer: true,
+    isJoined: false,
+    isBusy: false,
   },
 };
 
@@ -111,11 +103,9 @@ export const FullEvent: Story = {
         },
       ],
     },
-    state: {
-      token: "token",
-      isOrganizer: false,
-      isJoined: false,
-      isBusy: false,
-    },
+    token: "token",
+    isOrganizer: false,
+    isJoined: false,
+    isBusy: false,
   },
 };

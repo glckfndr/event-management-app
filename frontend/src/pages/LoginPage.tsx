@@ -8,7 +8,7 @@ import { loginUser } from "../features/auth/authSlice";
 import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
 import { FormField } from "../components/ui/FormField";
-import { getSafeReturnPath } from "../shared/navigation";
+import { getSafeReturnPath } from "../shared/lib/navigation";
 
 type LoginFormValues = {
   email: string;

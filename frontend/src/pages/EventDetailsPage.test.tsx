@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { api } from "../shared/api";
+import { api } from "../shared/api/client";
 import { EventDetailsPage } from "./EventDetailsPage";
 import {
   createTestStore,
@@ -65,6 +65,9 @@ describe("EventDetailsPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -111,6 +114,9 @@ describe("EventDetailsPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -168,6 +174,9 @@ describe("EventDetailsPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 
@@ -249,6 +258,9 @@ describe("EventDetailsPage", () => {
         selectedEvent: null,
         status: "idle",
         error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null
       },
     });
 

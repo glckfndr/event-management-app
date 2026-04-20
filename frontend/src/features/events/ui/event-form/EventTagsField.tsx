@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { FormField } from "../ui/FormField";
+import { FormField } from "../../../../components/ui/FormField";
 import {
   EVENT_MAX_TAGS,
   EVENT_VALIDATION_MESSAGES,
-} from "../../shared/eventValidation";
-import { getTagAccentClassNames } from "../../shared/tagAccent";
+} from "../../lib/eventValidation";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 const PRESET_TAGS = ["Tech", "Art", "Business", "Music", "Marketing"];
 

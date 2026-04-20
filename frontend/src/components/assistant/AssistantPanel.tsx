@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAppSelector } from "../../app/hooks";
-import { useAssistantUiStore } from "../../features/events/assistantUiStore";
+import { useAssistantUiStore } from "../../features/events/model/assistantUiStore";
 
 type AssistantPanelProps = {
   suggestedQuestions: string[];
@@ -176,3 +176,4 @@ export function AssistantPanel({
     </section>
   );
 }
+

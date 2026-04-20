@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { api } from "../../shared/api";
+import { api } from "../../shared/api/client";
 
 type User = {
   email: string;

@@ -1,4 +1,4 @@
-import { getTagAccentClassNames } from "../../shared/tagAccent";
+import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 export interface EventTagFilterBarProps {
   availableTags: string[];

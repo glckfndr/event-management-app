@@ -7,8 +7,8 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   createEventSchema,
   type CreateEventFormValues,
-} from "../features/events/createEventFormSchema";
-import { createEvent } from "../features/events/eventsSlice";
+} from "../features/events/lib/createEventFormSchema";
+import { createEvent } from "../features/events/model/eventsSlice";
 import type { CreateEventPayload } from "../types/event";
 import { Button } from "../components/ui/Button";
 import { FormErrorText } from "../components/ui/FormErrorText";
@@ -16,9 +16,9 @@ import {
   EventTagsField,
   EventTextareaField,
   EventTextInputField,
-} from "../components/event-form/EventFormFields";
-import { renderDateTimeField } from "../components/event-form/renderDateTimeField";
-import { getSafeReturnPath } from "../shared/navigation";
+} from "../features/events/ui/event-form/EventFormFields";
+import { renderDateTimeField } from "../features/events/ui/event-form/renderDateTimeField";
+import { getSafeReturnPath } from "../shared/lib/navigation";
 import { VisibilityFieldset } from "../components/ui/VisibilityFieldset";
 
 export function CreateEventPage() {

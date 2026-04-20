@@ -3,12 +3,12 @@ import { useAppDispatch, useAppSelector } from "../app/hooks";
 import {
   askAssistantQuestion,
   fetchPublicEvents,
-} from "../features/events/eventsSlice";
-import { useEventFilters } from "../features/events/useEventFilters";
+} from "../features/events/model/eventsSlice";
+import { useEventFilters } from "../features/events/model/useEventFilters";
 import { AssistantPanel } from "../components/assistant/AssistantPanel";
-import { EventCardGrid } from "../components/event-details/EventCardGrid";
-import { EventSearchBar } from "../components/event-details/EventSearchBar";
-import { EventTagFilterBar } from "../components/event-details/EventTagFilterBar";
+import { EventCardGrid } from "../features/events/ui/event-details/EventCardGrid";
+import { EventSearchBar } from "../features/events/ui/event-details/EventSearchBar";
+import { EventTagFilterBar } from "../features/events/ui/event-details/EventTagFilterBar";
 
 const ASSISTANT_QUESTION_SUGGESTIONS = [
   "What events am I attending this week?",
@@ -87,3 +87,4 @@ export function EventsPage() {
     </div>
   );
 }
+
