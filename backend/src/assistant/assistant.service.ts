@@ -1,44 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import {
-  Event as EventEntity,
-  EventVisibility,
-} from '../events/entities/event.entity';
-import { Participant } from '../participants/entities/participant.entity';
-import { mergeAndSortCalendarEvents } from '../events/events.service.helpers';
-import {
-  answerFromIntent,
-  answerFromRules,
-  answerParticipantsFromQuestion,
-  answerWhereIsFromQuestion,
-} from './assistant-answer.helpers';
+import { answerFromIntent, answerFromRules } from './assistant-answer.helpers';
 import {
   AssistantLlmService,
   ASSISTANT_FALLBACK_MESSAGE,
-  type AssistantContextSnapshot,
 } from './assistant-llm.service';
-import {
-  isParticipantsQuestionText,
-  isWhereIsQuestionText,
-  shouldUseDateFallbackQuestion,
-  shouldUseGlobalDateScopeQuestion,
-} from './assistant-text.helpers';
-import type {
-  AssistantEvent,
-  AssistantQuestionIntent,
-} from './assistant.types';
+import { isParticipantsQuestionText } from './assistant-text.helpers';
+import type { AssistantQuestionIntent } from './assistant.types';
+import { AssistantDataService } from './assistant-data.service';
+import { AssistantScopeResolver } from './assistant-scope.resolver';
+import { AssistantFallbackResolver } from './assistant-fallback.resolver';
 
 @Injectable()
 export class AssistantService {
   private readonly logger = new Logger(AssistantService.name);
 
   constructor(
-    @InjectRepository(EventEntity)
-    private readonly eventsRepository: Repository<EventEntity>,
-    @InjectRepository(Participant)
-    private readonly participantsRepository: Repository<Participant>,
     private readonly assistantLlmService: AssistantLlmService,
+    private readonly assistantDataService: AssistantDataService,
+    private readonly assistantScopeResolver: AssistantScopeResolver,
+    private readonly assistantFallbackResolver: AssistantFallbackResolver,
   ) {}
 
   async answerQuestion(
@@ -46,10 +26,10 @@ export class AssistantService {
     userId: string,
   ): Promise<{ answer: string }> {
     const normalizedQuestion = question.trim();
-    const events = await this.loadUserEvents(userId);
-    const scopedEvents = await this.resolveEventsForQuestionScope(
-      question,
-      events,
+    const userEvents = await this.assistantDataService.loadUserEvents(userId);
+    const scopedEvents = await this.assistantScopeResolver.resolveContextEvents(
+      normalizedQuestion,
+      userEvents,
     );
     const now = new Date();
     const shouldQueryLlm = Boolean(process.env.AI_API_KEY?.trim());
@@ -60,7 +40,11 @@ export class AssistantService {
 
     // Deterministic rules are the fallback path when AI is not configured.
     if (!shouldQueryLlm) {
-      const localAnswer = answerFromRules(question, scopedEvents, now);
+      const localAnswer = answerFromRules(
+        normalizedQuestion,
+        scopedEvents,
+        now,
+      );
 
       if (localAnswer) {
         this.trace('Assistant response source: local-rules (no AI_API_KEY)');
@@ -73,118 +57,85 @@ export class AssistantService {
       return { answer: ASSISTANT_FALLBACK_MESSAGE };
     }
 
-    const snapshot = this.buildSnapshot(
+    const snapshot = this.assistantDataService.buildSnapshot(
       scopedEvents,
       now,
       userId,
-      isParticipantsQuestionText(question),
+      isParticipantsQuestionText(normalizedQuestion),
     );
 
-    const intent = await this.classifyQuestion(question, snapshot);
+    const intent = await this.classifyQuestion(normalizedQuestion, snapshot);
 
     // If the model cannot classify confidently, fall back to rule-based resolvers.
     if (!intent || intent.intent === 'fallback') {
-      const lookupEvents = await this.resolveLookupEventsForQuestion(
-        question,
-        scopedEvents,
-      );
-      const fallbackResolution = this.resolveFallbackAnswer(
-        question,
-        lookupEvents,
-        now,
-      );
-
-      if (fallbackResolution.answer) {
-        this.trace(`Assistant response source: ${fallbackResolution.source}`);
-        return { answer: fallbackResolution.answer };
-      }
-
-      this.trace('Assistant response source: fallback (llm unclear intent)');
-      return { answer: ASSISTANT_FALLBACK_MESSAGE };
-    }
-
-    if (
-      intent.intent === 'where_is_event' ||
-      intent.intent === 'show_participants'
-    ) {
-      const lookupEvents = await this.loadWhereIsLookupEvents(events);
-      const lookupAnswer = answerFromIntent(
-        intent,
-        lookupEvents,
-        now,
-        userId,
-        question,
-      );
-
-      if (!lookupAnswer) {
-        const fallbackResolution = this.resolveFallbackAnswer(
-          question,
-          lookupEvents,
-          now,
+      const fallbackEvents =
+        await this.assistantScopeResolver.resolveLookupEventsForQuestion(
+          normalizedQuestion,
+          scopedEvents,
         );
 
-        if (fallbackResolution.answer) {
-          this.trace(`Assistant response source: ${fallbackResolution.source}`);
-          return { answer: fallbackResolution.answer };
-        }
-
-        this.trace('Assistant response source: fallback (intent unsupported)');
-        return { answer: ASSISTANT_FALLBACK_MESSAGE };
-      }
-
-      this.trace(`Assistant response source: llm-intent (${intent.intent})`);
-      return { answer: lookupAnswer };
+      return this.resolveFallbackResponse(
+        normalizedQuestion,
+        fallbackEvents,
+        now,
+        'fallback (llm unclear intent)',
+      );
     }
+
+    const intentEvents = await this.assistantScopeResolver.resolveIntentEvents(
+      intent,
+      normalizedQuestion,
+      userEvents,
+      scopedEvents,
+    );
 
     const answer = answerFromIntent(
       intent,
-      scopedEvents,
+      intentEvents,
       now,
       userId,
-      question,
+      normalizedQuestion,
     );
 
     if (!answer) {
-      const lookupEvents = await this.resolveLookupEventsForQuestion(
-        question,
-        scopedEvents,
-      );
-      const fallbackResolution = this.resolveFallbackAnswer(
-        question,
-        lookupEvents,
+      return this.resolveFallbackResponse(
+        normalizedQuestion,
+        intentEvents,
         now,
+        'fallback (intent unsupported)',
       );
-
-      if (fallbackResolution.answer) {
-        this.trace(`Assistant response source: ${fallbackResolution.source}`);
-        return { answer: fallbackResolution.answer };
-      }
-
-      this.trace('Assistant response source: fallback (intent unsupported)');
-      return { answer: ASSISTANT_FALLBACK_MESSAGE };
     }
 
     this.trace(`Assistant response source: llm-intent (${intent.intent})`);
     return { answer };
   }
 
-  private async resolveEventsForQuestionScope(
-    question: string,
-    userEvents: AssistantEvent[],
-  ): Promise<AssistantEvent[]> {
-    // Date-oriented global queries may need public events outside the user's own list.
-    if (!shouldUseGlobalDateScopeQuestion(question)) {
-      return userEvents;
-    }
-
-    return this.loadWhereIsLookupEvents(userEvents);
-  }
-
   private async classifyQuestion(
     question: string,
-    snapshot: AssistantContextSnapshot,
+    snapshot: Parameters<AssistantLlmService['classifyQuestion']>[1],
   ): Promise<AssistantQuestionIntent | null> {
     return this.assistantLlmService.classifyQuestion(question, snapshot);
+  }
+
+  private resolveFallbackResponse(
+    question: string,
+    events: Parameters<AssistantFallbackResolver['resolve']>[1],
+    now: Date,
+    terminalFallbackLogMessage: string,
+  ): { answer: string } {
+    const fallbackResolution = this.assistantFallbackResolver.resolve(
+      question,
+      events,
+      now,
+    );
+
+    if (fallbackResolution.answer) {
+      this.trace(`Assistant response source: ${fallbackResolution.source}`);
+      return { answer: fallbackResolution.answer };
+    }
+
+    this.trace(`Assistant response source: ${terminalFallbackLogMessage}`);
+    return { answer: ASSISTANT_FALLBACK_MESSAGE };
   }
 
   private trace(message: string): void {
@@ -193,201 +144,5 @@ export class AssistantService {
     }
 
     this.logger.debug(message);
-  }
-
-  private async loadUserEvents(userId: string): Promise<AssistantEvent[]> {
-    // Read organizer and participant views in parallel, then merge unique events.
-    const [organizedEvents, participantRows] = await Promise.all([
-      this.eventsRepository.find({
-        where: { organizerId: userId },
-        relations: ['tags', 'participants', 'participants.user'],
-      }),
-      this.participantsRepository.find({
-        where: { userId },
-        relations: [
-          'event',
-          'event.tags',
-          'event.participants',
-          'event.participants.user',
-        ],
-      }),
-    ]);
-
-    const mergedEvents = mergeAndSortCalendarEvents(
-      organizedEvents,
-      participantRows,
-    );
-
-    this.trace(`DB response: loaded ${mergedEvents.length} events`);
-
-    return this.toAssistantEvents(mergedEvents);
-  }
-
-  private toAssistantEvents(events: EventEntity[]): AssistantEvent[] {
-    return events.map((event) => {
-      // TypeORM relation typing can be narrower than runtime-loaded relations.
-      const e = event as EventEntity & {
-        tags?: Array<{ name: string }>;
-        participants?: Array<{
-          userId: string;
-          user?: { name?: string | null; email?: string | null };
-        }>;
-      };
-
-      return {
-        id: event.id,
-        title: event.title,
-        eventDate: new Date(event.eventDate),
-        visibility: event.visibility,
-        location: event.location,
-        organizerId: event.organizerId,
-        tags: (e.tags ?? []).map((tag) => tag.name),
-        participantIds: (e.participants ?? []).map((p) => p.userId),
-        participantLabels: (e.participants ?? []).map((p) => {
-          const name = p.user?.name?.trim();
-
-          if (name) {
-            return name;
-          }
-
-          return p.userId;
-        }),
-      };
-    });
-  }
-
-  private async loadWhereIsLookupEvents(
-    userEvents: AssistantEvent[],
-  ): Promise<AssistantEvent[]> {
-    const publicEvents = await this.eventsRepository.find({
-      where: { visibility: EventVisibility.PUBLIC },
-      relations: ['tags', 'participants', 'participants.user'],
-    });
-
-    const mappedPublicEvents = this.toAssistantEvents(publicEvents);
-    const byId = new Map<string, AssistantEvent>();
-
-    userEvents.forEach((event) => byId.set(event.id, event));
-    mappedPublicEvents.forEach((event) => {
-      if (!byId.has(event.id)) {
-        byId.set(event.id, event);
-      }
-    });
-
-    return [...byId.values()];
-  }
-
-  private async resolveLookupEventsForQuestion(
-    question: string,
-    userEvents: AssistantEvent[],
-  ): Promise<AssistantEvent[]> {
-    const shouldUseGlobalLookup =
-      isWhereIsQuestionText(question) || isParticipantsQuestionText(question);
-
-    if (!shouldUseGlobalLookup) {
-      return userEvents;
-    }
-
-    return this.loadWhereIsLookupEvents(userEvents);
-  }
-
-  private resolveFallbackAnswer(
-    question: string,
-    events: AssistantEvent[],
-    now: Date,
-  ): {
-    source:
-      | 'heuristic-participants'
-      | 'heuristic-where-is'
-      | 'heuristic-fallback'
-      | 'local-rules-fallback';
-    answer: string | null;
-  } {
-    const participantsAnswer = answerParticipantsFromQuestion(question, events);
-
-    if (participantsAnswer) {
-      return {
-        source: 'heuristic-participants',
-        answer: participantsAnswer,
-      };
-    }
-
-    const locationAnswer = answerWhereIsFromQuestion(question, events);
-
-    if (locationAnswer) {
-      return {
-        source: 'heuristic-where-is',
-        answer: locationAnswer,
-      };
-    }
-
-    if (shouldUseDateFallbackQuestion(question)) {
-      const localFallbackAnswer = answerFromRules(question, events, now);
-
-      if (localFallbackAnswer) {
-        return {
-          source: 'local-rules-fallback',
-          answer: localFallbackAnswer,
-        };
-      }
-    }
-
-    return {
-      source: 'heuristic-fallback',
-      answer: null,
-    };
-  }
-
-  private buildSnapshot(
-    events: AssistantEvent[],
-    now: Date,
-    userId: string,
-    includeParticipantIdentifiers: boolean,
-  ): AssistantContextSnapshot {
-    const sortedDates = events
-      .map((event) => event.eventDate)
-      .sort((first, second) => first.getTime() - second.getTime());
-
-    const tags = [
-      ...new Set(
-        events.flatMap((event) => event.tags).map((tag) => tag.toLowerCase()),
-      ),
-    ].sort();
-
-    return {
-      currentUserId: userId,
-      generatedAt: now.toISOString(),
-      dateWindow: {
-        earliestEventDate: sortedDates[0]?.toISOString() ?? null,
-        latestEventDate: sortedDates.at(-1)?.toISOString() ?? null,
-      },
-      eventCount: events.length,
-      tags,
-      events: events.map((event) => {
-        const eventSnapshot = {
-          title: event.title,
-          eventDate: event.eventDate.toISOString(),
-          visibility: event.visibility,
-          relationToUser:
-            event.organizerId === userId
-              ? ('organizer' as const)
-              : event.participantIds.includes(userId)
-                ? ('participant' as const)
-                : ('unrelated' as const),
-          location: event.location,
-          tags: event.tags,
-          participantCount: event.participantIds.length,
-        };
-
-        if (includeParticipantIdentifiers) {
-          return {
-            ...eventSnapshot,
-            participantIds: event.participantIds,
-          };
-        }
-
-        return eventSnapshot;
-      }),
-    };
   }
 }

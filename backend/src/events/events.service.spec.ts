@@ -316,7 +316,9 @@ describe('EventsService', () => {
     tagsRepository.create.mockImplementation(
       (payload: Record<string, unknown>) => payload,
     );
-    tagsRepository.save.mockRejectedValue(new Error('duplicate key value'));
+    tagsRepository.save.mockRejectedValue({
+      driverError: { code: '23505' },
+    });
 
     eventsRepository.create.mockImplementation(
       (payload: Record<string, unknown>) => payload,
@@ -338,6 +340,32 @@ describe('EventsService', () => {
     expect(tagsRepository.save).toHaveBeenCalledTimes(1);
     expect(tagsRepository.find).toHaveBeenCalledTimes(2);
     expect(result.tags).toHaveLength(2);
+  });
+
+  it('create rethrows tags save error when it is not a unique conflict', async () => {
+    const user = { sub: 'user-id', email: 'user@example.com' };
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const dbError = new Error('database unavailable');
+
+    tagsRepository.find.mockResolvedValue([{ id: 'tag-1', name: 'tech' }]);
+    tagsRepository.create.mockImplementation(
+      (payload: Record<string, unknown>) => payload,
+    );
+    tagsRepository.save.mockRejectedValue(dbError);
+
+    await expect(
+      service.create(
+        {
+          title: 'Non-conflict tags error event',
+          eventDate: futureDate,
+          location: 'Kyiv',
+          tags: ['Tech', 'Art'],
+        },
+        user,
+      ),
+    ).rejects.toBe(dbError);
+
+    expect(tagsRepository.find).toHaveBeenCalledTimes(1);
   });
 
   it('create ignores whitespace-only tags input', async () => {
