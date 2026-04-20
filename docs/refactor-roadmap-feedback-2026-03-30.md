@@ -1,7 +1,25 @@
 # Refactor Roadmap (за результатами фідбеку)
 
 Дата: 2026-03-30
-Гілка для роботи: feature/optional-frontend-enhancements
+Стратегія гілок для роботи:
+
+- Базова інтеграційна гілка для етапу: `feature/architecture-refactor-phase-*`
+- Task-гілки: `feature/issue-*-*` від відповідної phase-гілки
+- PR для задачі: `feature/issue-*-*` -> `feature/architecture-refactor-phase-*`
+
+Приклад flow:
+
+1. Backend етап (phase-1):
+
+- `feature/issue-1-*` -> `feature/architecture-refactor-phase-1`
+- `feature/issue-2-*` -> `feature/architecture-refactor-phase-1`
+- Після інтеграції задач: `feature/architecture-refactor-phase-1` -> `main`
+
+2. Frontend етап (phase-2):
+
+- `feature/issue-3-*` -> `feature/architecture-refactor-phase-2`
+- Наступні frontend issue-гілки також у `feature/architecture-refactor-phase-2`
+- Після інтеграції задач: `feature/architecture-refactor-phase-2` -> `main`
 
 ## Ціль
 
@@ -46,7 +64,7 @@ Frontend:
 
 Команди:
 
-- backend: `cd backend && npm run test:run`
+- backend: `cd backend && npm test`
 - frontend: `cd frontend && npm run test:run`
 
 Ризик: низький.
@@ -70,15 +88,15 @@ Frontend:
 - normalizeAndValidateTagNames
 - loadExistingTagsByName
 - createMissingTags
-- resolveTagsForEvent (оркестратор)
+- resolveEventTags (оркестратор, публічна API-функція)
 
 2. Скоротити try/catch до вузького місця (тільки створення відсутніх тегів).
 3. Не змінювати публічний контракт функції, що викликається з service.
 
 Валідація:
 
-- `cd backend && npm run test:run -- events-tags`
-- `cd backend && npm run test:run -- events.service`
+- `cd backend && npm test -- events-tags`
+- `cd backend && npm test -- events.service`
 
 Ризик: низький-середній.
 
@@ -98,9 +116,13 @@ Frontend:
 
 1. Створити модулі:
 
-- backend/src/assistant/repositories/event-data.repository.ts
-- backend/src/assistant/resolvers/question-scope.resolver.ts
-- backend/src/assistant/resolvers/fallback-answer.resolver.ts
+- backend/src/assistant/assistant-data.service.ts
+- backend/src/assistant/assistant-scope.resolver.ts
+- backend/src/assistant/assistant-fallback.resolver.ts
+
+Примітка:
+
+- Допускаються еквівалентні назви (`*.repository.ts`, `resolvers/*`) за умови, що межі відповідальності збережені: data/context, scope, fallback.
 
 2. Залишити в AssistantService лише сценарій:
 
@@ -111,8 +133,8 @@ Frontend:
 
 Валідація:
 
-- `cd backend && npm run test:run -- assistant.service`
-- `cd backend && npm run test:run -- assistant`
+- `cd backend && npm test -- assistant.service`
+- `cd backend && npm test -- assistant`
 
 Ризик: середній.
 
