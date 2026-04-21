@@ -9,7 +9,7 @@ import { getTagAccentClassNames } from "../../lib/tagAccent";
 
 type EventCardProps = {
   event: EventItem;
-  token: string | null;
+  isAuthenticated: boolean;
   isOrganizer: boolean;
   isJoined: boolean;
   isBusy: boolean;
@@ -33,7 +33,7 @@ const shortDescription = (description?: string) => {
 
 export function EventCard({
   event,
-  token,
+  isAuthenticated,
   isOrganizer,
   isJoined,
   isBusy,
@@ -145,7 +145,7 @@ export function EventCard({
         className="mt-4"
         onClick={(eventClick) => eventClick.stopPropagation()}
       >
-        {isOrganizer ? null : token && isJoined ? (
+        {isOrganizer ? null : isAuthenticated && isJoined ? (
           <Button
             type="button"
             disabled={isBusy}
@@ -158,7 +158,7 @@ export function EventCard({
           <span className="inline-block w-full rounded-xl bg-slate-200 px-4 py-2 text-center text-[1.05rem] font-semibold text-slate-600">
             Full
           </span>
-        ) : token ? (
+        ) : isAuthenticated ? (
           <Button
             type="button"
             disabled={isBusy}

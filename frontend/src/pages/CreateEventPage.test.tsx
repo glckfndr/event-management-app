@@ -136,11 +136,6 @@ describe("CreateEventPage", () => {
         location: "Kyiv",
         tags: ["AI"],
       }),
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token",
-        }),
-      }),
     );
   });
 });

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { selectIsAuthenticated } from "../features/auth/authSelectors";
 import {
   askAssistantQuestion,
   fetchPublicEvents,
@@ -24,7 +25,7 @@ export function EventsPage() {
   const { publicEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const {
     searchTerm,
     setSearchTerm,
@@ -40,7 +41,7 @@ export function EventsPage() {
   }, [dispatch]);
 
   const handleAssistantSubmit = async (question: string) => {
-    if (!token) {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -59,7 +60,7 @@ export function EventsPage() {
         onSearchTermChange={setSearchTerm}
       />
 
-      {token ? (
+      {isAuthenticated ? (
         <AssistantPanel
           suggestedQuestions={ASSISTANT_QUESTION_SUGGESTIONS}
           onSubmit={handleAssistantSubmit}
@@ -87,4 +88,3 @@ export function EventsPage() {
     </div>
   );
 }
-

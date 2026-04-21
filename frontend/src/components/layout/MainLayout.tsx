@@ -1,19 +1,20 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { logout } from "../../features/auth/authSlice";
+import { selectIsAuthenticated } from "../../features/auth/authSelectors";
+import { logoutUser } from "../../features/auth/authSlice";
 import { Button } from "../ui/Button";
 
 export function MainLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const userEmail = useAppSelector((state) => state.auth.user?.email);
 
   const displayName = userEmail?.split("@")[0] || "User";
 
-  const handleLogout = () => {
-    dispatch(logout());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/");
   };
 
@@ -190,7 +191,7 @@ export function MainLayout() {
               </svg>
               Create Event
             </Link>
-            {token ? (
+            {isAuthenticated ? (
               <div className="ml-3 flex items-center gap-3 border-l border-slate-200 pl-6">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                   <svg
@@ -222,7 +223,7 @@ export function MainLayout() {
                 </span>
                 <Button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={() => void handleLogout()}
                   aria-label="Logout"
                   className="inline-flex h-10 w-10 items-center justify-center rounded-md text-slate-700 hover:bg-slate-100"
                 >

@@ -9,12 +9,12 @@ import {
 } from "./eventsSlice";
 
 type UseEventParticipationActionsOptions = {
-  token: string | null;
+  isAuthenticated: boolean;
   navigate: NavigateFunction;
 };
 
 export const useEventParticipationActions = ({
-  token,
+  isAuthenticated,
   navigate,
 }: UseEventParticipationActionsOptions) => {
   const dispatch = useAppDispatch();
@@ -57,7 +57,7 @@ export const useEventParticipationActions = ({
   };
 
   const handleLeave = async (eventId: string) => {
-    if (!token) {
+    if (!isAuthenticated) {
       navigate("/login");
       return;
     }

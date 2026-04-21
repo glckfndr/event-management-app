@@ -306,13 +306,9 @@ describe("EventsPage", () => {
     expect(await screen.findByText("Assistant answer")).toBeInTheDocument();
     expect(screen.getByText("You have 3 events in total.")).toBeInTheDocument();
 
-    expect(postSpy).toHaveBeenCalledWith(
-      "/assistant/questions",
-      { question: "How many events do I have?" },
-      {
-        headers: { Authorization: "Bearer token" },
-      },
-    );
+    expect(postSpy).toHaveBeenCalledWith("/assistant/questions", {
+      question: "How many events do I have?",
+    });
   });
 
   it("keeps assistant live region mounted before answer updates", async () => {

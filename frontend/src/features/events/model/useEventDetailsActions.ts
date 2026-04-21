@@ -22,7 +22,7 @@ import {
 
 type UseEventDetailsActionsParams = {
   currentEvent: EventItem | null;
-  token: string | null;
+  isAuthenticated: boolean;
   returnTo: string;
   navigate: NavigateFunction;
   participantsCount: number;
@@ -32,7 +32,7 @@ type UseEventDetailsActionsParams = {
 
 export const useEventDetailsActions = ({
   currentEvent,
-  token,
+  isAuthenticated,
   returnTo,
   navigate,
   participantsCount,
@@ -51,7 +51,7 @@ export const useEventDetailsActions = ({
 
     await dispatch(fetchEventById(currentEvent.id)).unwrap();
 
-    if (token) {
+    if (isAuthenticated) {
       await dispatch(fetchMyEvents()).unwrap();
     }
   };

@@ -7,16 +7,26 @@ import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
 import { resolveJwtSecret } from '../src/auth/jwt.config';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  CSRF_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '../src/auth/auth-cookie.helpers';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
-  let authService: { register: jest.Mock; login: jest.Mock };
+  let authService: {
+    register: jest.Mock;
+    login: jest.Mock;
+    refreshSession: jest.Mock;
+  };
 
   beforeAll(async () => {
     authService = {
       register: jest.fn(),
       login: jest.fn(),
+      refreshSession: jest.fn(),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -48,6 +58,7 @@ describe('AuthController (e2e)', () => {
   beforeEach(() => {
     authService.register.mockReset();
     authService.login.mockReset();
+    authService.refreshSession.mockReset();
   });
 
   it('/auth/me (GET) returns 401 without token', () => {
@@ -77,6 +88,27 @@ describe('AuthController (e2e)', () => {
     );
   });
 
+  it('/auth/me (GET) returns payload with valid access cookie', async () => {
+    const httpServer = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const token = await jwtService.signAsync({
+      sub: 'user-id',
+      email: 'user@example.com',
+    });
+
+    const response = await request(httpServer)
+      .get('/auth/me')
+      .set('Cookie', [`${ACCESS_TOKEN_COOKIE_NAME}=${token}`])
+      .expect(200);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        sub: 'user-id',
+        email: 'user@example.com',
+      }),
+    );
+  });
+
   it('register -> login -> me happy-path', async () => {
     const httpServer = app.getHttpServer() as Parameters<typeof request>[0];
 
@@ -93,8 +125,13 @@ describe('AuthController (e2e)', () => {
     });
 
     authService.login.mockResolvedValue({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
       accessToken: token,
-      tokenType: 'Bearer',
+      refreshToken: 'refresh-token',
+      csrfToken: 'csrf-token',
     });
 
     await request(httpServer)
@@ -106,7 +143,7 @@ describe('AuthController (e2e)', () => {
       })
       .expect(201);
 
-    await request(httpServer)
+    const loginResponse = await request(httpServer)
       .post('/auth/login')
       .send({
         email: 'user@example.com',
@@ -114,9 +151,23 @@ describe('AuthController (e2e)', () => {
       })
       .expect(200);
 
+    expect(loginResponse.body).toEqual({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+    });
+    expect(loginResponse.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${ACCESS_TOKEN_COOKIE_NAME}=`),
+        expect.stringContaining(`${REFRESH_TOKEN_COOKIE_NAME}=`),
+        expect.stringContaining(`${CSRF_TOKEN_COOKIE_NAME}=`),
+      ]),
+    );
+
     const meResponse = await request(httpServer)
       .get('/auth/me')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Cookie', [`${ACCESS_TOKEN_COOKIE_NAME}=${token}`])
       .expect(200);
 
     expect(authService.register).toHaveBeenCalledWith({
@@ -133,6 +184,59 @@ describe('AuthController (e2e)', () => {
         sub: 'user-id',
         email: 'user@example.com',
       }),
+    );
+  });
+
+  it('/auth/refresh (POST) rotates cookies and returns user', async () => {
+    const httpServer = app.getHttpServer() as Parameters<typeof request>[0];
+
+    authService.refreshSession.mockResolvedValue({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      accessToken: 'next-access-token',
+      refreshToken: 'next-refresh-token',
+      csrfToken: 'next-csrf-token',
+    });
+
+    const response = await request(httpServer)
+      .post('/auth/refresh')
+      .set('Cookie', [`${REFRESH_TOKEN_COOKIE_NAME}=refresh-token`])
+      .expect(200);
+
+    expect(authService.refreshSession).toHaveBeenCalledWith('refresh-token');
+    expect(response.body).toEqual({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+    });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          `${ACCESS_TOKEN_COOKIE_NAME}=next-access-token`,
+        ),
+        expect.stringContaining(
+          `${REFRESH_TOKEN_COOKIE_NAME}=next-refresh-token`,
+        ),
+        expect.stringContaining(`${CSRF_TOKEN_COOKIE_NAME}=next-csrf-token`),
+      ]),
+    );
+  });
+
+  it('/auth/logout (POST) clears auth cookies', async () => {
+    const httpServer = app.getHttpServer() as Parameters<typeof request>[0];
+
+    const response = await request(httpServer).post('/auth/logout').expect(200);
+
+    expect(response.body).toEqual({ success: true });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(`${ACCESS_TOKEN_COOKIE_NAME}=;`),
+        expect.stringContaining(`${REFRESH_TOKEN_COOKIE_NAME}=;`),
+        expect.stringContaining(`${CSRF_TOKEN_COOKIE_NAME}=;`),
+      ]),
     );
   });
 });

@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
+import { extractAccessTokenFromRequest } from './auth-cookie.helpers';
 
 type RequestWithAuthToken = Request & {
   authToken?: string;
@@ -15,10 +16,9 @@ export class AuthMiddleware implements NestMiddleware {
   constructor(private readonly jwtService: JwtService) {}
 
   use(req: RequestWithAuthToken, _res: Response, next: NextFunction): void {
-    const authorization = req.headers.authorization;
+    const token = extractAccessTokenFromRequest(req);
 
-    if (authorization?.startsWith('Bearer ')) {
-      const token = authorization.slice(7).trim();
+    if (token) {
       req.authToken = token;
 
       try {
