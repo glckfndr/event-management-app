@@ -1,10 +1,12 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { QueryFailedError } from 'typeorm';
 import { Event, EventVisibility } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
@@ -123,6 +125,22 @@ describe('InvitationsService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('rejects creating invitation for non-organizer with 403', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'owner-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    await expect(
+      service.createInvitation(
+        'event-id',
+        { invitedUserId: 'invitee-id' },
+        { sub: 'another-user-id', email: 'user@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('rejects duplicate invitation pair', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',
@@ -137,6 +155,39 @@ describe('InvitationsService', () => {
       eventId: 'event-id',
       invitedUserId: 'invitee-id',
     });
+
+    await expect(
+      service.createInvitation(
+        'event-id',
+        { invitedUserId: 'invitee-id' },
+        { sub: 'organizer-id', email: 'organizer@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('maps unique violation on save to conflict for concurrent race', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    usersRepository.findOne.mockResolvedValue({ id: 'invitee-id' });
+    participantsRepository.findOne.mockResolvedValue(null);
+    invitationsRepository.findOne.mockResolvedValue(null);
+
+    const invitationPayload = {
+      eventId: 'event-id',
+      invitedByUserId: 'organizer-id',
+      invitedUserId: 'invitee-id',
+    };
+
+    invitationsRepository.create.mockReturnValue(invitationPayload);
+    invitationsRepository.save.mockRejectedValue(
+      new QueryFailedError('insert into event_invitations', [], {
+        code: '23505',
+      }),
+    );
 
     await expect(
       service.createInvitation(

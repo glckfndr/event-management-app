@@ -1,11 +1,12 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Event, EventVisibility } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
@@ -72,7 +73,15 @@ export class InvitationsService {
       invitedUserId: dto.invitedUserId,
     });
 
-    return this.invitationsRepository.save(invitation);
+    try {
+      return await this.invitationsRepository.save(invitation);
+    } catch (error: unknown) {
+      if (this.isUniqueViolationError(error)) {
+        throw new ConflictException('Invitation already exists for this user');
+      }
+
+      throw error;
+    }
   }
 
   async listInvitationsForEvent(
@@ -128,7 +137,7 @@ export class InvitationsService {
     }
 
     if (event.organizerId !== userId) {
-      throw new BadRequestException('Only organizer can manage invitations');
+      throw new ForbiddenException('Only organizer can manage invitations');
     }
 
     if (event.visibility !== EventVisibility.PRIVATE) {
@@ -136,5 +145,14 @@ export class InvitationsService {
         'Invitations are available only for private events',
       );
     }
+  }
+
+  private isUniqueViolationError(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = error.driverError as { code?: string } | undefined;
+    return driverError?.code === '23505';
   }
 }
