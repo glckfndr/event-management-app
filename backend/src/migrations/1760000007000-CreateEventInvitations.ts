@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class CreateEventInvitations1760000007000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      "CREATE TYPE \"event_invitations_status_enum\" AS ENUM('pending', 'accepted', 'declined', 'revoked')",
+      "CREATE TYPE \"event_invitations_status_enum\" AS ENUM('pending', 'accepted', 'declined')",
     );
 
     await queryRunner.query(`

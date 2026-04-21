@@ -14,7 +14,6 @@ export enum EventInvitationStatus {
   PENDING = 'pending',
   ACCEPTED = 'accepted',
   DECLINED = 'declined',
-  REVOKED = 'revoked',
 }
 
 @Entity('event_invitations')
