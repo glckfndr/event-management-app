@@ -142,41 +142,51 @@ export class InvitationsService {
     invitationId: string,
     user: AuthenticatedUser,
   ): Promise<EventInvitation> {
-    const invitation = await this.getInvitationForInvitedUser(
-      invitationId,
-      user.sub,
-    );
+    return this.invitationsRepository.manager.transaction(async (manager) => {
+      const transactionalInvitationsRepository =
+        manager.getRepository(EventInvitation);
+      const transactionalParticipantsRepository =
+        manager.getRepository(Participant);
 
-    if (invitation.status !== EventInvitationStatus.PENDING) {
-      throw new ConflictException('Invitation is not pending');
-    }
+      const invitation = await this.getInvitationForInvitedUser(
+        invitationId,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
 
-    invitation.status = EventInvitationStatus.ACCEPTED;
-    const savedInvitation = await this.invitationsRepository.save(invitation);
+      if (invitation.status !== EventInvitationStatus.PENDING) {
+        throw new ConflictException('Invitation is not pending');
+      }
 
-    const existingParticipant = await this.participantsRepository.findOne({
-      where: {
-        eventId: invitation.eventId,
-        userId: user.sub,
-      },
-    });
+      invitation.status = EventInvitationStatus.ACCEPTED;
+      const savedInvitation =
+        await transactionalInvitationsRepository.save(invitation);
 
-    if (!existingParticipant) {
-      const participant = this.participantsRepository.create({
-        eventId: invitation.eventId,
-        userId: user.sub,
-      });
+      const existingParticipant =
+        await transactionalParticipantsRepository.findOne({
+          where: {
+            eventId: invitation.eventId,
+            userId: user.sub,
+          },
+        });
 
-      try {
-        await this.participantsRepository.save(participant);
-      } catch (error: unknown) {
-        if (!this.isUniqueViolationError(error)) {
-          throw error;
+      if (!existingParticipant) {
+        const participant = transactionalParticipantsRepository.create({
+          eventId: invitation.eventId,
+          userId: user.sub,
+        });
+
+        try {
+          await transactionalParticipantsRepository.save(participant);
+        } catch (error: unknown) {
+          if (!this.isUniqueViolationError(error)) {
+            throw error;
+          }
         }
       }
-    }
 
-    return savedInvitation;
+      return savedInvitation;
+    });
   }
 
   async declineInvitation(
@@ -231,8 +241,10 @@ export class InvitationsService {
   private async getInvitationForInvitedUser(
     invitationId: string,
     invitedUserId: string,
+    invitationsRepository: Repository<EventInvitation> = this
+      .invitationsRepository,
   ): Promise<EventInvitation> {
-    const invitation = await this.invitationsRepository.findOne({
+    const invitation = await invitationsRepository.findOne({
       where: {
         id: invitationId,
         invitedUserId,

@@ -18,6 +18,9 @@ import { InvitationsService } from './invitations.service';
 
 describe('InvitationsService', () => {
   let service: InvitationsService;
+  let transactionManager: {
+    getRepository: jest.Mock;
+  };
 
   const invitationsRepository = {
     create: jest.fn(),
@@ -25,6 +28,9 @@ describe('InvitationsService', () => {
     findOne: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
+    manager: {
+      transaction: jest.fn(),
+    },
   };
 
   const eventsRepository = {
@@ -43,6 +49,28 @@ describe('InvitationsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    transactionManager = {
+      getRepository: jest.fn((entity: unknown) => {
+        if (entity === EventInvitation) {
+          return invitationsRepository;
+        }
+
+        if (entity === Participant) {
+          return participantsRepository;
+        }
+
+        return undefined;
+      }),
+    };
+
+    invitationsRepository.manager.transaction.mockImplementation(
+      (
+        callback: (
+          manager: typeof transactionManager,
+        ) => Promise<unknown> | unknown,
+      ) => Promise.resolve(callback(transactionManager)),
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
