@@ -10,6 +10,7 @@ import { EventDetailsPage } from "../pages/EventDetailsPage";
 import { EventsPage } from "../pages/EventsPage";
 import { LoginPage } from "../pages/LoginPage";
 import { MyEventsPage } from "../pages/MyEventsPage";
+import { MyInvitationsPage } from "../pages/MyInvitationsPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { APP_ROUTES } from "./routes";
 
@@ -50,6 +51,14 @@ const appRoutes = [
         element: (
           <ProtectedRoute>
             <MyEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: APP_ROUTES.myInvitations,
+        element: (
+          <ProtectedRoute>
+            <MyInvitationsPage />
           </ProtectedRoute>
         ),
       },

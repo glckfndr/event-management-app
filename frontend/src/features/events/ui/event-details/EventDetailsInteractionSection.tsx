@@ -11,6 +11,7 @@ import { EditIcon } from "../../../../components/ui/icons/EditIcon";
 import { TrashIcon } from "../../../../components/ui/icons/TrashIcon";
 import { EventEditForm } from "./EventEditForm";
 import type { EventEditFormValues } from "./EventEditForm";
+import { OrganizerInvitationsPanel } from "../../../invitations/ui/OrganizerInvitationsPanel";
 
 type EventDetailsInteractionSectionProps = {
   currentEvent: EventItem;
@@ -270,6 +271,12 @@ export function EventDetailsInteractionSection({
       </div>
 
       {error ? <FormErrorText className="mt-4">{error}</FormErrorText> : null}
+
+      <OrganizerInvitationsPanel
+        eventId={currentEvent.id}
+        isPrivateEvent={currentEvent.visibility === "private"}
+        isOrganizer={isOrganizer}
+      />
 
       {isOrganizer && isEditing ? (
         <EventEditForm
