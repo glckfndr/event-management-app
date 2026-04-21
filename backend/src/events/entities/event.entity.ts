@@ -12,6 +12,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Participant } from '../../participants/entities/participant.entity';
 import { Tag } from '../../tags/entities/tag.entity';
+import { EventInvitation } from '../../invitations/entities/event-invitation.entity';
 
 export enum EventVisibility {
   PUBLIC = 'public',
@@ -59,6 +60,12 @@ export class Event {
     (participant: Participant): Event => participant.event,
   )
   participants!: Participant[];
+
+  @OneToMany(
+    () => EventInvitation,
+    (invitation: EventInvitation): Event => invitation.event,
+  )
+  invitations!: EventInvitation[];
 
   @ManyToMany(() => Tag, (tag: Tag): Event[] => tag.events)
   @JoinTable({
