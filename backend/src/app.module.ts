@@ -4,6 +4,7 @@ import {
   NestModule,
   RequestMethod,
 } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import ormconfig from './ormconfig';
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { AssistantModule } from './assistant/assistant.module';
+import { CsrfProtectionGuard } from './auth/csrf-protection.guard';
 
 @Module({
   imports: [
@@ -23,7 +25,14 @@ import { AssistantModule } from './assistant/assistant.module';
     AssistantModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthMiddleware],
+  providers: [
+    AppService,
+    AuthMiddleware,
+    {
+      provide: APP_GUARD,
+      useClass: CsrfProtectionGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
