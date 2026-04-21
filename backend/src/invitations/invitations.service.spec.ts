@@ -198,6 +198,76 @@ describe('InvitationsService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('lists invitations for private event organizer with expected ordering and relations', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    const invitations = [
+      {
+        id: 'invitation-2',
+        eventId: 'event-id',
+        invitedByUserId: 'organizer-id',
+        invitedUserId: 'invitee-2',
+      },
+      {
+        id: 'invitation-1',
+        eventId: 'event-id',
+        invitedByUserId: 'organizer-id',
+        invitedUserId: 'invitee-1',
+      },
+    ];
+
+    invitationsRepository.find.mockResolvedValue(invitations);
+
+    const result = await service.listInvitationsForEvent('event-id', {
+      sub: 'organizer-id',
+      email: 'organizer@example.com',
+    });
+
+    expect(invitationsRepository.find).toHaveBeenCalledWith({
+      where: { eventId: 'event-id' },
+      order: { createdAt: 'DESC' },
+      relations: {
+        invitedByUser: true,
+        invitedUser: true,
+      },
+    });
+    expect(result).toEqual(invitations);
+  });
+
+  it('rejects listing invitations for non-organizer with 403', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'owner-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    await expect(
+      service.listInvitationsForEvent('event-id', {
+        sub: 'another-user-id',
+        email: 'user@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects listing invitations for public event with 400', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PUBLIC,
+    });
+
+    await expect(
+      service.listInvitationsForEvent('event-id', {
+        sub: 'organizer-id',
+        email: 'organizer@example.com',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('throws when invitation to revoke is missing', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',

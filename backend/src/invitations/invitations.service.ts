@@ -10,7 +10,7 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { Event, EventVisibility } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
-import { AuthenticatedUser } from '../events/events.service.helpers';
+import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { EventInvitation } from './entities/event-invitation.entity';
 
