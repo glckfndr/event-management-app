@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { authReducer, loginUser } from "./authSlice";
+import { authReducer, loginUser, logoutUser } from "./authSlice";
 
 describe("authSlice", () => {
   beforeEach(() => {
@@ -47,5 +47,35 @@ describe("authSlice", () => {
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
     expect(state.isInitialized).toBe(true);
+  });
+
+  it("clears auth state when logout request fails", () => {
+    const authenticatedState = authReducer(
+      undefined,
+      loginUser.fulfilled(
+        {
+          user: {
+            sub: "user-id",
+            email: "normalized.user@example.com",
+          },
+        },
+        "login-request-id",
+        {
+          email: "RAW@Example.com",
+          password: "password",
+        },
+      ),
+    );
+
+    const state = authReducer(
+      authenticatedState,
+      logoutUser.rejected(new Error("Network error"), "logout-request-id"),
+    );
+
+    expect(state.token).toBeNull();
+    expect(state.user).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isInitialized).toBe(true);
+    expect(state.error).toBeNull();
   });
 });

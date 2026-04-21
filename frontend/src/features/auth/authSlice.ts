@@ -35,6 +35,15 @@ const initialState: AuthState = {
   error: null,
 };
 
+const resetLoggedOutState = (state: AuthState) => {
+  state.status = "idle";
+  state.token = null;
+  state.user = null;
+  state.isAuthenticated = false;
+  state.isInitialized = true;
+  state.error = null;
+};
+
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (payload: LoginPayload) => {
@@ -120,12 +129,10 @@ const authSlice = createSlice({
         state.isInitialized = true;
       })
       .addCase(logoutUser.fulfilled, (state) => {
-        state.status = "idle";
-        state.token = null;
-        state.user = null;
-        state.isAuthenticated = false;
-        state.isInitialized = true;
-        state.error = null;
+        resetLoggedOutState(state);
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        resetLoggedOutState(state);
       });
   },
 });
