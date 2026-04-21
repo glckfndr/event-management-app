@@ -9,7 +9,7 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService, type AuthSessionPayload } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -21,30 +21,13 @@ import {
   setAuthCookies,
 } from './auth-cookie.helpers';
 
-type AuthSessionResponse = {
-  user: { sub: string; email: string };
-  accessToken: string;
-  refreshToken: string;
-  csrfToken: string;
-};
-
-type AuthControllerServiceContract = {
-  register: AuthService['register'];
-  login: (loginDto: LoginDto) => Promise<AuthSessionResponse>;
-  refreshSession: (refreshToken: string) => Promise<AuthSessionResponse>;
-};
-
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  private getAuthService(): AuthControllerServiceContract {
-    return this.authService as unknown as AuthControllerServiceContract;
-  }
-
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
-    return this.getAuthService().register(registerDto);
+    return this.authService.register(registerDto);
   }
 
   @Post('login')
@@ -52,8 +35,8 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ) {
-    const session = await this.getAuthService().login(loginDto);
+  ): Promise<{ user: { sub: string; email: string } }> {
+    const session: AuthSessionPayload = await this.authService.login(loginDto);
     setAuthCookies(response, session);
 
     return {
@@ -66,14 +49,15 @@ export class AuthController {
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ) {
+  ): Promise<{ user: { sub: string; email: string } }> {
     const refreshToken = extractRefreshTokenFromRequest(request);
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is missing.');
     }
 
-    const session = await this.getAuthService().refreshSession(refreshToken);
+    const session: AuthSessionPayload =
+      await this.authService.refreshSession(refreshToken);
     setAuthCookies(response, session);
 
     return {
