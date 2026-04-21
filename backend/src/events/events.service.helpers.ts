@@ -62,7 +62,7 @@ export function assertPrivateEventAccess(
   }
 }
 
-export function sanitizeParticipantEmails(event: Event): Event {
+export function sanitizeEventForAuthenticatedView(event: Event): Event {
   // Remove participant email from API responses while preserving other user fields.
   const sanitizedParticipants = (event.participants ?? []).map(
     (participant) => {

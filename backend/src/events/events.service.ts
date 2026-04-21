@@ -14,7 +14,7 @@ import {
   assertPrivateEventAccess,
   AuthenticatedUser,
   mergeAndSortCalendarEvents,
-  sanitizeParticipantEmails,
+  sanitizeEventForAuthenticatedView,
 } from './events.service.helpers';
 import {
   assertCapacityAvailable,
@@ -94,7 +94,7 @@ export class EventsService {
 
     assertPrivateEventAccess(event, user);
 
-    return user ? sanitizeParticipantEmails(event) : event;
+    return user ? sanitizeEventForAuthenticatedView(event) : event;
   }
 
   async create(
