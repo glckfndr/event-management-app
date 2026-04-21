@@ -114,7 +114,7 @@ Frontend:
 
 План змін (мінімально інвазивно):
 
-1. Розділити відповідальність на 2 ключові зони:
+1. Розділити відповідальність на 3 ключові зони:
 
 - backend/src/assistant/assistant-data.service.ts
 - backend/src/assistant/assistant.service.ts (оркестрація + прозорий fallback)
