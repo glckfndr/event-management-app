@@ -80,6 +80,23 @@ Field-specific formatting:
   - Risks/Notes
 - Comment: actionable, context-specific, no filler.
 
+## PR Review Reply Rule
+
+After implementing any PR review comment, always provide a short English reply text that is ready to paste into the review thread.
+
+Format guidance:
+
+1. Keep it to 1-3 sentences.
+2. Mention what was changed.
+3. Mention validation briefly when relevant (for example, tests run).
+4. Avoid extra context not needed by reviewer.
+
+Template:
+
+Updated based on your feedback.
+I reused the shared helper to centralize the post-update fetch and remove duplicated not-found handling in both paths.
+Validated with targeted unit/e2e tests.
+
 ## Templates
 
 Title

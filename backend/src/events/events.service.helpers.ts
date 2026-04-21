@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Participant } from '../participants/entities/participant.entity';
 import { Event, EventVisibility } from './entities/event.entity';
+import { EventInvitationStatus } from '../invitations/entities/event-invitation.entity';
 
 export type AuthenticatedUser = {
   sub: string;
@@ -48,15 +49,20 @@ export function assertPrivateEventAccess(
   const isParticipant = event.participants.some(
     (participant) => participant.userId === user.sub,
   );
+  const hasAcceptedInvitation = (event.invitations ?? []).some(
+    (invitation) =>
+      invitation.invitedUserId === user.sub &&
+      invitation.status === EventInvitationStatus.ACCEPTED,
+  );
 
-  if (!isOrganizer && !isParticipant) {
+  if (!isOrganizer && !isParticipant && !hasAcceptedInvitation) {
     throw new ForbiddenException(
       'You do not have access to this private event',
     );
   }
 }
 
-export function sanitizeParticipantEmails(event: Event): Event {
+export function sanitizeEventForAuthenticatedView(event: Event): Event {
   // Remove participant email from API responses while preserving other user fields.
   const sanitizedParticipants = (event.participants ?? []).map(
     (participant) => {
@@ -73,8 +79,10 @@ export function sanitizeParticipantEmails(event: Event): Event {
     },
   );
 
+  const { invitations: _invitations, ...eventWithoutInvitations } = event;
+
   return {
-    ...event,
+    ...eventWithoutInvitations,
     participants: sanitizedParticipants as Participant[],
-  };
+  } as Event;
 }

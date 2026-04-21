@@ -4,6 +4,7 @@ import { Event } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
 import { EventInvitation } from './entities/event-invitation.entity';
+import { InvitationsLifecycleController } from './invitations-lifecycle.controller';
 import { InvitationsController } from './invitations.controller';
 import { InvitationsService } from './invitations.service';
 
@@ -11,7 +12,7 @@ import { InvitationsService } from './invitations.service';
   imports: [
     TypeOrmModule.forFeature([EventInvitation, Event, Participant, User]),
   ],
-  controllers: [InvitationsController],
+  controllers: [InvitationsController, InvitationsLifecycleController],
   providers: [InvitationsService],
   exports: [InvitationsService],
 })

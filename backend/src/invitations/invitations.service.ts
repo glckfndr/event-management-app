@@ -12,7 +12,10 @@ import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
-import { EventInvitation } from './entities/event-invitation.entity';
+import {
+  EventInvitation,
+  EventInvitationStatus,
+} from './entities/event-invitation.entity';
 
 @Injectable()
 export class InvitationsService {
@@ -124,6 +127,120 @@ export class InvitationsService {
     });
   }
 
+  async listMyInvitations(user: AuthenticatedUser): Promise<EventInvitation[]> {
+    const invitations = await this.invitationsRepository.find({
+      where: { invitedUserId: user.sub },
+      order: { createdAt: 'DESC' },
+      relations: {
+        event: { organizer: true, tags: true },
+        invitedByUser: true,
+      },
+    });
+
+    return invitations.map((invitation) =>
+      this.sanitizeInvitationForInviteeView(invitation),
+    );
+  }
+
+  async acceptInvitation(
+    invitationId: string,
+    user: AuthenticatedUser,
+  ): Promise<EventInvitation> {
+    return this.invitationsRepository.manager.transaction(async (manager) => {
+      const transactionalInvitationsRepository =
+        manager.getRepository(EventInvitation);
+      const transactionalParticipantsRepository =
+        manager.getRepository(Participant);
+
+      const invitation = await this.getInvitationForInvitedUser(
+        invitationId,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
+
+      const updateResult = await transactionalInvitationsRepository.update(
+        {
+          id: invitation.id,
+          invitedUserId: user.sub,
+          status: EventInvitationStatus.PENDING,
+        },
+        {
+          status: EventInvitationStatus.ACCEPTED,
+        },
+      );
+
+      if (updateResult.affected !== 1) {
+        throw new ConflictException('Invitation is not pending');
+      }
+
+      const existingParticipant =
+        await transactionalParticipantsRepository.findOne({
+          where: {
+            eventId: invitation.eventId,
+            userId: user.sub,
+          },
+        });
+
+      if (!existingParticipant) {
+        const participant = transactionalParticipantsRepository.create({
+          eventId: invitation.eventId,
+          userId: user.sub,
+        });
+
+        try {
+          await transactionalParticipantsRepository.save(participant);
+        } catch (error: unknown) {
+          if (!this.isUniqueViolationError(error)) {
+            throw error;
+          }
+        }
+      }
+
+      return this.getInvitationForInvitedUser(
+        invitation.id,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
+    });
+  }
+
+  async declineInvitation(
+    invitationId: string,
+    user: AuthenticatedUser,
+  ): Promise<EventInvitation> {
+    return this.invitationsRepository.manager.transaction(async (manager) => {
+      const transactionalInvitationsRepository =
+        manager.getRepository(EventInvitation);
+
+      const invitation = await this.getInvitationForInvitedUser(
+        invitationId,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
+
+      const updateResult = await transactionalInvitationsRepository.update(
+        {
+          id: invitation.id,
+          invitedUserId: user.sub,
+          status: EventInvitationStatus.PENDING,
+        },
+        {
+          status: EventInvitationStatus.DECLINED,
+        },
+      );
+
+      if (updateResult.affected !== 1) {
+        throw new ConflictException('Invitation is not pending');
+      }
+
+      return this.getInvitationForInvitedUser(
+        invitation.id,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
+    });
+  }
+
   private async assertOrganizerCanManageInvitations(
     eventId: string,
     userId: string,
@@ -154,5 +271,55 @@ export class InvitationsService {
 
     const driverError = error.driverError as { code?: string } | undefined;
     return driverError?.code === '23505';
+  }
+
+  private async getInvitationForInvitedUser(
+    invitationId: string,
+    invitedUserId: string,
+    invitationsRepository: Repository<EventInvitation> = this
+      .invitationsRepository,
+  ): Promise<EventInvitation> {
+    const invitation = await invitationsRepository.findOne({
+      where: {
+        id: invitationId,
+        invitedUserId,
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    return invitation;
+  }
+
+  private sanitizeInvitationForInviteeView(
+    invitation: EventInvitation,
+  ): EventInvitation {
+    const event = invitation.event;
+
+    if (!event) {
+      return invitation;
+    }
+
+    const shouldHidePrivateDetails =
+      event.visibility === EventVisibility.PRIVATE &&
+      invitation.status !== EventInvitationStatus.ACCEPTED;
+
+    if (!shouldHidePrivateDetails) {
+      return invitation;
+    }
+
+    const {
+      description: _description,
+      location: _location,
+      capacity: _capacity,
+      ...eventPreview
+    } = event;
+
+    return {
+      ...invitation,
+      event: eventPreview as Event,
+    };
   }
 }
