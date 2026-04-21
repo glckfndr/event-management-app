@@ -1,54 +1,51 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { authReducer, loginUser } from "./authSlice";
 
-const createTokenWithEmail = (email: string) => {
-  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-  const payload = btoa(JSON.stringify({ email }))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-
-  return `${header}.${payload}.signature`;
-};
-
 describe("authSlice", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it("derives user email from JWT on login fulfilled", () => {
-    const token = createTokenWithEmail("normalized.user@example.com");
-
+  it("stores authenticated user from login payload", () => {
     const state = authReducer(
       undefined,
-      loginUser.fulfilled({ token }, "request-id", {
+      loginUser.fulfilled(
+        {
+          user: {
+            sub: "user-id",
+            email: "normalized.user@example.com",
+          },
+        },
+        "request-id",
+        {
+          email: "  RAW@Example.com  ",
+          password: "password",
+        },
+      ),
+    );
+
+    expect(state.token).toBeNull();
+    expect(state.user).toEqual({
+      sub: "user-id",
+      email: "normalized.user@example.com",
+    });
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.isInitialized).toBe(true);
+    expect(localStorage.getItem("accessToken")).toBeNull();
+  });
+
+  it("keeps user null when login payload has no user", () => {
+    const state = authReducer(
+      undefined,
+      loginUser.rejected(new Error("Unauthorized"), "request-id", {
         email: "  RAW@Example.com  ",
         password: "password",
       }),
     );
 
-    expect(state.token).toBe(token);
-    expect(state.user).toEqual({ email: "normalized.user@example.com" });
-    expect(localStorage.getItem("accessToken")).toBe(token);
-  });
-
-  it("sets user to null when JWT has no email claim", () => {
-    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-    const payload = btoa(JSON.stringify({ sub: "user-id" }));
-    const token = `${header}.${payload}.signature`;
-
-    const state = authReducer(
-      undefined,
-      loginUser.fulfilled({ token }, "request-id", {
-        email: "input@example.com",
-        password: "password",
-      }),
-    );
-
-    expect(state.token).toBe(token);
+    expect(state.token).toBeNull();
     expect(state.user).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isInitialized).toBe(true);
   });
 });

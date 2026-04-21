@@ -67,7 +67,7 @@ describe("EventDetailsPage", () => {
         error: null,
         assistantAnswer: null,
         assistantStatus: "idle",
-        assistantError: null
+        assistantError: null,
       },
     });
 
@@ -116,7 +116,7 @@ describe("EventDetailsPage", () => {
         error: null,
         assistantAnswer: null,
         assistantStatus: "idle",
-        assistantError: null
+        assistantError: null,
       },
     });
 
@@ -176,7 +176,7 @@ describe("EventDetailsPage", () => {
         error: null,
         assistantAnswer: null,
         assistantStatus: "idle",
-        assistantError: null
+        assistantError: null,
       },
     });
 
@@ -214,7 +214,6 @@ describe("EventDetailsPage", () => {
         visibility: "public",
         tags: ["Business", "Tech"],
       }),
-      expect.any(Object),
     );
   });
 
@@ -260,7 +259,7 @@ describe("EventDetailsPage", () => {
         error: null,
         assistantAnswer: null,
         assistantStatus: "idle",
-        assistantError: null
+        assistantError: null,
       },
     });
 
