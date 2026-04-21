@@ -333,6 +333,40 @@ describe('InvitationsService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('revokes invitation for organizer/private event', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    invitationsRepository.findOne.mockResolvedValue({
+      id: 'invitation-id',
+      eventId: 'event-id',
+    });
+
+    invitationsRepository.delete.mockResolvedValue({ affected: 1 });
+
+    await expect(
+      service.revokeInvitation('event-id', 'invitation-id', {
+        sub: 'organizer-id',
+        email: 'organizer@example.com',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(invitationsRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 'invitation-id',
+        eventId: 'event-id',
+      },
+    });
+
+    expect(invitationsRepository.delete).toHaveBeenCalledWith({
+      id: 'invitation-id',
+      eventId: 'event-id',
+    });
+  });
+
   it('throws when invitation to revoke is missing', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',
