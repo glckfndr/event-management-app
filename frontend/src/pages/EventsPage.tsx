@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { selectIsAuthenticated } from "../features/auth/authSelectors";
 import {
   askAssistantQuestion,
   fetchPublicEvents,
@@ -24,9 +25,7 @@ export function EventsPage() {
   const { publicEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
-  const isAuthenticated = useAppSelector(
-    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
-  );
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const {
     searchTerm,
     setSearchTerm,

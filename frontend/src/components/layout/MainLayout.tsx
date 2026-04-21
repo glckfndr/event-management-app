@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { selectIsAuthenticated } from "../../features/auth/authSelectors";
 import { logoutUser } from "../../features/auth/authSlice";
 import { Button } from "../ui/Button";
 
@@ -7,9 +8,7 @@ export function MainLayout() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const isAuthenticated = useAppSelector(
-    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
-  );
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const userEmail = useAppSelector((state) => state.auth.user?.email);
 
   const displayName = userEmail?.split("@")[0] || "User";

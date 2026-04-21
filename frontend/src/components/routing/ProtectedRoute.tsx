@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAppSelector } from "../../app/hooks";
+import {
+  selectIsAuthenticated,
+  selectIsInitialized,
+} from "../../features/auth/authSelectors";
 
 type ProtectedRouteProps = {
   children: ReactNode;
 };
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const isAuthenticated = useAppSelector(
-    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
-  );
-  const isInitialized = useAppSelector(
-    (state) => state.auth.isInitialized ?? true,
-  );
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isInitialized = useAppSelector(selectIsInitialized);
   const location = useLocation();
   // Preserve full location so login can return user to the original target.
   const from = `${location.pathname}${location.search}${location.hash}`;

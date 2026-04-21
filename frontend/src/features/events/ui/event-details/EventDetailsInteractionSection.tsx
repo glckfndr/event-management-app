@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../app/hooks";
+import { selectIsAuthenticated } from "../../../auth/authSelectors";
 import { fetchMyEvents } from "../../model/eventsSlice";
 import { useEventDetailsActions } from "../../model/useEventDetailsActions";
 import type { EventItem } from "../../../../types/event";
@@ -71,9 +72,7 @@ export function EventDetailsInteractionSection({
 }: EventDetailsInteractionSectionProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const isAuthenticated = useAppSelector(
-    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
-  );
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const myEvents = useAppSelector((state) => state.events.myEvents);
   const [isEditing, setIsEditing] = useState(false);
