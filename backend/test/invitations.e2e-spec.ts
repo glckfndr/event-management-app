@@ -455,7 +455,7 @@ describe('Invitations lifecycle (e2e)', () => {
     await request(httpServer)
       .post(`/invitations/${invitationToDeclineId}/decline`)
       .set('Authorization', 'Bearer invitee-token')
-      .expect(201)
+      .expect(200)
       .expect((response) => {
         expect(response.body).toEqual(
           expect.objectContaining({

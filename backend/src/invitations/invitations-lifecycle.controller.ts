@@ -46,8 +46,9 @@ export class InvitationsLifecycleController {
   }
 
   @Post(':invitationId/decline')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Decline invitation for current user' })
-  @ApiResponse({ status: 201, description: 'Invitation declined' })
+  @ApiResponse({ status: 200, description: 'Invitation declined' })
   declineInvitation(
     @Param('invitationId', new ParseUUIDPipe()) invitationId: string,
     @CurrentUser() user: { sub: string; email: string },
