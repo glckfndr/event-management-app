@@ -192,19 +192,11 @@ export class InvitationsService {
         }
       }
 
-      const updatedInvitation =
-        await transactionalInvitationsRepository.findOne({
-          where: {
-            id: invitation.id,
-            invitedUserId: user.sub,
-          },
-        });
-
-      if (!updatedInvitation) {
-        throw new NotFoundException('Invitation not found');
-      }
-
-      return updatedInvitation;
+      return this.getInvitationForInvitedUser(
+        invitation.id,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
     });
   }
 
@@ -237,19 +229,11 @@ export class InvitationsService {
         throw new ConflictException('Invitation is not pending');
       }
 
-      const updatedInvitation =
-        await transactionalInvitationsRepository.findOne({
-          where: {
-            id: invitation.id,
-            invitedUserId: user.sub,
-          },
-        });
-
-      if (!updatedInvitation) {
-        throw new NotFoundException('Invitation not found');
-      }
-
-      return updatedInvitation;
+      return this.getInvitationForInvitedUser(
+        invitation.id,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
     });
   }
 
