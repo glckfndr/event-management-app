@@ -154,13 +154,20 @@ export class InvitationsService {
         transactionalInvitationsRepository,
       );
 
-      if (invitation.status !== EventInvitationStatus.PENDING) {
+      const updateResult = await transactionalInvitationsRepository.update(
+        {
+          id: invitation.id,
+          invitedUserId: user.sub,
+          status: EventInvitationStatus.PENDING,
+        },
+        {
+          status: EventInvitationStatus.ACCEPTED,
+        },
+      );
+
+      if (updateResult.affected !== 1) {
         throw new ConflictException('Invitation is not pending');
       }
-
-      invitation.status = EventInvitationStatus.ACCEPTED;
-      const savedInvitation =
-        await transactionalInvitationsRepository.save(invitation);
 
       const existingParticipant =
         await transactionalParticipantsRepository.findOne({
@@ -185,7 +192,19 @@ export class InvitationsService {
         }
       }
 
-      return savedInvitation;
+      const updatedInvitation =
+        await transactionalInvitationsRepository.findOne({
+          where: {
+            id: invitation.id,
+            invitedUserId: user.sub,
+          },
+        });
+
+      if (!updatedInvitation) {
+        throw new NotFoundException('Invitation not found');
+      }
+
+      return updatedInvitation;
     });
   }
 
@@ -193,17 +212,45 @@ export class InvitationsService {
     invitationId: string,
     user: AuthenticatedUser,
   ): Promise<EventInvitation> {
-    const invitation = await this.getInvitationForInvitedUser(
-      invitationId,
-      user.sub,
-    );
+    return this.invitationsRepository.manager.transaction(async (manager) => {
+      const transactionalInvitationsRepository =
+        manager.getRepository(EventInvitation);
 
-    if (invitation.status !== EventInvitationStatus.PENDING) {
-      throw new ConflictException('Invitation is not pending');
-    }
+      const invitation = await this.getInvitationForInvitedUser(
+        invitationId,
+        user.sub,
+        transactionalInvitationsRepository,
+      );
 
-    invitation.status = EventInvitationStatus.DECLINED;
-    return this.invitationsRepository.save(invitation);
+      const updateResult = await transactionalInvitationsRepository.update(
+        {
+          id: invitation.id,
+          invitedUserId: user.sub,
+          status: EventInvitationStatus.PENDING,
+        },
+        {
+          status: EventInvitationStatus.DECLINED,
+        },
+      );
+
+      if (updateResult.affected !== 1) {
+        throw new ConflictException('Invitation is not pending');
+      }
+
+      const updatedInvitation =
+        await transactionalInvitationsRepository.findOne({
+          where: {
+            id: invitation.id,
+            invitedUserId: user.sub,
+          },
+        });
+
+      if (!updatedInvitation) {
+        throw new NotFoundException('Invitation not found');
+      }
+
+      return updatedInvitation;
+    });
   }
 
   private async assertOrganizerCanManageInvitations(

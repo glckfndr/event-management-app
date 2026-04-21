@@ -128,6 +128,20 @@ describe('Invitations lifecycle (e2e)', () => {
     delete: jest.fn(() => ({ affected: 1 })),
   };
 
+  const transactionManager = {
+    getRepository: jest.fn((entity: unknown) => {
+      if (entity === EventInvitation) {
+        return invitationsRepository;
+      }
+
+      if (entity === Participant) {
+        return participantsRepository;
+      }
+
+      return undefined;
+    }),
+  };
+
   const invitationsRepository = {
     create: jest.fn((payload: Record<string, unknown>) => payload),
     find: jest.fn(
@@ -186,6 +200,30 @@ describe('Invitations lifecycle (e2e)', () => {
 
       return invitations[existingIndex];
     }),
+    update: jest.fn(
+      (
+        where: {
+          id: string;
+          invitedUserId: string;
+          status: EventInvitationStatus;
+        },
+        values: { status: EventInvitationStatus },
+      ) => {
+        const invitation = invitations.find(
+          (row) =>
+            row.id === where.id &&
+            row.invitedUserId === where.invitedUserId &&
+            row.status === where.status,
+        );
+
+        if (!invitation) {
+          return { affected: 0 };
+        }
+
+        invitation.status = values.status;
+        return { affected: 1 };
+      },
+    ),
     delete: jest.fn(({ id, eventId }: { id: string; eventId: string }) => {
       const index = invitations.findIndex(
         (invitation) => invitation.id === id && invitation.eventId === eventId,
@@ -197,6 +235,15 @@ describe('Invitations lifecycle (e2e)', () => {
 
       return { affected: index >= 0 ? 1 : 0 };
     }),
+    manager: {
+      transaction: jest.fn(
+        (
+          callback: (
+            manager: typeof transactionManager,
+          ) => Promise<unknown> | unknown,
+        ) => Promise.resolve(callback(transactionManager)),
+      ),
+    },
   };
 
   const usersRepository = {

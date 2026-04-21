@@ -26,6 +26,7 @@ describe('InvitationsService', () => {
     create: jest.fn(),
     find: jest.fn(),
     findOne: jest.fn(),
+    update: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
     manager: {
@@ -449,6 +450,13 @@ describe('InvitationsService', () => {
     };
 
     invitationsRepository.findOne.mockResolvedValue(invitation);
+    invitationsRepository.update.mockResolvedValue({ affected: 1 });
+    invitationsRepository.findOne
+      .mockResolvedValueOnce(invitation)
+      .mockResolvedValueOnce({
+        ...invitation,
+        status: EventInvitationStatus.ACCEPTED,
+      });
     invitationsRepository.save.mockResolvedValue({
       ...invitation,
       status: EventInvitationStatus.ACCEPTED,
@@ -494,6 +502,8 @@ describe('InvitationsService', () => {
       status: EventInvitationStatus.DECLINED,
     });
 
+    invitationsRepository.update.mockResolvedValue({ affected: 0 });
+
     await expect(
       service.acceptInvitation('invitation-id', {
         sub: 'invitee-id',
@@ -512,11 +522,13 @@ describe('InvitationsService', () => {
       status: EventInvitationStatus.PENDING,
     };
 
-    invitationsRepository.findOne.mockResolvedValue(invitation);
-    invitationsRepository.save.mockResolvedValue({
-      ...invitation,
-      status: EventInvitationStatus.DECLINED,
-    });
+    invitationsRepository.update.mockResolvedValue({ affected: 1 });
+    invitationsRepository.findOne
+      .mockResolvedValueOnce(invitation)
+      .mockResolvedValueOnce({
+        ...invitation,
+        status: EventInvitationStatus.DECLINED,
+      });
 
     const result = await service.declineInvitation('invitation-id', {
       sub: 'invitee-id',
@@ -528,5 +540,22 @@ describe('InvitationsService', () => {
         status: EventInvitationStatus.DECLINED,
       }),
     );
+  });
+
+  it('declineInvitation rejects non-pending invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue({
+      id: 'invitation-id',
+      eventId: 'event-id',
+      invitedUserId: 'invitee-id',
+      status: EventInvitationStatus.ACCEPTED,
+    });
+    invitationsRepository.update.mockResolvedValue({ affected: 0 });
+
+    await expect(
+      service.declineInvitation('invitation-id', {
+        sub: 'invitee-id',
+        email: 'invitee@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 });
