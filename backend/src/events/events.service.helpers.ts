@@ -79,8 +79,10 @@ export function sanitizeParticipantEmails(event: Event): Event {
     },
   );
 
+  const { invitations: _invitations, ...eventWithoutInvitations } = event;
+
   return {
-    ...event,
+    ...eventWithoutInvitations,
     participants: sanitizedParticipants as Participant[],
-  };
+  } as Event;
 }

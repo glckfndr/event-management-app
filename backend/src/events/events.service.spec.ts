@@ -646,6 +646,7 @@ describe('EventsService', () => {
     );
 
     expect(result.participants?.[0]?.user).not.toHaveProperty('email');
+    expect(result).not.toHaveProperty('invitations');
   });
 
   it('findOne throws when unauthenticated user requests private event', async () => {
