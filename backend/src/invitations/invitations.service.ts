@@ -249,9 +249,6 @@ export class InvitationsService {
         id: invitationId,
         invitedUserId,
       },
-      relations: {
-        event: true,
-      },
     });
 
     if (!invitation) {
