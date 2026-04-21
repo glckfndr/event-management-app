@@ -441,6 +441,64 @@ describe('InvitationsService', () => {
     expect(result).toEqual(invitations);
   });
 
+  it('listMyInvitations hides private event details for non-accepted invitations', async () => {
+    const invitations = [
+      {
+        id: 'pending-invitation-id',
+        invitedUserId: 'invitee-id',
+        status: EventInvitationStatus.PENDING,
+        event: {
+          id: 'private-event-id',
+          title: 'Private party',
+          description: 'Sensitive details',
+          location: 'Secret location',
+          capacity: 10,
+          visibility: EventVisibility.PRIVATE,
+        },
+      },
+      {
+        id: 'accepted-invitation-id',
+        invitedUserId: 'invitee-id',
+        status: EventInvitationStatus.ACCEPTED,
+        event: {
+          id: 'private-event-id-2',
+          title: 'Private party accepted',
+          description: 'Visible details',
+          location: 'Visible location',
+          capacity: 20,
+          visibility: EventVisibility.PRIVATE,
+        },
+      },
+    ];
+
+    invitationsRepository.find.mockResolvedValue(invitations);
+
+    const result = await service.listMyInvitations({
+      sub: 'invitee-id',
+      email: 'invitee@example.com',
+    });
+
+    expect(result[0].event).toEqual(
+      expect.objectContaining({
+        id: 'private-event-id',
+        title: 'Private party',
+        visibility: EventVisibility.PRIVATE,
+      }),
+    );
+    expect(result[0].event?.description).toBeUndefined();
+    expect(result[0].event?.location).toBeUndefined();
+    expect(result[0].event?.capacity).toBeUndefined();
+
+    expect(result[1].event).toEqual(
+      expect.objectContaining({
+        id: 'private-event-id-2',
+        description: 'Visible details',
+        location: 'Visible location',
+        capacity: 20,
+      }),
+    );
+  });
+
   it('acceptInvitation updates status and creates participant for pending invitation', async () => {
     const invitation = {
       id: 'invitation-id',

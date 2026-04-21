@@ -165,20 +165,6 @@ describe('Invitations lifecycle (e2e)', () => {
     delete: jest.fn(() => ({ affected: 1 })),
   };
 
-  const transactionManager = {
-    getRepository: jest.fn((entity: unknown) => {
-      if (entity === EventInvitation) {
-        return invitationsRepository;
-      }
-
-      if (entity === Participant) {
-        return participantsRepository;
-      }
-
-      return undefined;
-    }),
-  };
-
   const invitationsRepository = {
     create: jest.fn((payload: Record<string, unknown>) => payload),
     find: jest.fn(
@@ -273,15 +259,28 @@ describe('Invitations lifecycle (e2e)', () => {
       return { affected: index >= 0 ? 1 : 0 };
     }),
     manager: {
-      transaction: jest.fn(
-        (
-          callback: (
-            manager: typeof transactionManager,
-          ) => Promise<unknown> | unknown,
-        ) => Promise.resolve(callback(transactionManager)),
-      ),
+      transaction: jest.fn(),
     },
   };
+
+  const transactionManager = {
+    getRepository: jest.fn((entity: unknown): unknown => {
+      if (entity === EventInvitation) {
+        return invitationsRepository;
+      }
+
+      if (entity === Participant) {
+        return participantsRepository;
+      }
+
+      return undefined;
+    }),
+  };
+
+  invitationsRepository.manager.transaction.mockImplementation(
+    (callback: (manager: typeof transactionManager) => unknown) =>
+      Promise.resolve(callback(transactionManager)),
+  );
 
   const usersRepository = {
     findOne: jest.fn(

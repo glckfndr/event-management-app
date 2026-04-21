@@ -128,7 +128,7 @@ export class InvitationsService {
   }
 
   async listMyInvitations(user: AuthenticatedUser): Promise<EventInvitation[]> {
-    return this.invitationsRepository.find({
+    const invitations = await this.invitationsRepository.find({
       where: { invitedUserId: user.sub },
       order: { createdAt: 'DESC' },
       relations: {
@@ -136,6 +136,10 @@ export class InvitationsService {
         invitedByUser: true,
       },
     });
+
+    return invitations.map((invitation) =>
+      this.sanitizeInvitationForInviteeView(invitation),
+    );
   }
 
   async acceptInvitation(
@@ -287,5 +291,35 @@ export class InvitationsService {
     }
 
     return invitation;
+  }
+
+  private sanitizeInvitationForInviteeView(
+    invitation: EventInvitation,
+  ): EventInvitation {
+    const event = invitation.event;
+
+    if (!event) {
+      return invitation;
+    }
+
+    const shouldHidePrivateDetails =
+      event.visibility === EventVisibility.PRIVATE &&
+      invitation.status !== EventInvitationStatus.ACCEPTED;
+
+    if (!shouldHidePrivateDetails) {
+      return invitation;
+    }
+
+    const {
+      description: _description,
+      location: _location,
+      capacity: _capacity,
+      ...eventPreview
+    } = event;
+
+    return {
+      ...invitation,
+      event: eventPreview as Event,
+    };
   }
 }
