@@ -34,7 +34,7 @@ describe("authSlice", () => {
     expect(localStorage.getItem("accessToken")).toBeNull();
   });
 
-  it("keeps user null when login payload has no user", () => {
+  it("keeps user null when login is rejected as unauthorized", () => {
     const state = authReducer(
       undefined,
       loginUser.rejected(new Error("Unauthorized"), "request-id", {

@@ -9,7 +9,7 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthService, type AuthSessionPayload } from './auth.service';
+import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -21,9 +21,38 @@ import {
   setAuthCookies,
 } from './auth-cookie.helpers';
 
+type RegisterResponse = {
+  id: string;
+  email: string;
+  name: string | null;
+  createdAt: Date;
+};
+
+type SessionUser = {
+  sub: string;
+  email: string;
+};
+
+type SessionPayload = {
+  user: SessionUser;
+  accessToken: string;
+  refreshToken: string;
+  csrfToken: string;
+};
+
+type AuthControllerService = {
+  register: (registerDto: RegisterDto) => Promise<RegisterResponse>;
+  login: (loginDto: LoginDto) => Promise<SessionPayload>;
+  refreshSession: (refreshToken: string) => Promise<SessionPayload>;
+};
+
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private readonly authService: AuthControllerService;
+
+  constructor(authService: AuthService) {
+    this.authService = authService;
+  }
 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
@@ -36,7 +65,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ user: { sub: string; email: string } }> {
-    const session: AuthSessionPayload = await this.authService.login(loginDto);
+    const session: SessionPayload = await this.authService.login(loginDto);
     setAuthCookies(response, session);
 
     return {
@@ -56,7 +85,7 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token is missing.');
     }
 
-    const session: AuthSessionPayload =
+    const session: SessionPayload =
       await this.authService.refreshSession(refreshToken);
     setAuthCookies(response, session);
 
