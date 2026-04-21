@@ -34,5 +34,5 @@ This project intentionally uses both Redux Toolkit and Zustand.
 
 - Redux store setup: `frontend/src/app/store.ts`
 - Redux hooks: `frontend/src/app/hooks.ts`
-- Zustand assistant UI store: `frontend/src/features/events/assistantUiStore.ts`
-- Redux events domain slice: `frontend/src/features/events/eventsSlice.ts`
+- Zustand assistant UI store: `frontend/src/features/events/model/assistantUiStore.ts`
+- Redux events domain slice: `frontend/src/features/events/model/eventsSlice.ts`

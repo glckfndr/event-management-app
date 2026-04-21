@@ -115,9 +115,9 @@ The project is split into a React frontend and a NestJS backend.
 The frontend follows a page + feature + shared-components structure.
 
 - `pages/` contains route-level containers such as `EventsPage`, `EventDetailsPage`, `CreateEventPage`, and `MyEventsPage`
-- `features/` contains domain logic such as Redux slices and custom hooks
-- `components/` contains reusable UI and page-specific presentational components
-- `shared/` contains common utilities such as API helpers, navigation helpers, validation helpers, and styling helpers
+- `features/` contains feature-owned `model`, `ui`, `lib`, and `api` modules
+- `components/` contains reusable cross-feature UI blocks (for example generic UI controls and assistant panel)
+- `shared/` contains only cross-feature primitives (API client and generic utility helpers)
 
 State management is intentionally split:
 
@@ -189,7 +189,7 @@ Larger pages are intentionally decomposed by responsibility.
 
 Examples:
 
-- `EventDetailsPage` coordinates state, while detail summary, actions, edit form, and delete modal are separate components
+- `EventDetailsPage` coordinates state, while detail summary and edit form are split into focused feature components
 - `MyEventsPage` coordinates calendar state, while week header, grid rendering, view toggle, and month navigation are separate components
 
 ### Key Tradeoffs

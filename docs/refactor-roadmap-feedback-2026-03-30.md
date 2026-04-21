@@ -44,9 +44,9 @@ Frontend:
 - frontend/src/App.tsx
 - frontend/src/components/\*\*
 - frontend/src/features/events/\*\*
-- frontend/src/shared/api.ts
-- frontend/src/shared/navigation.ts
-- frontend/src/shared/eventValidation.ts
+- frontend/src/shared/api/client.ts
+- frontend/src/shared/lib/navigation.ts
+- frontend/src/features/events/lib/eventValidation.ts
 
 ## Фази
 
@@ -114,15 +114,15 @@ Frontend:
 
 План змін (мінімально інвазивно):
 
-1. Створити модулі:
+1. Розділити відповідальність на 2 ключові зони:
 
 - backend/src/assistant/assistant-data.service.ts
-- backend/src/assistant/assistant-scope.resolver.ts
-- backend/src/assistant/assistant-fallback.resolver.ts
+- backend/src/assistant/assistant.service.ts (оркестрація + прозорий fallback)
+- backend/src/assistant/assistant-llm.service.ts (класифікація через LLM)
 
 Примітка:
 
-- Допускаються еквівалентні назви (`*.repository.ts`, `resolvers/*`) за умови, що межі відповідальності збережені: data/context, scope, fallback.
+- Допускаються еквівалентні назви (`*.repository.ts`) за умови, що межі відповідальності збережені: data/context і llm-orchestration.
 
 2. Залишити в AssistantService лише сценарій:
 
@@ -149,7 +149,7 @@ Frontend:
 Файли:
 
 - frontend/src/App.tsx
-- frontend/src/shared/navigation.ts
+- frontend/src/shared/lib/navigation.ts
 
 План змін:
 
