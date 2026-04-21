@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Inject,
   Post,
   Req,
   Res,
@@ -10,6 +11,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import type { AuthSessionPayload, SessionUser } from './auth.types';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -28,31 +30,18 @@ type RegisterResponse = {
   createdAt: Date;
 };
 
-type SessionUser = {
-  sub: string;
-  email: string;
-};
-
-type SessionPayload = {
-  user: SessionUser;
-  accessToken: string;
-  refreshToken: string;
-  csrfToken: string;
-};
-
 type AuthControllerService = {
   register: (registerDto: RegisterDto) => Promise<RegisterResponse>;
-  login: (loginDto: LoginDto) => Promise<SessionPayload>;
-  refreshSession: (refreshToken: string) => Promise<SessionPayload>;
+  login: (loginDto: LoginDto) => Promise<AuthSessionPayload>;
+  refreshSession: (refreshToken: string) => Promise<AuthSessionPayload>;
 };
 
 @Controller('auth')
 export class AuthController {
-  private readonly authService: AuthControllerService;
-
-  constructor(authService: AuthService) {
-    this.authService = authService;
-  }
+  constructor(
+    @Inject(AuthService)
+    private readonly authService: AuthControllerService,
+  ) {}
 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
@@ -64,8 +53,8 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ user: { sub: string; email: string } }> {
-    const session: SessionPayload = await this.authService.login(loginDto);
+  ): Promise<{ user: SessionUser }> {
+    const session: AuthSessionPayload = await this.authService.login(loginDto);
     setAuthCookies(response, session);
 
     return {
@@ -78,14 +67,14 @@ export class AuthController {
   async refresh(
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<{ user: { sub: string; email: string } }> {
+  ): Promise<{ user: SessionUser }> {
     const refreshToken = extractRefreshTokenFromRequest(request);
 
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token is missing.');
     }
 
-    const session: SessionPayload =
+    const session: AuthSessionPayload =
       await this.authService.refreshSession(refreshToken);
     setAuthCookies(response, session);
 

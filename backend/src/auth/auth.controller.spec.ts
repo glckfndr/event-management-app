@@ -1,6 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+
+type MockResponse = {
+  cookie: jest.Mock;
+  clearCookie: jest.Mock;
+};
+
+const createResponse = (): MockResponse => ({
+  cookie: jest.fn(),
+  clearCookie: jest.fn(),
+});
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -59,16 +70,14 @@ describe('AuthController', () => {
       csrfToken: 'csrf-token',
     });
 
-    const response = {
-      cookie: jest.fn(),
-    } as any;
+    const response = createResponse();
 
     const dto = {
       email: 'user@example.com',
       password: 'password123',
     };
 
-    const result = await controller.login(dto, response);
+    const result = await controller.login(dto, response as unknown as Response);
 
     expect(authService.login).toHaveBeenCalledWith(dto);
     expect(response.cookie).toHaveBeenCalledTimes(3);
@@ -95,12 +104,13 @@ describe('AuthController', () => {
       headers: {
         cookie: 'refresh_token=refresh-token',
       },
-    } as any;
-    const response = {
-      cookie: jest.fn(),
-    } as any;
+    };
+    const response = createResponse();
 
-    const result = await controller.refresh(request, response);
+    const result = await controller.refresh(
+      request as unknown as Request,
+      response as unknown as Response,
+    );
 
     expect(authService.refreshSession).toHaveBeenCalledWith('refresh-token');
     expect(response.cookie).toHaveBeenCalledTimes(3);
@@ -113,11 +123,11 @@ describe('AuthController', () => {
   });
 
   it('logout clears auth cookies', () => {
-    const response = {
-      clearCookie: jest.fn(),
-    } as any;
+    const response = createResponse();
 
-    expect(controller.logout(response)).toEqual({ success: true });
+    expect(controller.logout(response as unknown as Response)).toEqual({
+      success: true,
+    });
     expect(response.clearCookie).toHaveBeenCalledTimes(3);
   });
 
