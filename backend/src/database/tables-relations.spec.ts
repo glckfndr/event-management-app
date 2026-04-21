@@ -5,6 +5,7 @@ import { User } from '../users/entities/user.entity';
 import { Event } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { Tag } from '../tags/entities/tag.entity';
+import { EventInvitation } from '../invitations/entities/event-invitation.entity';
 
 describe('Database tables relations', () => {
   let dataSource: DataSource;
@@ -12,6 +13,7 @@ describe('Database tables relations', () => {
   let eventsRepository: Repository<Event>;
   let participantsRepository: Repository<Participant>;
   let tagsRepository: Repository<Tag>;
+  let invitationsRepository: Repository<EventInvitation>;
 
   beforeAll(async () => {
     const db = newDb({ autoCreateForeignKeyIndices: true });
@@ -37,7 +39,7 @@ describe('Database tables relations', () => {
 
     dataSource = await db.adapters.createTypeormDataSource({
       type: 'postgres',
-      entities: [User, Event, Participant, Tag],
+      entities: [User, Event, Participant, Tag, EventInvitation],
       synchronize: true,
     });
 
@@ -52,6 +54,7 @@ describe('Database tables relations', () => {
     eventsRepository = dataSource.getRepository(Event);
     participantsRepository = dataSource.getRepository(Participant);
     tagsRepository = dataSource.getRepository(Tag);
+    invitationsRepository = dataSource.getRepository(EventInvitation);
   });
 
   afterAll(async () => {
@@ -63,6 +66,7 @@ describe('Database tables relations', () => {
   beforeEach(async () => {
     // Clear join table first to satisfy FK constraints.
     await dataSource.createQueryBuilder().delete().from('event_tags').execute();
+    await invitationsRepository.createQueryBuilder().delete().execute();
     await participantsRepository.createQueryBuilder().delete().execute();
     await tagsRepository.createQueryBuilder().delete().execute();
     await eventsRepository.createQueryBuilder().delete().execute();
@@ -308,5 +312,88 @@ describe('Database tables relations', () => {
 
     expect(eventsCount).toBe(1);
     expect(participantsCount).toBe(0);
+  });
+
+  it('enforces unique invitation pair eventId+invitedUserId', async () => {
+    const organizer = await usersRepository.save(
+      usersRepository.create({
+        email: 'invite-organizer@example.com',
+        password: 'hashed-password',
+        name: 'Invite Organizer',
+      }),
+    );
+
+    const invitedUser = await usersRepository.save(
+      usersRepository.create({
+        email: 'invite-user@example.com',
+        password: 'hashed-password',
+        name: 'Invite User',
+      }),
+    );
+
+    const event = await eventsRepository.save(
+      eventsRepository.create({
+        title: 'Invitation uniqueness event',
+        eventDate: new Date('2026-08-12T12:00:00.000Z'),
+        organizerId: organizer.id,
+      }),
+    );
+
+    await invitationsRepository.save(
+      invitationsRepository.create({
+        eventId: event.id,
+        invitedByUserId: organizer.id,
+        invitedUserId: invitedUser.id,
+      }),
+    );
+
+    await expect(
+      invitationsRepository.save(
+        invitationsRepository.create({
+          eventId: event.id,
+          invitedByUserId: organizer.id,
+          invitedUserId: invitedUser.id,
+        }),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('cascades event deletion to invitations', async () => {
+    const organizer = await usersRepository.save(
+      usersRepository.create({
+        email: 'event-delete-organizer@example.com',
+        password: 'hashed-password',
+        name: 'Event Delete Organizer',
+      }),
+    );
+
+    const invitedUser = await usersRepository.save(
+      usersRepository.create({
+        email: 'event-delete-invitee@example.com',
+        password: 'hashed-password',
+        name: 'Event Delete Invitee',
+      }),
+    );
+
+    const event = await eventsRepository.save(
+      eventsRepository.create({
+        title: 'Event invitation cascade test',
+        eventDate: new Date('2026-09-01T12:00:00.000Z'),
+        organizerId: organizer.id,
+      }),
+    );
+
+    await invitationsRepository.save(
+      invitationsRepository.create({
+        eventId: event.id,
+        invitedByUserId: organizer.id,
+        invitedUserId: invitedUser.id,
+      }),
+    );
+
+    await eventsRepository.delete({ id: event.id });
+
+    const invitationsCount = await invitationsRepository.count();
+    expect(invitationsCount).toBe(0);
   });
 });

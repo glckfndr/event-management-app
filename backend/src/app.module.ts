@@ -15,6 +15,7 @@ import { EventsModule } from './events/events.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { AssistantModule } from './assistant/assistant.module';
 import { CsrfProtectionGuard } from './auth/csrf-protection.guard';
+import { InvitationsModule } from './invitations/invitations.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CsrfProtectionGuard } from './auth/csrf-protection.guard';
     UsersModule,
     EventsModule,
     AssistantModule,
+    InvitationsModule,
   ],
   controllers: [AppController],
   providers: [
