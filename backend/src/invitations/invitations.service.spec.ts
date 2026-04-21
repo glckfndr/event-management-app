@@ -141,6 +141,71 @@ describe('InvitationsService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('rejects self-invite with 400', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    await expect(
+      service.createInvitation(
+        'event-id',
+        { invitedUserId: 'organizer-id' },
+        { sub: 'organizer-id', email: 'organizer@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(usersRepository.findOne).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when invited user does not exist', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    usersRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.createInvitation(
+        'event-id',
+        { invitedUserId: 'missing-user-id' },
+        { sub: 'organizer-id', email: 'organizer@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns 409 when invited user is already a participant', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      organizerId: 'organizer-id',
+      visibility: EventVisibility.PRIVATE,
+    });
+
+    usersRepository.findOne.mockResolvedValue({
+      id: 'invitee-id',
+      email: 'invitee@example.com',
+    });
+
+    participantsRepository.findOne.mockResolvedValue({
+      id: 'participant-id',
+      eventId: 'event-id',
+      userId: 'invitee-id',
+    });
+
+    await expect(
+      service.createInvitation(
+        'event-id',
+        { invitedUserId: 'invitee-id' },
+        { sub: 'organizer-id', email: 'organizer@example.com' },
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(invitationsRepository.findOne).not.toHaveBeenCalled();
+  });
+
   it('rejects duplicate invitation pair', async () => {
     eventsRepository.findOne.mockResolvedValue({
       id: 'event-id',
