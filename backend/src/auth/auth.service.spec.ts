@@ -17,7 +17,7 @@ describe('AuthService', () => {
     findByEmailWithPassword: jest.Mock;
     createUser: jest.Mock;
   };
-  let jwtService: { signAsync: jest.Mock };
+  let jwtService: { signAsync: jest.Mock; verifyAsync: jest.Mock };
 
   beforeEach(async () => {
     usersService = {
@@ -28,6 +28,7 @@ describe('AuthService', () => {
 
     jwtService = {
       signAsync: jest.fn(),
+      verifyAsync: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -121,7 +122,7 @@ describe('AuthService', () => {
     expect(compare).toHaveBeenCalledWith('wrong-password', 'hashed-password');
   });
 
-  it('login returns bearer token for valid credentials', async () => {
+  it('login returns session payload for valid credentials', async () => {
     usersService.findByEmailWithPassword.mockResolvedValue({
       id: 'user-id',
       email: 'user@example.com',
@@ -129,20 +130,88 @@ describe('AuthService', () => {
     });
 
     (compare as jest.Mock).mockResolvedValue(true);
-    jwtService.signAsync.mockResolvedValue('jwt-token');
+    jwtService.signAsync
+      .mockResolvedValueOnce('access-token')
+      .mockResolvedValueOnce('refresh-token');
 
     const result = await service.login({
       email: 'user@example.com',
       password: 'password123',
     });
 
-    expect(jwtService.signAsync).toHaveBeenCalledWith({
+    expect(jwtService.signAsync).toHaveBeenNthCalledWith(1, {
       sub: 'user-id',
       email: 'user@example.com',
     });
+    expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+      2,
+      {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      expect.objectContaining({
+        secret: expect.any(String),
+        expiresIn: expect.any(String),
+      }),
+    );
     expect(result).toEqual({
-      accessToken: 'jwt-token',
-      tokenType: 'Bearer',
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      csrfToken: expect.any(String),
     });
+  });
+
+  it('refreshSession reissues tokens for valid refresh token', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 'user-id',
+      email: 'user@example.com',
+    });
+    usersService.findByEmail.mockResolvedValue({
+      id: 'user-id',
+      email: 'user@example.com',
+    });
+    jwtService.signAsync
+      .mockResolvedValueOnce('access-token')
+      .mockResolvedValueOnce('refresh-token');
+
+    const result = await service.refreshSession('refresh-token');
+
+    expect(jwtService.verifyAsync).toHaveBeenCalledWith(
+      'refresh-token',
+      expect.objectContaining({ secret: expect.any(String) }),
+    );
+    expect(result).toEqual({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      csrfToken: expect.any(String),
+    });
+  });
+
+  it('refreshSession throws UnauthorizedException for invalid token', async () => {
+    jwtService.verifyAsync.mockRejectedValue(new Error('invalid token'));
+
+    await expect(service.refreshSession('bad-token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
+  it('refreshSession throws UnauthorizedException when user is missing', async () => {
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 'user-id',
+      email: 'user@example.com',
+    });
+    usersService.findByEmail.mockResolvedValue(null);
+
+    await expect(
+      service.refreshSession('refresh-token'),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

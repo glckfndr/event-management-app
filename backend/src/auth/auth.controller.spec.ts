@@ -4,12 +4,17 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: { register: jest.Mock; login: jest.Mock };
+  let authService: {
+    register: jest.Mock;
+    login: jest.Mock;
+    refreshSession: jest.Mock;
+  };
 
   beforeEach(async () => {
     authService = {
       register: jest.fn(),
       login: jest.fn(),
+      refreshSession: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -44,16 +49,76 @@ describe('AuthController', () => {
   });
 
   it('login delegates to authService.login', async () => {
-    authService.login.mockResolvedValue({ accessToken: 'token' });
+    authService.login.mockResolvedValue({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      csrfToken: 'csrf-token',
+    });
+
+    const response = {
+      cookie: jest.fn(),
+    } as any;
 
     const dto = {
       email: 'user@example.com',
       password: 'password123',
     };
 
-    await controller.login(dto);
+    const result = await controller.login(dto, response);
 
     expect(authService.login).toHaveBeenCalledWith(dto);
+    expect(response.cookie).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+    });
+  });
+
+  it('refresh delegates to authService.refreshSession', async () => {
+    authService.refreshSession.mockResolvedValue({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      csrfToken: 'csrf-token',
+    });
+
+    const request = {
+      headers: {
+        cookie: 'refresh_token=refresh-token',
+      },
+    } as any;
+    const response = {
+      cookie: jest.fn(),
+    } as any;
+
+    const result = await controller.refresh(request, response);
+
+    expect(authService.refreshSession).toHaveBeenCalledWith('refresh-token');
+    expect(response.cookie).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({
+      user: {
+        sub: 'user-id',
+        email: 'user@example.com',
+      },
+    });
+  });
+
+  it('logout clears auth cookies', () => {
+    const response = {
+      clearCookie: jest.fn(),
+    } as any;
+
+    expect(controller.logout(response)).toEqual({ success: true });
+    expect(response.clearCookie).toHaveBeenCalledTimes(3);
   });
 
   it('me returns request.user payload', () => {
