@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Post,
@@ -34,8 +35,9 @@ export class InvitationsLifecycleController {
   }
 
   @Post(':invitationId/accept')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Accept invitation for current user' })
-  @ApiResponse({ status: 201, description: 'Invitation accepted' })
+  @ApiResponse({ status: 200, description: 'Invitation accepted' })
   acceptInvitation(
     @Param('invitationId', new ParseUUIDPipe()) invitationId: string,
     @CurrentUser() user: { sub: string; email: string },
