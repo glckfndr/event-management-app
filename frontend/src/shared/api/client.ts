@@ -1,4 +1,7 @@
-import axios from "axios";
+import axios, {
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 const rawApiUrl = import.meta.env.VITE_API_URL;
 // Local backend URL is used when VITE_API_URL is not provided.
@@ -43,12 +46,21 @@ api.interceptors.request.use((config) => {
 let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
+type RetryAwareRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  skipAuthRefresh?: boolean;
+};
+
+type RefreshControlConfig = AxiosRequestConfig & {
+  skipAuthRefresh?: boolean;
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const statusCode = error?.response?.status;
     const originalRequest = error?.config as
-      | (typeof error.config & { _retry?: boolean; skipAuthRefresh?: boolean })
+      | RetryAwareRequestConfig
       | undefined;
 
     if (!originalRequest || statusCode !== 401) {
@@ -56,6 +68,7 @@ api.interceptors.response.use(
     }
 
     const requestUrl = String(originalRequest.url ?? "");
+    const hasSessionSignal = Boolean(getCookieValue(CSRF_COOKIE_NAME));
     const isAuthEndpoint =
       requestUrl.includes("/auth/login") ||
       requestUrl.includes("/auth/register") ||
@@ -65,6 +78,7 @@ api.interceptors.response.use(
     if (
       originalRequest._retry ||
       originalRequest.skipAuthRefresh ||
+      !hasSessionSignal ||
       isAuthEndpoint
     ) {
       throw error;
@@ -74,10 +88,12 @@ api.interceptors.response.use(
 
     if (!isRefreshing) {
       isRefreshing = true;
+      const refreshConfig: RefreshControlConfig = {
+        skipAuthRefresh: true,
+      };
+
       refreshPromise = api
-        .post("/auth/refresh", {}, {
-          skipAuthRefresh: true,
-        } as any)
+        .post("/auth/refresh", {}, refreshConfig)
         .then(() => undefined)
         .finally(() => {
           isRefreshing = false;
