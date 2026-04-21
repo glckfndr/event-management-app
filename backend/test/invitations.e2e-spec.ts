@@ -31,6 +31,43 @@ type InvitationRecord = {
   createdAt: Date;
 };
 
+type TestAuthUser = {
+  sub: string;
+  email: string;
+};
+
+function resolveUserFromToken(
+  token: string | undefined,
+  users: {
+    organizer: { id: string; email: string };
+    invitee: { id: string; email: string };
+    stranger: { id: string; email: string };
+  },
+): TestAuthUser | undefined {
+  if (token === 'organizer-token') {
+    return {
+      sub: users.organizer.id,
+      email: users.organizer.email,
+    };
+  }
+
+  if (token === 'invitee-token') {
+    return {
+      sub: users.invitee.id,
+      email: users.invitee.email,
+    };
+  }
+
+  if (token === 'stranger-token') {
+    return {
+      sub: users.stranger.id,
+      email: users.stranger.email,
+    };
+  }
+
+  return undefined;
+}
+
 describe('Invitations lifecycle (e2e)', () => {
   let app: INestApplication;
 
@@ -263,7 +300,7 @@ describe('Invitations lifecycle (e2e)', () => {
     canActivate(context: ExecutionContext): boolean {
       const requestContext = context.switchToHttp().getRequest<{
         headers: Record<string, string | undefined>;
-        user?: { sub: string; email: string };
+        user?: TestAuthUser;
       }>();
 
       const authorization = requestContext.headers.authorization;
@@ -271,27 +308,9 @@ describe('Invitations lifecycle (e2e)', () => {
         ? authorization.slice(7)
         : undefined;
 
-      if (token === 'organizer-token') {
-        requestContext.user = {
-          sub: users.organizer.id,
-          email: users.organizer.email,
-        };
-        return true;
-      }
-
-      if (token === 'invitee-token') {
-        requestContext.user = {
-          sub: users.invitee.id,
-          email: users.invitee.email,
-        };
-        return true;
-      }
-
-      if (token === 'stranger-token') {
-        requestContext.user = {
-          sub: users.stranger.id,
-          email: users.stranger.email,
-        };
+      const resolvedUser = resolveUserFromToken(token, users);
+      if (resolvedUser) {
+        requestContext.user = resolvedUser;
         return true;
       }
 
@@ -341,7 +360,7 @@ describe('Invitations lifecycle (e2e)', () => {
       (
         req: {
           headers: Record<string, string | string[] | undefined>;
-          user?: { sub: string; email: string };
+          user?: TestAuthUser;
         },
         _res: unknown,
         next: () => void,
@@ -352,26 +371,7 @@ describe('Invitations lifecycle (e2e)', () => {
             ? authHeader.slice(7)
             : undefined;
 
-        if (token === 'organizer-token') {
-          req.user = {
-            sub: users.organizer.id,
-            email: users.organizer.email,
-          };
-        }
-
-        if (token === 'invitee-token') {
-          req.user = {
-            sub: users.invitee.id,
-            email: users.invitee.email,
-          };
-        }
-
-        if (token === 'stranger-token') {
-          req.user = {
-            sub: users.stranger.id,
-            email: users.stranger.email,
-          };
-        }
+        req.user = resolveUserFromToken(token, users);
 
         next();
       },
