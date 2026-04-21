@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -31,7 +32,7 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Invite user to private event (organizer only)' })
   @ApiResponse({ status: 201, description: 'Invitation created successfully' })
   createInvitation(
-    @Param('eventId') eventId: string,
+    @Param('eventId', new ParseUUIDPipe()) eventId: string,
     @Body() dto: CreateInvitationDto,
     @CurrentUser() user: { sub: string; email: string },
   ): Promise<EventInvitation> {
@@ -42,7 +43,7 @@ export class InvitationsController {
   @ApiOperation({ summary: 'List private event invitations (organizer only)' })
   @ApiResponse({ status: 200, description: 'Invitations list' })
   listInvitations(
-    @Param('eventId') eventId: string,
+    @Param('eventId', new ParseUUIDPipe()) eventId: string,
     @CurrentUser() user: { sub: string; email: string },
   ): Promise<EventInvitation[]> {
     return this.invitationsService.listInvitationsForEvent(eventId, user);
@@ -53,8 +54,8 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Revoke invitation (organizer only)' })
   @ApiResponse({ status: 204, description: 'Invitation revoked successfully' })
   async revokeInvitation(
-    @Param('eventId') eventId: string,
-    @Param('invitationId') invitationId: string,
+    @Param('eventId', new ParseUUIDPipe()) eventId: string,
+    @Param('invitationId', new ParseUUIDPipe()) invitationId: string,
     @CurrentUser() user: { sub: string; email: string },
   ): Promise<void> {
     await this.invitationsService.revokeInvitation(eventId, invitationId, user);
