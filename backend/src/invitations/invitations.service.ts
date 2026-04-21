@@ -12,7 +12,10 @@ import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthenticatedUser } from '../common/types/authenticated-request';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
-import { EventInvitation } from './entities/event-invitation.entity';
+import {
+  EventInvitation,
+  EventInvitationStatus,
+} from './entities/event-invitation.entity';
 
 @Injectable()
 export class InvitationsService {
@@ -124,6 +127,75 @@ export class InvitationsService {
     });
   }
 
+  async listMyInvitations(user: AuthenticatedUser): Promise<EventInvitation[]> {
+    return this.invitationsRepository.find({
+      where: { invitedUserId: user.sub },
+      order: { createdAt: 'DESC' },
+      relations: {
+        event: { organizer: true, tags: true },
+        invitedByUser: true,
+      },
+    });
+  }
+
+  async acceptInvitation(
+    invitationId: string,
+    user: AuthenticatedUser,
+  ): Promise<EventInvitation> {
+    const invitation = await this.getInvitationForInvitedUser(
+      invitationId,
+      user.sub,
+    );
+
+    if (invitation.status !== EventInvitationStatus.PENDING) {
+      throw new ConflictException('Invitation is not pending');
+    }
+
+    invitation.status = EventInvitationStatus.ACCEPTED;
+    const savedInvitation = await this.invitationsRepository.save(invitation);
+
+    const existingParticipant = await this.participantsRepository.findOne({
+      where: {
+        eventId: invitation.eventId,
+        userId: user.sub,
+      },
+    });
+
+    if (!existingParticipant) {
+      const participant = this.participantsRepository.create({
+        eventId: invitation.eventId,
+        userId: user.sub,
+      });
+
+      try {
+        await this.participantsRepository.save(participant);
+      } catch (error: unknown) {
+        if (!this.isUniqueViolationError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    return savedInvitation;
+  }
+
+  async declineInvitation(
+    invitationId: string,
+    user: AuthenticatedUser,
+  ): Promise<EventInvitation> {
+    const invitation = await this.getInvitationForInvitedUser(
+      invitationId,
+      user.sub,
+    );
+
+    if (invitation.status !== EventInvitationStatus.PENDING) {
+      throw new ConflictException('Invitation is not pending');
+    }
+
+    invitation.status = EventInvitationStatus.DECLINED;
+    return this.invitationsRepository.save(invitation);
+  }
+
   private async assertOrganizerCanManageInvitations(
     eventId: string,
     userId: string,
@@ -154,5 +226,26 @@ export class InvitationsService {
 
     const driverError = error.driverError as { code?: string } | undefined;
     return driverError?.code === '23505';
+  }
+
+  private async getInvitationForInvitedUser(
+    invitationId: string,
+    invitedUserId: string,
+  ): Promise<EventInvitation> {
+    const invitation = await this.invitationsRepository.findOne({
+      where: {
+        id: invitationId,
+        invitedUserId,
+      },
+      relations: {
+        event: true,
+      },
+    });
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found');
+    }
+
+    return invitation;
   }
 }

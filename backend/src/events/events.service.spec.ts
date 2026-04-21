@@ -630,7 +630,12 @@ describe('EventsService', () => {
     expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
     expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
-      relations: { organizer: true, participants: { user: true }, tags: true },
+      relations: {
+        organizer: true,
+        participants: { user: true },
+        invitations: true,
+        tags: true,
+      },
     });
 
     expect(result.participants?.[0]?.user).toEqual(
@@ -707,7 +712,12 @@ describe('EventsService', () => {
     expect(eventsRepository.findOne).toHaveBeenCalledTimes(1);
     expect(eventsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'event-id' },
-      relations: { organizer: true, participants: { user: true }, tags: true },
+      relations: {
+        organizer: true,
+        participants: { user: true },
+        invitations: true,
+        tags: true,
+      },
     });
 
     expect(result.participants?.[0]?.user).not.toHaveProperty('email');
@@ -719,6 +729,7 @@ describe('EventsService', () => {
       visibility: 'private',
       organizerId: 'organizer-id',
       participants: [{ userId: 'participant-id' }],
+      invitations: [],
     });
 
     await expect(
@@ -727,6 +738,32 @@ describe('EventsService', () => {
         email: 'another@example.com',
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('findOne returns private event to user with accepted invitation', async () => {
+    eventsRepository.findOne.mockResolvedValue({
+      id: 'event-id',
+      visibility: 'private',
+      organizerId: 'organizer-id',
+      participants: [],
+      invitations: [
+        {
+          invitedUserId: 'invited-user-id',
+          status: 'accepted',
+        },
+      ],
+    });
+
+    const result = await service.findOne('event-id', {
+      sub: 'invited-user-id',
+      email: 'invited@example.com',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        id: 'event-id',
+      }),
+    );
   });
 
   it('joinEvent throws when capacity is reached', async () => {

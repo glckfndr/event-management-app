@@ -10,7 +10,10 @@ import { QueryFailedError } from 'typeorm';
 import { Event, EventVisibility } from '../events/entities/event.entity';
 import { Participant } from '../participants/entities/participant.entity';
 import { User } from '../users/entities/user.entity';
-import { EventInvitation } from './entities/event-invitation.entity';
+import {
+  EventInvitation,
+  EventInvitationStatus,
+} from './entities/event-invitation.entity';
 import { InvitationsService } from './invitations.service';
 
 describe('InvitationsService', () => {
@@ -30,6 +33,8 @@ describe('InvitationsService', () => {
 
   const participantsRepository = {
     findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
   };
 
   const usersRepository = {
@@ -247,11 +252,14 @@ describe('InvitationsService', () => {
       invitedUserId: 'invitee-id',
     };
 
+    const driverError = new Error('duplicate invitation') as Error & {
+      code: string;
+    };
+    driverError.code = '23505';
+
     invitationsRepository.create.mockReturnValue(invitationPayload);
     invitationsRepository.save.mockRejectedValue(
-      new QueryFailedError('insert into event_invitations', [], {
-        code: '23505',
-      }),
+      new QueryFailedError('insert into event_invitations', [], driverError),
     );
 
     await expect(
@@ -382,5 +390,118 @@ describe('InvitationsService', () => {
         email: 'organizer@example.com',
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('listMyInvitations returns current user invitations with relations and ordering', async () => {
+    const invitations = [{ id: 'invitation-id', invitedUserId: 'invitee-id' }];
+    invitationsRepository.find.mockResolvedValue(invitations);
+
+    const result = await service.listMyInvitations({
+      sub: 'invitee-id',
+      email: 'invitee@example.com',
+    });
+
+    expect(invitationsRepository.find).toHaveBeenCalledWith({
+      where: { invitedUserId: 'invitee-id' },
+      order: { createdAt: 'DESC' },
+      relations: {
+        event: { organizer: true, tags: true },
+        invitedByUser: true,
+      },
+    });
+    expect(result).toEqual(invitations);
+  });
+
+  it('acceptInvitation updates status and creates participant for pending invitation', async () => {
+    const invitation = {
+      id: 'invitation-id',
+      eventId: 'event-id',
+      invitedUserId: 'invitee-id',
+      status: EventInvitationStatus.PENDING,
+    };
+
+    invitationsRepository.findOne.mockResolvedValue(invitation);
+    invitationsRepository.save.mockResolvedValue({
+      ...invitation,
+      status: EventInvitationStatus.ACCEPTED,
+    });
+    participantsRepository.findOne.mockResolvedValue(null);
+    participantsRepository.create.mockReturnValue({
+      eventId: 'event-id',
+      userId: 'invitee-id',
+    });
+    participantsRepository.save.mockResolvedValue({
+      id: 'participant-id',
+      eventId: 'event-id',
+      userId: 'invitee-id',
+    });
+
+    const result = await service.acceptInvitation('invitation-id', {
+      sub: 'invitee-id',
+      email: 'invitee@example.com',
+    });
+
+    expect(invitationsRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 'invitation-id',
+        invitedUserId: 'invitee-id',
+      },
+      relations: {
+        event: true,
+      },
+    });
+    expect(participantsRepository.create).toHaveBeenCalledWith({
+      eventId: 'event-id',
+      userId: 'invitee-id',
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: EventInvitationStatus.ACCEPTED,
+      }),
+    );
+  });
+
+  it('acceptInvitation rejects non-pending invitation', async () => {
+    invitationsRepository.findOne.mockResolvedValue({
+      id: 'invitation-id',
+      eventId: 'event-id',
+      invitedUserId: 'invitee-id',
+      status: EventInvitationStatus.DECLINED,
+    });
+
+    await expect(
+      service.acceptInvitation('invitation-id', {
+        sub: 'invitee-id',
+        email: 'invitee@example.com',
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+
+    expect(participantsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('declineInvitation updates status for pending invitation', async () => {
+    const invitation = {
+      id: 'invitation-id',
+      eventId: 'event-id',
+      invitedUserId: 'invitee-id',
+      status: EventInvitationStatus.PENDING,
+    };
+
+    invitationsRepository.findOne.mockResolvedValue(invitation);
+    invitationsRepository.save.mockResolvedValue({
+      ...invitation,
+      status: EventInvitationStatus.DECLINED,
+    });
+
+    const result = await service.declineInvitation('invitation-id', {
+      sub: 'invitee-id',
+      email: 'invitee@example.com',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: EventInvitationStatus.DECLINED,
+      }),
+    );
   });
 });

@@ -75,7 +75,12 @@ export class EventsService {
 
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
     const relations = user
-      ? { organizer: true, participants: { user: true }, tags: true }
+      ? {
+          organizer: true,
+          participants: { user: true },
+          invitations: true,
+          tags: true,
+        }
       : { organizer: true, participants: true, tags: true };
 
     const event = await this.eventsRepository.findOne({
