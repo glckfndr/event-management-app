@@ -43,9 +43,8 @@ Current examples include:
 - `frontend/src/components/ui/DatePickerInput.stories.tsx`
 - `frontend/src/components/ui/VisibilityFieldset.stories.tsx`
 - `frontend/src/components/assistant/AssistantPanel.stories.tsx`
-- `frontend/src/components/event-details/EventCard.stories.tsx`
-- `frontend/src/components/event-details/DeleteConfirmModal.stories.tsx`
-- `frontend/src/components/event-form/EventTagsField.stories.tsx`
+- `frontend/src/features/events/ui/event-details/EventCard.stories.tsx`
+- `frontend/src/features/events/ui/event-form/EventTagsField.stories.tsx`
 
 ## Troubleshooting
 
