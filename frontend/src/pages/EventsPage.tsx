@@ -24,7 +24,9 @@ export function EventsPage() {
   const { publicEvents, status, error } = useAppSelector(
     (state) => state.events,
   );
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(
+    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
+  );
   const {
     searchTerm,
     setSearchTerm,
@@ -40,7 +42,7 @@ export function EventsPage() {
   }, [dispatch]);
 
   const handleAssistantSubmit = async (question: string) => {
-    if (!token) {
+    if (!isAuthenticated) {
       return;
     }
 
@@ -59,7 +61,7 @@ export function EventsPage() {
         onSearchTermChange={setSearchTerm}
       />
 
-      {token ? (
+      {isAuthenticated ? (
         <AssistantPanel
           suggestedQuestions={ASSISTANT_QUESTION_SUGGESTIONS}
           onSubmit={handleAssistantSubmit}
@@ -87,4 +89,3 @@ export function EventsPage() {
     </div>
   );
 }
-

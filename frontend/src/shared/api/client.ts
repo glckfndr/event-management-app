@@ -6,8 +6,86 @@ const apiUrl = rawApiUrl?.trim() || "http://localhost:3001";
 
 export const api = axios.create({
   baseURL: apiUrl,
+  withCredentials: true,
 });
 
-export const getAuthHeader = (token: string | null) =>
-  // Keep call sites simple by returning undefined when no token exists.
-  token ? { Authorization: `Bearer ${token}` } : undefined;
+const CSRF_COOKIE_NAME = "csrf_token";
+const CSRF_HEADER_NAME = "x-csrf-token";
+const SAFE_METHODS = new Set(["get", "head", "options"]);
+
+const getCookieValue = (cookieName: string): string | null => {
+  const escapedCookieName = cookieName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(?:^|; )${escapedCookieName}=([^;]*)`);
+  const match = document.cookie.match(regex);
+
+  if (!match) {
+    return null;
+  }
+
+  return decodeURIComponent(match[1]);
+};
+
+api.interceptors.request.use((config) => {
+  const method = (config.method ?? "get").toLowerCase();
+
+  if (!SAFE_METHODS.has(method)) {
+    const csrfToken = getCookieValue(CSRF_COOKIE_NAME);
+
+    if (csrfToken) {
+      config.headers = config.headers ?? {};
+      config.headers[CSRF_HEADER_NAME] = csrfToken;
+    }
+  }
+
+  return config;
+});
+
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const statusCode = error?.response?.status;
+    const originalRequest = error?.config as
+      | (typeof error.config & { _retry?: boolean; skipAuthRefresh?: boolean })
+      | undefined;
+
+    if (!originalRequest || statusCode !== 401) {
+      throw error;
+    }
+
+    const requestUrl = String(originalRequest.url ?? "");
+    const isAuthEndpoint =
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/auth/register") ||
+      requestUrl.includes("/auth/refresh") ||
+      requestUrl.includes("/auth/logout");
+
+    if (
+      originalRequest._retry ||
+      originalRequest.skipAuthRefresh ||
+      isAuthEndpoint
+    ) {
+      throw error;
+    }
+
+    originalRequest._retry = true;
+
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = api
+        .post("/auth/refresh", {}, {
+          skipAuthRefresh: true,
+        } as any)
+        .then(() => undefined)
+        .finally(() => {
+          isRefreshing = false;
+          refreshPromise = null;
+        });
+    }
+
+    await refreshPromise;
+    return api(originalRequest);
+  },
+);

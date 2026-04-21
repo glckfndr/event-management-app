@@ -7,12 +7,21 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(
+    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
+  );
+  const isInitialized = useAppSelector(
+    (state) => state.auth.isInitialized ?? true,
+  );
   const location = useLocation();
   // Preserve full location so login can return user to the original target.
   const from = `${location.pathname}${location.search}${location.hash}`;
 
-  if (!token) {
+  if (!isInitialized) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from }} />;
   }
 

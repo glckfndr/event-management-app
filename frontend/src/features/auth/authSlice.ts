@@ -2,12 +2,15 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { api } from "../../shared/api/client";
 
 type User = {
+  sub?: string;
   email: string;
 };
 
 type AuthState = {
   token: string | null;
   user: User | null;
+  isAuthenticated?: boolean;
+  isInitialized?: boolean;
   status: "idle" | "loading" | "failed";
   error: string | null;
 };
@@ -23,48 +26,11 @@ type RegisterPayload = {
   password: string;
 };
 
-const tokenFromStorage = localStorage.getItem("accessToken");
-
-const decodeBase64Url = (value: string) => {
-  const normalizedValue = value.replace(/-/g, "+").replace(/_/g, "/");
-  const paddingLength = (4 - (normalizedValue.length % 4)) % 4;
-  const paddedValue = normalizedValue.padEnd(
-    normalizedValue.length + paddingLength,
-    "=",
-  );
-
-  return atob(paddedValue);
-};
-
-const getUserFromToken = (token: string | null): User | null => {
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const base64Payload = token.split(".")[1];
-
-    if (!base64Payload) {
-      return null;
-    }
-
-    const decoded = JSON.parse(decodeBase64Url(base64Payload)) as {
-      email?: string;
-    };
-
-    if (!decoded.email) {
-      return null;
-    }
-
-    return { email: decoded.email };
-  } catch {
-    return null;
-  }
-};
-
 const initialState: AuthState = {
-  token: tokenFromStorage,
-  user: getUserFromToken(tokenFromStorage),
+  token: null,
+  user: null,
+  isAuthenticated: false,
+  isInitialized: false,
   status: "idle",
   error: null,
 };
@@ -73,15 +39,21 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (payload: LoginPayload) => {
     const response = await api.post<{
-      accessToken: string;
-      tokenType: "Bearer";
+      user: User;
     }>("/auth/login", payload);
 
-    return {
-      token: response.data.accessToken,
-    };
+    return response.data;
   },
 );
+
+export const fetchSession = createAsyncThunk("auth/fetchSession", async () => {
+  const response = await api.get<User>("/auth/me");
+  return response.data;
+});
+
+export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
+  await api.post("/auth/logout");
+});
 
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
@@ -94,13 +66,7 @@ export const registerUser = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {
-    logout(state) {
-      state.token = null;
-      state.user = null;
-      localStorage.removeItem("accessToken");
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(loginUser.pending, (state) => {
@@ -109,13 +75,18 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "idle";
-        state.token = action.payload.token;
-        state.user = getUserFromToken(action.payload.token);
-        localStorage.setItem("accessToken", action.payload.token);
+        state.token = null;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+        state.isInitialized = true;
       })
       .addCase(loginUser.rejected, (state) => {
         state.status = "failed";
         state.error = "Invalid email or password";
+        state.token = null;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.isInitialized = true;
       })
       .addCase(registerUser.pending, (state) => {
         state.status = "loading";
@@ -127,9 +98,36 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state) => {
         state.status = "failed";
         state.error = "Registration failed";
+      })
+      .addCase(fetchSession.pending, (state) => {
+        if (!state.isInitialized) {
+          state.status = "loading";
+        }
+      })
+      .addCase(fetchSession.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.token = null;
+        state.user = action.payload;
+        state.isAuthenticated = true;
+        state.isInitialized = true;
+        state.error = null;
+      })
+      .addCase(fetchSession.rejected, (state) => {
+        state.status = "idle";
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.isInitialized = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.status = "idle";
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.isInitialized = true;
+        state.error = null;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
 export const authReducer = authSlice.reducer;

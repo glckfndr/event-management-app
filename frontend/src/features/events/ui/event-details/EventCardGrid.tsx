@@ -13,17 +13,19 @@ export interface EventCardGridProps {
 export function EventCardGrid({ events }: EventCardGridProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(
+    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
+  );
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const myEvents = useAppSelector((state) => state.events.myEvents);
   const { actionError, busyEventId, handleJoin, handleLeave } =
-    useEventParticipationActions({ token, navigate });
+    useEventParticipationActions({ isAuthenticated, navigate });
 
   useEffect(() => {
-    if (token) {
+    if (isAuthenticated) {
       void dispatch(fetchMyEvents());
     }
-  }, [dispatch, token]);
+  }, [dispatch, isAuthenticated]);
 
   // Fast lookup for join-state rendering on each card.
   const joinedEventIds = useMemo(
@@ -40,7 +42,7 @@ export function EventCardGrid({ events }: EventCardGridProps) {
           <EventCard
             key={event.id}
             event={event}
-            token={token}
+            isAuthenticated={isAuthenticated}
             isOrganizer={
               Boolean(currentUserEmail) &&
               currentUserEmail === event.organizer?.email

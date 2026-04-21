@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import type { RootState } from "../../../app/store";
-import { logout } from "../../auth/authSlice";
+import { logoutUser } from "../../auth/authSlice";
 import type { CreateEventPayload, EventItem } from "../../../types/event";
 import {
   askAssistantQuestionRequest,
@@ -39,12 +38,8 @@ const initialState: EventsState = {
 
 export const askAssistantQuestion = createAsyncThunk(
   "events/askAssistantQuestion",
-  async (question: string, { getState }) => {
-    const state = getState() as RootState;
-    const response = await askAssistantQuestionRequest(
-      question,
-      state.auth.token,
-    );
+  async (question: string) => {
+    const response = await askAssistantQuestionRequest(question);
 
     return {
       question,
@@ -62,25 +57,22 @@ export const fetchPublicEvents = createAsyncThunk(
 
 export const fetchEventById = createAsyncThunk(
   "events/fetchById",
-  async (eventId: string, { getState }) => {
-    const state = getState() as RootState;
-    return fetchEventByIdRequest(eventId, state.auth.token);
+  async (eventId: string) => {
+    return fetchEventByIdRequest(eventId);
   },
 );
 
 export const fetchMyEvents = createAsyncThunk(
   "events/fetchMyEvents",
-  async (_, { getState }) => {
-    const state = getState() as RootState;
-    return fetchMyEventsRequest(state.auth.token);
+  async () => {
+    return fetchMyEventsRequest();
   },
 );
 
 export const createEvent = createAsyncThunk(
   "events/createEvent",
-  async (payload: CreateEventPayload, { getState }) => {
-    const state = getState() as RootState;
-    return createEventRequest(payload, state.auth.token);
+  async (payload: CreateEventPayload) => {
+    return createEventRequest(payload);
   },
 );
 
@@ -91,18 +83,16 @@ export const updateEvent = createAsyncThunk(
       eventId: string;
       data: Partial<CreateEventPayload>;
     },
-    { getState },
+    _,
   ) => {
-    const state = getState() as RootState;
-    return updateEventRequest(payload, state.auth.token);
+    return updateEventRequest(payload);
   },
 );
 
 export const deleteEvent = createAsyncThunk(
   "events/deleteEvent",
-  async (eventId: string, { getState }) => {
-    const state = getState() as RootState;
-    await deleteEventRequest(eventId, state.auth.token);
+  async (eventId: string) => {
+    await deleteEventRequest(eventId);
 
     return eventId;
   },
@@ -110,9 +100,8 @@ export const deleteEvent = createAsyncThunk(
 
 export const joinEvent = createAsyncThunk(
   "events/joinEvent",
-  async (eventId: string, { getState }) => {
-    const state = getState() as RootState;
-    await joinEventRequest(eventId, state.auth.token);
+  async (eventId: string) => {
+    await joinEventRequest(eventId);
 
     return eventId;
   },
@@ -120,9 +109,8 @@ export const joinEvent = createAsyncThunk(
 
 export const leaveEvent = createAsyncThunk(
   "events/leaveEvent",
-  async (eventId: string, { getState }) => {
-    const state = getState() as RootState;
-    await leaveEventRequest(eventId, state.auth.token);
+  async (eventId: string) => {
+    await leaveEventRequest(eventId);
 
     return eventId;
   },
@@ -134,7 +122,7 @@ const eventsSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(logout, (state) => {
+      .addCase(logoutUser.fulfilled, (state) => {
         // Clear user-specific data after logout.
         state.myEvents = [];
         state.selectedEvent = null;

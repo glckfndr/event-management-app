@@ -71,7 +71,9 @@ export function EventDetailsInteractionSection({
 }: EventDetailsInteractionSectionProps) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector(
+    (state) => state.auth.isAuthenticated ?? Boolean(state.auth.token),
+  );
   const currentUserEmail = useAppSelector((state) => state.auth.user?.email);
   const myEvents = useAppSelector((state) => state.events.myEvents);
   const [isEditing, setIsEditing] = useState(false);
@@ -84,10 +86,10 @@ export function EventDetailsInteractionSection({
   const deleteDialogDescriptionId = useId();
 
   useEffect(() => {
-    if (token) {
+    if (isAuthenticated) {
       void dispatch(fetchMyEvents());
     }
-  }, [dispatch, token]);
+  }, [dispatch, isAuthenticated]);
 
   const joinedEventIds = useMemo(
     () => new Set(myEvents.map((item) => item.id)),
@@ -116,7 +118,7 @@ export function EventDetailsInteractionSection({
     handleEditSubmit,
   } = useEventDetailsActions({
     currentEvent,
-    token,
+    isAuthenticated,
     returnTo,
     navigate,
     participantsCount,
@@ -194,7 +196,7 @@ export function EventDetailsInteractionSection({
   return (
     <>
       <div className="mt-6 flex flex-wrap gap-2">
-        {token ? (
+        {isAuthenticated ? (
           <>
             {/* Participants can join/leave unless they are the organizer. */}
             {!isOrganizer ? (
