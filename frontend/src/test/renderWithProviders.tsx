@@ -4,10 +4,12 @@ import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import { authReducer } from "../features/auth/authSlice";
 import { eventsReducer } from "../features/events/model/eventsSlice";
+import { invitationsReducer } from "../features/invitations/model/invitationsSlice";
 
 type TestState = {
   auth: ReturnType<typeof authReducer>;
   events: ReturnType<typeof eventsReducer>;
+  invitations: ReturnType<typeof invitationsReducer>;
 };
 
 export const createTestStore = (preloadedState?: Partial<TestState>) =>
@@ -15,6 +17,7 @@ export const createTestStore = (preloadedState?: Partial<TestState>) =>
     reducer: {
       auth: authReducer,
       events: eventsReducer,
+      invitations: invitationsReducer,
     },
     preloadedState: preloadedState as TestState | undefined,
   });
@@ -38,4 +41,3 @@ export const renderWithProviders = (
     ...render(ui, { wrapper: Wrapper }),
   };
 };
-
