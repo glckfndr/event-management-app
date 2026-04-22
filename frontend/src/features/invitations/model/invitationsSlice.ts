@@ -107,10 +107,12 @@ const invitationsSlice = createSlice({
       .addCase(fetchInvitationsForEvent.pending, (state, action) => {
         state.eventStatusById[action.meta.arg] = "loading";
         state.eventErrorById[action.meta.arg] = null;
+        state.actionError = null; // Clear global action error on event invitations load
       })
       .addCase(fetchInvitationsForEvent.fulfilled, (state, action) => {
         state.eventStatusById[action.payload.eventId] = "idle";
         state.byEventId[action.payload.eventId] = action.payload.invitations;
+        state.actionError = null; // Also clear error after successful load
       })
       .addCase(fetchInvitationsForEvent.rejected, (state, action) => {
         const eventId = action.meta.arg;
@@ -155,6 +157,7 @@ const invitationsSlice = createSlice({
       .addCase(fetchMyInvitations.pending, (state) => {
         state.myStatus = "loading";
         state.myError = null;
+        state.actionError = null; // Clear global action error on my invitations load
       })
       .addCase(fetchMyInvitations.fulfilled, (state, action) => {
         state.myStatus = "idle";
