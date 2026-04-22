@@ -9,6 +9,8 @@ Main features:
 - authentication flows
 - public event discovery
 - event details and participation actions
+- organizer private invitations panel on event details (invite and revoke)
+- `My Invitations` page for invitees (accept and decline)
 - event creation and editing
 - calendar-based "My Events" page
 - AI assistant UI with suggestions and recent questions
@@ -88,6 +90,12 @@ Covered flows include:
 - assistant visibility for unauthenticated users
 - predefined assistant suggestions
 - persisted recent assistant questions via `localStorage`
+
+Focused invitations page suite:
+
+```bash
+npx vitest run src/pages/MyInvitationsPage.test.tsx
+```
 
 ## Storybook
 

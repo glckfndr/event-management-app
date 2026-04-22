@@ -10,6 +10,7 @@ Main responsibilities:
 - public and private event access control
 - event CRUD operations
 - join and leave flows
+- private invitation lifecycle (create, list, revoke, accept, decline)
 - calendar data for authenticated users
 - assistant endpoints for event-related questions
 
@@ -115,6 +116,18 @@ This covers:
 - fallback behavior for unsupported or unclear intents
 - read-only assistant restrictions
 - date and scope-related assistant queries
+
+Focused invitations suites:
+
+```bash
+npm run test -- invitations.service.spec.ts invitations.controller.spec.ts
+```
+
+This covers:
+
+- organizer-only invitation management rules for private events
+- invitee-only accept/decline flows
+- invitee-facing payload sanitization and response consistency
 
 ## Seeding
 

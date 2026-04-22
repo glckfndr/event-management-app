@@ -121,6 +121,34 @@ Acceptance Criteria:
 
 Priority: Could
 
+## Epic: Private Invitations
+
+### Story US-11: Manage private invitations as organizer
+
+As an organizer of a private event, I want to invite and revoke users so that I can control event access before participation.
+
+Acceptance Criteria:
+
+- Organizer can create an invitation for a valid user on a private event.
+- Organizer can view event invitations list with statuses.
+- Organizer can revoke an existing invitation.
+- Non-organizers cannot manage invitations for the event.
+
+Priority: Must
+
+### Story US-12: Respond to invitations as invitee
+
+As an invited user, I want to review and accept or decline invitations so that I can control whether I join private events.
+
+Acceptance Criteria:
+
+- Invitee can view personal invitation list.
+- Invitee can accept or decline only their own pending invitation.
+- Invitee sees private-event preview sanitized until invitation is accepted.
+- Accepted invitations allow opening related event details from `My Invitations`.
+
+Priority: Must
+
 ## Traceability
 
 Story-to-module mapping (frontend and backend ownership):
@@ -137,6 +165,8 @@ Story-to-module mapping (frontend and backend ownership):
 | US-08 | delete modal/action in event details flow                                                                                                                              | `backend/src/events/events.controller.ts`, `backend/src/events/events.service.ts`                                        |
 | US-09 | assistant panel/components and request flow in `frontend/src/components/assistant/*`, `frontend/src/features/events/model/*`, and `frontend/src/features/events/api/*` | `backend/src/assistant/*`                                                                                                |
 | US-10 | recent prompts persistence in assistant UI state                                                                                                                       | `backend/src/assistant/*` (answer flow), local persistence on frontend                                                   |
+| US-11 | organizer invitation UI in `frontend/src/features/invitations/ui/*`, event details integration in `frontend/src/features/events/ui/event-details/*`                | `backend/src/invitations/*`, private event checks in `backend/src/events/*`                                              |
+| US-12 | `frontend/src/pages/MyInvitationsPage*`, invitation state/actions in `frontend/src/features/invitations/model/*`                                                    | `backend/src/invitations/*`, participant sync in `backend/src/participants/*`                                            |
 
 ## Status Tracking
 
@@ -152,3 +182,5 @@ Story-to-module mapping (frontend and backend ownership):
 | US-08 | Done (MVP) | Organizer delete-event flow implemented.                  |
 | US-09 | Done (MVP) | Assistant question/answer flow implemented.               |
 | US-10 | Done (MVP) | Recent prompts persistence supported in assistant UX.     |
+| US-11 | Done (MVP) | Organizer can manage private invitations end-to-end.      |
+| US-12 | Done (MVP) | Invitee accept/decline and invitation list flows shipped. |
