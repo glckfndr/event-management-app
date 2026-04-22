@@ -131,6 +131,7 @@ const invitationsSlice = createSlice({
           current,
           action.payload.invitation,
         );
+        state.eventErrorById[action.payload.eventId] = null;
       })
       .addCase(createInvitation.rejected, (state, action) => {
         state.actionStatusByKey[`create:${action.meta.arg.eventId}`] = "failed";
@@ -148,6 +149,7 @@ const invitationsSlice = createSlice({
         state.byEventId[action.payload.eventId] = current.filter(
           (invitation) => invitation.id !== action.payload.invitationId,
         );
+        state.eventErrorById[action.payload.eventId] = null;
       })
       .addCase(revokeInvitation.rejected, (state, action) => {
         state.actionStatusByKey[`revoke:${action.meta.arg.invitationId}`] =
