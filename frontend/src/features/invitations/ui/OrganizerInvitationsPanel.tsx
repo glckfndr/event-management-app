@@ -41,6 +41,7 @@ export function OrganizerInvitationsPanel({
     (state) =>
       state.invitations.actionStatusByKey[`create:${eventId}`] === "loading",
   );
+  const inviteInputId = `invited-user-id-${eventId}`;
   const [invitedUserId, setInvitedUserId] = useState("");
 
   useEffect(() => {
@@ -85,7 +86,11 @@ export function OrganizerInvitationsPanel({
         onSubmit={(event) => void handleInvite(event)}
         className="mt-4 flex flex-wrap gap-2"
       >
+        <label htmlFor={inviteInputId} className="sr-only">
+          Invited user UUID
+        </label>
         <input
+          id={inviteInputId}
           value={invitedUserId}
           onChange={(event) => setInvitedUserId(event.target.value)}
           type="text"
@@ -112,7 +117,7 @@ export function OrganizerInvitationsPanel({
         <FormErrorText className="mt-2">{actionError}</FormErrorText>
       ) : null}
 
-      {invitations.length === 0 && listStatus !== "loading" ? (
+      {listStatus === "idle" && !listError && invitations.length === 0 ? (
         <p className="mt-4 text-sm text-slate-600">No invitations yet.</p>
       ) : null}
 
