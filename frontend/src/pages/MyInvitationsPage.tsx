@@ -40,7 +40,7 @@ export function MyInvitationsPage() {
         <FormErrorText className="mt-4">{actionError}</FormErrorText>
       ) : null}
 
-      {status !== "loading" && invitations.length === 0 ? (
+      {status === "idle" && !error && invitations.length === 0 ? (
         <p className="mt-6 text-slate-600">No invitations yet.</p>
       ) : null}
 
