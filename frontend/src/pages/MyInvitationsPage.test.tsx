@@ -44,14 +44,6 @@ describe("MyInvitationsPage", () => {
         invitedUserId: "usr-1",
         status: "accepted",
         createdAt: "2099-01-01T00:00:00.000Z",
-        invitedByUser: { id: "org-1", email: "organizer@example.com" },
-        event: {
-          id: "evt-1",
-          title: "Private meetup",
-          eventDate: "2099-01-10T10:00:00.000Z",
-          visibility: "private",
-          organizerId: "org-1",
-        },
       },
     });
 
@@ -94,5 +86,6 @@ describe("MyInvitationsPage", () => {
     });
 
     expect(screen.getByText("accepted")).toBeInTheDocument();
+    expect(screen.getByText("Private meetup")).toBeInTheDocument();
   });
 });

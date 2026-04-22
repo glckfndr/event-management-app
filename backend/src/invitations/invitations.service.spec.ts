@@ -540,6 +540,10 @@ describe('InvitationsService', () => {
         id: 'invitation-id',
         invitedUserId: 'invitee-id',
       },
+      relations: {
+        event: { organizer: true, tags: true },
+        invitedByUser: true,
+      },
     });
     expect(participantsRepository.create).toHaveBeenCalledWith({
       eventId: 'event-id',

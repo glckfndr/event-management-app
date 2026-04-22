@@ -45,7 +45,14 @@ const upsertInvitation = (
   }
 
   const next = [...invitations];
-  next[existingIndex] = invitation;
+  const existingInvitation = next[existingIndex];
+  next[existingIndex] = {
+    ...existingInvitation,
+    ...invitation,
+    event: invitation.event ?? existingInvitation.event,
+    invitedByUser: invitation.invitedByUser ?? existingInvitation.invitedByUser,
+    invitedUser: invitation.invitedUser ?? existingInvitation.invitedUser,
+  };
   return next;
 };
 

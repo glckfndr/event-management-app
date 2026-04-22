@@ -284,13 +284,17 @@ export class InvitationsService {
         id: invitationId,
         invitedUserId,
       },
+      relations: {
+        event: { organizer: true, tags: true },
+        invitedByUser: true,
+      },
     });
 
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
     }
 
-    return invitation;
+    return this.sanitizeInvitationForInviteeView(invitation);
   }
 
   private sanitizeInvitationForInviteeView(
