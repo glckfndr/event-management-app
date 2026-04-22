@@ -90,7 +90,7 @@ export function OrganizerInvitationsPanel({
           onChange={(event) => setInvitedUserId(event.target.value)}
           type="text"
           placeholder="Invited user UUID"
-          className="min-w-70 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+          className="min-w-[17.5rem] flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
         />
         <Button
           type="submit"
