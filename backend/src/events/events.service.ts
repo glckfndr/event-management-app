@@ -14,7 +14,7 @@ import {
   assertPrivateEventAccess,
   AuthenticatedUser,
   mergeAndSortCalendarEvents,
-  sanitizeParticipantEmails,
+  sanitizeEventForAuthenticatedView,
 } from './events.service.helpers';
 import {
   assertCapacityAvailable,
@@ -75,7 +75,12 @@ export class EventsService {
 
   async findOne(id: string, user?: AuthenticatedUser): Promise<Event> {
     const relations = user
-      ? { organizer: true, participants: { user: true }, tags: true }
+      ? {
+          organizer: true,
+          participants: { user: true },
+          invitations: true,
+          tags: true,
+        }
       : { organizer: true, participants: true, tags: true };
 
     const event = await this.eventsRepository.findOne({
@@ -89,7 +94,7 @@ export class EventsService {
 
     assertPrivateEventAccess(event, user);
 
-    return user ? sanitizeParticipantEmails(event) : event;
+    return user ? sanitizeEventForAuthenticatedView(event) : event;
   }
 
   async create(

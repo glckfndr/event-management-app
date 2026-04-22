@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Event } from '../../events/entities/event.entity';
 import { Participant } from '../../participants/entities/participant.entity';
+import { EventInvitation } from '../../invitations/entities/event-invitation.entity';
 
 @Entity('users')
 export class User {
@@ -30,4 +31,10 @@ export class User {
 
   @OneToMany(() => Participant, (participant) => participant.user)
   participations!: Participant[];
+
+  @OneToMany(() => EventInvitation, (invitation) => invitation.invitedByUser)
+  sentInvitations!: EventInvitation[];
+
+  @OneToMany(() => EventInvitation, (invitation) => invitation.invitedUser)
+  receivedInvitations!: EventInvitation[];
 }

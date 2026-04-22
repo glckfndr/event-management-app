@@ -9,6 +9,8 @@ Main capabilities:
 - user registration and login
 - browsing public events
 - controlled access to private events
+- organizer-managed private invitations (invite, list, revoke)
+- invitee-managed invitation responses (accept, decline) via `My Invitations`
 - creating, editing, and deleting organizer-owned events
 - joining and leaving events
 - calendar-based `My Events` view
@@ -109,6 +111,7 @@ The project is split into a React frontend and a NestJS backend.
 - frontend is responsible for routing, forms, UI state, and user interactions
 - backend is responsible for validation, authorization, persistence, and business rules
 - PostgreSQL stores users, events, participants, and tags
+- PostgreSQL stores users, events, participants, invitations, and tags
 
 ### Frontend Architecture
 
@@ -150,12 +153,14 @@ Core entities:
 - `User` organizes events and can join events
 - `Event` stores title, date, location, visibility, capacity, organizer, and tags
 - `Participant` is the explicit join table for user-event participation
+- `EventInvitation` tracks organizer-to-user private event invitations and statuses
 - `Tag` supports event categorization and frontend filtering
 
 Important constraints:
 
 - user emails are unique
 - user-event participation pairs are unique
+- event-user invitation pairs are unique
 - private events are visible only to organizer or participant
 - participant email addresses are hidden in event detail responses
 
@@ -165,6 +170,8 @@ The app uses JWT-based authentication.
 
 - protected actions such as create, update, delete, join, and leave require authenticated users
 - organizer-only actions are checked on the backend
+- invitation-management actions for private events are organizer-only
+- invitation response actions are limited to the invited user
 - private event access is validated on the backend even if the frontend hides restricted UI
 - one read route uses optional auth middleware so event details can serve both guests and signed-in users with different access levels
 

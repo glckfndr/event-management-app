@@ -299,4 +299,80 @@ describe("EventDetailsPage", () => {
       resolveDelete?.();
     });
   });
+
+  it("shows organizer invitations panel for private event and submits invite", async () => {
+    const event = {
+      ...createInitialEvent(),
+      visibility: "private" as const,
+    };
+
+    vi.spyOn(api, "get").mockImplementation(async (url: string) => {
+      if (url === "/events/evt-1") {
+        return { data: event };
+      }
+
+      if (url === "/users/me/events") {
+        return { data: [] };
+      }
+
+      if (url === "/events/evt-1/invitations") {
+        return { data: [] };
+      }
+
+      throw new Error(`Unexpected GET url: ${url}`);
+    });
+
+    const postSpy = vi.spyOn(api, "post").mockResolvedValue({
+      data: {
+        id: "inv-1",
+        eventId: "evt-1",
+        invitedByUserId: "org-1",
+        invitedUserId: "usr-2",
+        status: "pending",
+        createdAt: "2099-01-01T00:00:00.000Z",
+      },
+    });
+
+    const store = createTestStore({
+      auth: {
+        token: "test-token",
+        user: { email: "organizer@example.com" },
+        status: "idle",
+        error: null,
+      },
+      events: {
+        publicEvents: [],
+        myEvents: [],
+        selectedEvent: null,
+        status: "idle",
+        error: null,
+        assistantAnswer: null,
+        assistantStatus: "idle",
+        assistantError: null,
+      },
+    });
+
+    renderWithProviders(
+      <MemoryRouter initialEntries={["/events/evt-1"]}>
+        <Routes>
+          <Route path="/events/:id" element={<EventDetailsPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { store },
+    );
+
+    expect(await screen.findByText("Invitations")).toBeInTheDocument();
+
+    await userEvent.type(
+      screen.getByPlaceholderText("Invited user UUID"),
+      "usr-2",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Invite" }));
+
+    await waitFor(() => {
+      expect(postSpy).toHaveBeenCalledWith("/events/evt-1/invitations", {
+        invitedUserId: "usr-2",
+      });
+    });
+  });
 });

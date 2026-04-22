@@ -11,6 +11,7 @@ This project intentionally uses both Redux Toolkit and Zustand.
 
 - Auth/session state (`auth` slice).
 - Events domain data (`events` slice): lists, selected event, request status, API errors.
+- Invitations domain data (`invitations` slice): organizer event invitations, invitee list, action statuses, API errors.
 - Async actions that call backend APIs.
 - Any state required across multiple pages and business flows.
 
@@ -36,3 +37,4 @@ This project intentionally uses both Redux Toolkit and Zustand.
 - Redux hooks: `frontend/src/app/hooks.ts`
 - Zustand assistant UI store: `frontend/src/features/events/model/assistantUiStore.ts`
 - Redux events domain slice: `frontend/src/features/events/model/eventsSlice.ts`
+- Redux invitations domain slice: `frontend/src/features/invitations/model/invitationsSlice.ts`
