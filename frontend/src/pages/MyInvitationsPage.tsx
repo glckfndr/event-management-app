@@ -53,7 +53,7 @@ export function MyInvitationsPage() {
             const eventTitle = invitation.event?.title ?? "Private event";
             const eventDate = invitation.event?.eventDate
               ? new Date(invitation.event.eventDate).toLocaleString()
-              : "Date hidden until accepted";
+              : "Date unavailable";
             const eventLocation =
               invitation.event?.location ?? "Location hidden until accepted";
 

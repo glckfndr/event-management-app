@@ -12,11 +12,11 @@ import {
 
 type InvitationsState = {
   byEventId: Record<string, InvitationItem[]>;
-  eventStatusById: Record<string, "idle" | "loading" | "failed">;
+  eventStatusById: Partial<Record<string, "idle" | "loading" | "failed">>;
   myInvitations: InvitationItem[];
   myStatus: "idle" | "loading" | "failed";
-  actionStatusByKey: Record<string, "idle" | "loading" | "failed">;
-  eventErrorById: Record<string, string | null>;
+  actionStatusByKey: Partial<Record<string, "idle" | "loading" | "failed">>;
+  eventErrorById: Partial<Record<string, string | null>>;
   myError: string | null;
   actionError: string | null;
 };

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { screen, waitFor } from "@testing-library/react";
@@ -10,6 +10,10 @@ import {
 } from "../test/renderWithProviders";
 
 describe("MyInvitationsPage", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("loads invitations and allows accepting pending invitation", async () => {
     vi.spyOn(api, "get").mockResolvedValue({
       data: [
